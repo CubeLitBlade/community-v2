@@ -13,60 +13,60 @@ func TestNewUsername(t *testing.T) {
 		name    string
 		value   string
 		want    account.Username
-		wantErr bool
+		wantErr error
 	}{
 		{
-			name:    "accepts minimum length username",
-			value:   strings.Repeat("a", account.MinUsernameLength),
-			want:    account.Username(strings.Repeat("a", account.MinUsernameLength)),
-			wantErr: false,
+			name:  "accepts minimum length username",
+			value: strings.Repeat("a", account.MinUsernameLength),
+			want:  account.Username(strings.Repeat("a", account.MinUsernameLength)),
 		},
 		{
-			name:    "accepts maximum length username",
-			value:   strings.Repeat("a", account.MaxUsernameLength),
-			want:    account.Username(strings.Repeat("a", account.MaxUsernameLength)),
-			wantErr: false,
+			name:  "accepts maximum length username",
+			value: strings.Repeat("a", account.MaxUsernameLength),
+			want:  account.Username(strings.Repeat("a", account.MaxUsernameLength)),
 		},
 		{
 			name:    "rejects username shorter than minimum length",
 			value:   "a",
-			wantErr: true,
+			wantErr: account.ErrUsernameLength,
 		},
 		{
 			name:    "rejects username longer than maximum length",
 			value:   strings.Repeat("a", account.MaxUsernameLength+1),
-			wantErr: true,
+			wantErr: account.ErrUsernameLength,
 		},
 		{
-			name:    "trims surrounding spaces",
-			value:   " alice ",
-			want:    account.Username("alice"),
-			wantErr: false,
+			name:  "trims surrounding spaces",
+			value: " alice ",
+			want:  account.Username("alice"),
 		},
 		{
 			name:    "rejects blank username",
 			value:   "   ",
-			wantErr: true,
+			wantErr: account.ErrUsernameBlank,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, gotErr := account.NewUsername(tt.value)
-			if tt.wantErr {
+
+			if tt.wantErr != nil {
 				if gotErr == nil {
 					t.Fatal("NewUsername() succeeded unexpectedly")
 				}
 
-				if !errors.Is(gotErr, account.ErrInvalidUsername) {
-					t.Errorf("NewUsername() error = %v, want ErrInvalidUsername", gotErr)
+				if !errors.Is(gotErr, tt.wantErr) {
+					t.Errorf("NewUsername() error = %v, want %v", gotErr, tt.wantErr)
 				}
 
 				return
 			}
-			if gotErr != nil {
-				t.Errorf("NewUsername() failed: %v", gotErr)
 
+			if gotErr != nil {
+				t.Fatalf("NewUsername() failed: %v", gotErr)
 			}
+
 			if got != tt.want {
 				t.Errorf("NewUsername() = %v, want %v", got, tt.want)
 			}
@@ -79,48 +79,46 @@ func TestUsernameFromStorage(t *testing.T) {
 		name    string
 		value   string
 		want    account.Username
-		wantErr bool
+		wantErr error
 	}{
 		{
-			name:    "accepts normal username",
-			value:   "bob",
-			want:    account.Username("bob"),
-			wantErr: false,
+			name:  "accepts normal username",
+			value: "bob",
+			want:  account.Username("bob"),
 		},
 		{
-			name:    "accepts archived username",
-			value:   "alice#archived_123",
-			want:    account.Username("alice#archived_123"),
-			wantErr: false,
+			name:  "accepts archived username",
+			value: "alice#archived_123",
+			want:  account.Username("alice#archived_123"),
 		},
 		{
-			name:    "accepts username longer than normal limit",
-			value:   strings.Repeat("a", account.MaxUsernameLength+1),
-			want:    account.Username(strings.Repeat("a", account.MaxUsernameLength+1)),
-			wantErr: false,
+			name:  "accepts username longer than normal limit",
+			value: strings.Repeat("a", account.MaxUsernameLength+1),
+			want:  account.Username(strings.Repeat("a", account.MaxUsernameLength+1)),
 		},
 		{
 			name:    "rejects blank stored username",
 			value:   "   ",
-			wantErr: true,
+			wantErr: account.ErrUsernameBlank,
 		},
 		{
 			name:    "rejects username longer than storage limit",
 			value:   strings.Repeat("a", account.MaxStoredUsernameLength+1),
-			wantErr: true,
+			wantErr: account.ErrUsernameLength,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, gotErr := account.UsernameFromStorage(tt.value)
 
-			if tt.wantErr {
+			if tt.wantErr != nil {
 				if gotErr == nil {
 					t.Fatal("UsernameFromStorage() succeeded unexpectedly")
 				}
 
-				if !errors.Is(gotErr, account.ErrInvalidUsername) {
-					t.Errorf("UsernameFromStorage() error = %v, want ErrInvalidUsername", gotErr)
+				if !errors.Is(gotErr, tt.wantErr) {
+					t.Errorf("UsernameFromStorage() error = %v, want %v", gotErr, tt.wantErr)
 				}
 
 				return
@@ -143,35 +141,48 @@ func TestArchiveUsername(t *testing.T) {
 		username account.Username
 		id       account.AccountID
 		want     account.Username
-		wantErr  bool
+		wantErr  error
 	}{
 		{
 			name:     "generates archived username from normal username",
 			username: account.Username("alice"),
 			id:       account.AccountID(9223372036854775807),
 			want:     account.Username("alice#archived_9223372036854775807"),
-			wantErr:  false,
 		},
 		{
 			name:     "keeps archived username within storage limit",
 			username: account.Username(strings.Repeat("a", account.MaxUsernameLength)),
 			id:       account.AccountID(9223372036854775807),
 			want:     account.Username(strings.Repeat("a", account.MaxUsernameLength) + "#archived_9223372036854775807"),
-			wantErr:  false,
+		},
+		{
+			name:     "rejects archived username longer than storage limit",
+			username: account.Username(strings.Repeat("a", account.MaxStoredUsernameLength)),
+			id:       account.AccountID(1),
+			wantErr:  account.ErrUsernameLength,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, gotErr := account.ArchiveUsername(tt.username, tt.id)
-			if gotErr != nil {
-				if !tt.wantErr {
-					t.Errorf("ArchiveUsername() failed: %v", gotErr)
+
+			if tt.wantErr != nil {
+				if gotErr == nil {
+					t.Fatal("ArchiveUsername() succeeded unexpectedly")
 				}
+
+				if !errors.Is(gotErr, tt.wantErr) {
+					t.Errorf("ArchiveUsername() error = %v, want %v", gotErr, tt.wantErr)
+				}
+
 				return
 			}
-			if tt.wantErr {
-				t.Fatal("ArchiveUsername() succeeded unexpectedly")
+
+			if gotErr != nil {
+				t.Fatalf("ArchiveUsername() failed: %v", gotErr)
 			}
+
 			if got != tt.want {
 				t.Errorf("ArchiveUsername() = %v, want %v", got, tt.want)
 			}
