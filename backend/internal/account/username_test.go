@@ -139,26 +139,26 @@ func TestArchiveUsername(t *testing.T) {
 	tests := []struct {
 		name     string
 		username account.Username
-		id       account.AccountID
+		id       account.ID
 		want     account.Username
 		wantErr  error
 	}{
 		{
 			name:     "generates archived username from normal username",
 			username: account.Username("alice"),
-			id:       account.AccountID(9223372036854775807),
+			id:       account.ID(9223372036854775807),
 			want:     account.Username("alice#archived_9223372036854775807"),
 		},
 		{
 			name:     "keeps archived username within storage limit",
 			username: account.Username(strings.Repeat("a", account.MaxUsernameLength)),
-			id:       account.AccountID(9223372036854775807),
+			id:       account.ID(9223372036854775807),
 			want:     account.Username(strings.Repeat("a", account.MaxUsernameLength) + "#archived_9223372036854775807"),
 		},
 		{
 			name:     "rejects archived username longer than storage limit",
 			username: account.Username(strings.Repeat("a", account.MaxStoredUsernameLength)),
-			id:       account.AccountID(1),
+			id:       account.ID(1),
 			wantErr:  account.ErrUsernameLength,
 		},
 	}

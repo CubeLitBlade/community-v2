@@ -71,7 +71,7 @@ func UsernameFromStorage(value string) (Username, error) {
 	return Username(value), nil
 }
 
-func ArchiveUsername(username Username, id AccountID) (Username, error) {
+func ArchiveUsername(username Username, id ID) (Username, error) {
 	value := fmt.Sprintf(archivedUsernameFormat, username.String(), id)
 	length := utf8.RuneCountInString(value)
 

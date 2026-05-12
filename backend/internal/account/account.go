@@ -1,9 +1,14 @@
 package account
 
-type AccountID int64
+type ID int64
 
 type Account struct {
-	ID           AccountID
-	Username     Username
-	PasswordHash PasswordHash
+	id                     ID
+	username               Username
+	passwordHash           PasswordHash
+	passwordChangeRequired bool
+	displayName            string
+	role                   Role
+	status                 Status
+	audit                  Audit
 }
