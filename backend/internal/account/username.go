@@ -45,7 +45,7 @@ func NewUsername(value string) (Username, error) {
 	return Username(value), nil
 }
 
-func (u Username) String() string {
+func (u Username) Value() string {
 	return string(u)
 }
 
@@ -72,7 +72,7 @@ func UsernameFromStorage(value string) (Username, error) {
 }
 
 func ArchiveUsername(username Username, id ID) (Username, error) {
-	value := fmt.Sprintf(archivedUsernameFormat, username.String(), id)
+	value := fmt.Sprintf(archivedUsernameFormat, username.Value(), id)
 	length := utf8.RuneCountInString(value)
 
 	if length > MaxStoredUsernameLength {
