@@ -53,3 +53,23 @@ func Register(id ID, username string, password string, now time.Time) (Account, 
 		audit:                  NewAudit(now),
 	}, nil
 }
+
+func (a Account) ID() ID {
+	return a.id
+}
+
+func (a Account) Username() string {
+	return a.username.Value()
+}
+
+func (a Account) DisplayName() string {
+	return a.displayName
+}
+
+func (a Account) Role() Role {
+	return a.role
+}
+
+func (a Account) Status() Status {
+	return a.status
+}
