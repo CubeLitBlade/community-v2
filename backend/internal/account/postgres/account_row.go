@@ -2,7 +2,7 @@ package postgres
 
 import "time"
 
-type AccountPO struct {
+type accountRow struct {
 	ID                     int64      `gorm:"column:id;primaryKey"`
 	Username               string     `gorm:"column:username"`
 	PasswordHash           string     `gorm:"column:password_hash"`
@@ -16,6 +16,6 @@ type AccountPO struct {
 	LastLoginIP            *string    `gorm:"column:last_login_ip"`
 }
 
-func (AccountPO) TableName() string {
+func (accountRow) TableName() string {
 	return "accounts"
 }

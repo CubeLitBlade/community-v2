@@ -24,8 +24,8 @@ func NewRepository(db *gorm.DB) *Repository {
 
 var _ account.Repository = (*Repository)(nil)
 
-func (r *Repository) Save(ctx context.Context, acc account.Account) error {
-	po := toPO(acc)
+func (r *Repository) Create(ctx context.Context, acc account.Account) error {
+	po := toRow(acc)
 
 	if err := r.db.WithContext(ctx).Create(&po).Error; err != nil {
 		return fmt.Errorf("insert account: %w", err)
@@ -34,7 +34,7 @@ func (r *Repository) Save(ctx context.Context, acc account.Account) error {
 	return nil
 }
 
-func toPO(acc account.Account) AccountPO {
+func toRow(acc account.Account) accountRow {
 	s := acc.Snapshot()
 
 	var lastLoginIP *string
@@ -43,7 +43,7 @@ func toPO(acc account.Account) AccountPO {
 		lastLoginIP = &ip
 	}
 
-	return AccountPO{
+	return accountRow{
 		ID:                     int64(s.ID),
 		Username:               s.Username,
 		PasswordHash:           s.PasswordHash,

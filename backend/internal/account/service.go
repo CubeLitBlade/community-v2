@@ -42,8 +42,8 @@ func (s *Service) CreateAccount(ctx context.Context, username string, password s
 		return Account{}, fmt.Errorf("create account: %w", err)
 	}
 
-	if err := s.repo.Save(ctx, account); err != nil {
-		return Account{}, fmt.Errorf("save account: %w", err)
+	if err := s.repo.Create(ctx, account); err != nil {
+		return Account{}, fmt.Errorf("create account: %w", err)
 	}
 
 	s.logger.Info(
