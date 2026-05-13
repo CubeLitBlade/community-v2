@@ -3,6 +3,7 @@ package account
 import (
 	"errors"
 	"fmt"
+	"net/netip"
 	"time"
 )
 
@@ -72,4 +73,42 @@ func (a Account) Role() Role {
 
 func (a Account) Status() Status {
 	return a.status
+}
+
+type Snapshot struct {
+	ID                     ID
+	Username               string
+	PasswordHash           string
+	PasswordChangeRequired bool
+	DisplayName            string
+	Role                   Role
+	Status                 Status
+	CreatedAt              time.Time
+	UpdatedAt              time.Time
+	LastLoginAt            *time.Time
+	LastLoginIP            *netip.Addr
+}
+
+func (a Account) Snapshot() Snapshot {
+	var lastLoginAt *time.Time
+	var lastLoginIP *netip.Addr
+
+	if a.audit.lastLogin != nil {
+		lastLoginAt = &a.audit.lastLogin.at
+		lastLoginIP = &a.audit.lastLogin.ip
+	}
+
+	return Snapshot{
+		ID:                     a.id,
+		Username:               a.username.Value(),
+		PasswordHash:           a.passwordHash.value,
+		PasswordChangeRequired: a.passwordChangeRequired,
+		DisplayName:            a.displayName,
+		Role:                   a.role,
+		Status:                 a.status,
+		CreatedAt:              a.audit.createdAt,
+		UpdatedAt:              a.audit.updatedAt,
+		LastLoginAt:            lastLoginAt,
+		LastLoginIP:            lastLoginIP,
+	}
 }

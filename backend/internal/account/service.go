@@ -1,6 +1,7 @@
 package account
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"time"
@@ -12,23 +13,25 @@ type IDGenerator interface {
 
 type Service struct {
 	ids    IDGenerator
+	repo   Repository
 	now    func() time.Time
 	logger *slog.Logger
 }
 
-func NewService(ids IDGenerator, logger *slog.Logger) *Service {
+func NewService(ids IDGenerator, repo Repository, logger *slog.Logger) *Service {
 	if logger == nil {
 		panic("account.NewService: logger is nil")
 	}
 
 	return &Service{
 		ids:    ids,
+		repo:   repo,
 		now:    time.Now,
 		logger: logger,
 	}
 }
 
-func (s *Service) CreateAccount(username string, password string) (Account, error) {
+func (s *Service) CreateAccount(ctx context.Context, username string, password string) (Account, error) {
 	id, err := s.ids.NextID()
 	if err != nil {
 		return Account{}, fmt.Errorf("generate account id: %w", err)
@@ -37,6 +40,10 @@ func (s *Service) CreateAccount(username string, password string) (Account, erro
 	account, err := Register(ID(id), username, password, s.now())
 	if err != nil {
 		return Account{}, fmt.Errorf("create account: %w", err)
+	}
+
+	if err := s.repo.Save(ctx, account); err != nil {
+		return Account{}, fmt.Errorf("save account: %w", err)
 	}
 
 	s.logger.Info(
@@ -48,8 +55,6 @@ func (s *Service) CreateAccount(username string, password string) (Account, erro
 		"status", account.status,
 		"created_at", account.audit.createdAt.Format(time.RFC3339),
 	)
-
-	// TODO: save created account to database
 
 	return account, nil
 }

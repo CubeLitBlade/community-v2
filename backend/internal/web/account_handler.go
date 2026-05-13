@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -10,7 +11,7 @@ import (
 )
 
 type AccountService interface {
-	CreateAccount(username string, password string) (account.Account, error)
+	CreateAccount(ctx context.Context, username string, password string) (account.Account, error)
 }
 
 type AccountHandler struct {
@@ -50,7 +51,7 @@ func (h *AccountHandler) createAccount(c *gin.Context) {
 		return
 	}
 
-	acc, err := h.accounts.CreateAccount(req.Username, req.Password)
+	acc, err := h.accounts.CreateAccount(c.Request.Context(), req.Username, req.Password)
 	if err != nil {
 		h.logger.Warn(
 			"create account failed",
