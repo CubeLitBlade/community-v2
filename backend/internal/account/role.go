@@ -8,7 +8,7 @@ import (
 type Role string
 
 var (
-	ErrRoleUnknown = errors.New("unknown status")
+	ErrRoleUnknown = errors.New("unknown role")
 )
 
 const (
@@ -22,8 +22,8 @@ func ParseRole(value string) (Role, error) {
 
 	if !role.IsValid() {
 		return "", fmt.Errorf(
-			"%w: status '%s' is unknown",
-			ErrStatusUnknown,
+			"%w: role '%s' is unknown",
+			ErrRoleUnknown,
 			value,
 		)
 	}
