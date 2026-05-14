@@ -59,9 +59,7 @@ func (h *AccountHandler) createAccount(c *gin.Context) {
 			"error", err,
 		)
 
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "failed to create account",
-		})
+		writeMappedError(c, err, accountProblem)
 		return
 	}
 

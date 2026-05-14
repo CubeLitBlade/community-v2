@@ -37,3 +37,33 @@ func writeInvalidRequest(c *gin.Context, detail string) {
 		"INVALID_REQUEST",
 	)
 }
+
+type problemSpec struct {
+	status int
+	title  string
+	code   string
+	detail string
+}
+
+func writeProblemSpec(c *gin.Context, spec problemSpec) {
+	writeProblem(c, spec.status, spec.title, spec.detail, spec.code)
+}
+
+type errorMapper func(error) (problemSpec, bool)
+
+func writeMappedError(c *gin.Context, err error, mappers ...errorMapper) {
+	for _, mapper := range mappers {
+		if spec, ok := mapper(err); ok {
+			writeProblemSpec(c, spec)
+			return
+		}
+	}
+
+	writeProblem(
+		c,
+		http.StatusInternalServerError,
+		"Internal server error",
+		"An unexpected error occurred.",
+		"INTERNAL_ERROR",
+	)
+}

@@ -61,7 +61,7 @@ func ValidatePassword(raw string) error {
 	length := utf8.RuneCountInString(raw)
 	if length < MinPasswordLength {
 		return fmt.Errorf(
-			"%w: password should be at least than %d characters",
+			"%w: password should be at least %d characters",
 			ErrPasswordTooShort,
 			MinPasswordLength,
 		)
