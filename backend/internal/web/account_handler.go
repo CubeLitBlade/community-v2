@@ -39,8 +39,8 @@ func (h *AccountHandler) RegisterRoutes(router gin.IRouter) {
 }
 
 type createAccountRequest struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	Username string `binding:"required" json:"username"`
+	Password string `binding:"required" json:"password"`
 }
 
 func (h *AccountHandler) createAccount(c *gin.Context) {
@@ -48,6 +48,7 @@ func (h *AccountHandler) createAccount(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		writeInvalidRequest(c, "Request body must be valid JSON and include username and password.")
+
 		return
 	}
 
@@ -60,6 +61,7 @@ func (h *AccountHandler) createAccount(c *gin.Context) {
 		)
 
 		writeMappedError(c, err, accountProblem)
+
 		return
 	}
 

@@ -7,21 +7,19 @@ import (
 	"time"
 )
 
-var (
-	ErrInvalidAccountID = errors.New("invalid account id")
-)
+var ErrInvalidAccountID = errors.New("invalid account id")
 
 type ID int64
 
 type Account struct {
-	id                     ID
+	audit                  Audit
 	username               Username
 	passwordHash           PasswordHash
-	passwordChangeRequired bool
 	displayName            string
 	role                   Role
 	status                 Status
-	audit                  Audit
+	id                     ID
+	passwordChangeRequired bool
 }
 
 func Register(id ID, username string, password string, now time.Time) (Account, error) {
@@ -76,22 +74,24 @@ func (a Account) Status() Status {
 }
 
 type Snapshot struct {
-	ID                     ID
-	Username               string
-	PasswordHash           string
-	PasswordChangeRequired bool
-	DisplayName            string
-	Role                   Role
-	Status                 Status
 	CreatedAt              time.Time
 	UpdatedAt              time.Time
 	LastLoginAt            *time.Time
 	LastLoginIP            *netip.Addr
+	Username               string
+	PasswordHash           string
+	DisplayName            string
+	Role                   Role
+	Status                 Status
+	ID                     ID
+	PasswordChangeRequired bool
 }
 
 func (a Account) Snapshot() Snapshot {
-	var lastLoginAt *time.Time
-	var lastLoginIP *netip.Addr
+	var (
+		lastLoginAt *time.Time
+		lastLoginIP *netip.Addr
+	)
 
 	if a.audit.lastLogin != nil {
 		lastLoginAt = &a.audit.lastLogin.at

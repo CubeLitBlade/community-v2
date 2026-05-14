@@ -8,48 +8,76 @@ import (
 	"time"
 )
 
+const (
+	envAddr                  = "ADDR"
+	envDatabaseURL           = "DATABASE_URL"
+	envSnowflakeID           = "SNOWFLAKE_ID"
+	envJWTSecret             = "JWT_SECRET"
+	envAccessTokenTTL        = "JWT_ACCESS_TOKEN_TTL"
+	envCSRFAuthKey           = "CSRF_AUTH_KEY"
+	envCookieSecure          = "COOKIE_SECURE"
+	envAccessTokenCookieName = "ACCESS_TOKEN_COOKIE_NAME"
+)
+
+const (
+	defaultAddr                  = ":8080"
+	defaultSnowflakeID           = int64(1)
+	defaultAccessTokenTTL        = 2 * time.Hour
+	defaultCookieSecure          = false
+	defaultAccessTokenCookieName = "ACCESS_TOKEN"
+	defaultCookieSameSite        = http.SameSiteLaxMode
+)
+
+const (
+	minJWTSecretBytes = 32
+	csrfAuthKeyBytes  = 32
+
+	envIntParseBase = 10
+	envInt64Bits    = 64
+)
+
 type Config struct {
 	Addr                  string
 	DatabaseURL           string
-	SnowflakeID           int64
-	JWTSecret             []byte
-	AccessTokenTTL        time.Duration
-	CSRFAuthKey           []byte
-	CookieSecure          bool
-	CookieSameSite        http.SameSite
 	AccessTokenCookieName string
+	JWTSecret             []byte
+	CSRFAuthKey           []byte
+	SnowflakeID           int64
+	AccessTokenTTL        time.Duration
+	CookieSameSite        http.SameSite
+	CookieSecure          bool
 }
 
 func LoadConfig() (Config, error) {
-	snowflakeID, err := envInt64("SNOWFLAKE_ID", 1)
+	snowflakeID, err := envInt64(envSnowflakeID, defaultSnowflakeID)
 	if err != nil {
 		return Config{}, err
 	}
 
-	accessTokenTTL, err := envDuration("JWT_ACCESS_TOKEN_TTL", 2*time.Hour)
+	accessTokenTTL, err := envDuration(envAccessTokenTTL, defaultAccessTokenTTL)
 	if err != nil {
 		return Config{}, err
 	}
 
-	cookieSecure, err := envBool("COOKIE_SECURE", false)
+	cookieSecure, err := envBool(envCookieSecure, defaultCookieSecure)
 	if err != nil {
 		return Config{}, err
 	}
 
 	cfg := Config{
-		Addr:        envString("ADDR", ":8080"),
-		DatabaseURL: os.Getenv("DATABASE_URL"),
+		Addr:        envString(envAddr, defaultAddr),
+		DatabaseURL: os.Getenv(envDatabaseURL),
 
 		SnowflakeID: snowflakeID,
 
-		JWTSecret:      []byte(os.Getenv("JWT_SECRET")),
+		JWTSecret:      []byte(os.Getenv(envJWTSecret)),
 		AccessTokenTTL: accessTokenTTL,
 
-		CSRFAuthKey: []byte(os.Getenv("CSRF_AUTH_KEY")),
+		CSRFAuthKey: []byte(os.Getenv(envCSRFAuthKey)),
 
 		CookieSecure:          cookieSecure,
-		CookieSameSite:        http.SameSiteLaxMode,
-		AccessTokenCookieName: envString("ACCESS_TOKEN_COOKIE_NAME", "ACCESS_TOKEN"),
+		CookieSameSite:        defaultCookieSameSite,
+		AccessTokenCookieName: envString(envAccessTokenCookieName, defaultAccessTokenCookieName),
 	}
 
 	if err := cfg.validate(); err != nil {
@@ -61,23 +89,23 @@ func LoadConfig() (Config, error) {
 
 func (c Config) validate() error {
 	if c.DatabaseURL == "" {
-		return fmt.Errorf("DATABASE_URL is unset")
+		return fmt.Errorf("%s is unset", envDatabaseURL)
 	}
 
-	if len(c.JWTSecret) < 32 {
-		return fmt.Errorf("JWT_SECRET must be at least 32 bytes")
+	if len(c.JWTSecret) < minJWTSecretBytes {
+		return fmt.Errorf("%s must be at least %d bytes", envJWTSecret, minJWTSecretBytes)
 	}
 
 	if c.AccessTokenTTL <= 0 {
-		return fmt.Errorf("JWT_ACCESS_TOKEN_TTL must be positive")
+		return fmt.Errorf("%s must be positive", envAccessTokenTTL)
 	}
 
-	if len(c.CSRFAuthKey) != 32 {
-		return fmt.Errorf("CSRF_AUTH_KEY must be exactly 32 bytes")
+	if len(c.CSRFAuthKey) != csrfAuthKeyBytes {
+		return fmt.Errorf("%s must be exactly %d bytes", envCSRFAuthKey, csrfAuthKeyBytes)
 	}
 
 	if c.AccessTokenCookieName == "" {
-		return fmt.Errorf("ACCESS_TOKEN_COOKIE_NAME must not be empty")
+		return fmt.Errorf("%s must not be empty", envAccessTokenCookieName)
 	}
 
 	return nil
@@ -112,7 +140,7 @@ func envInt64(key string, fallback int64) (int64, error) {
 		return fallback, nil
 	}
 
-	parsed, err := strconv.ParseInt(value, 10, 64)
+	parsed, err := strconv.ParseInt(value, envIntParseBase, envInt64Bits)
 	if err != nil {
 		return 0, fmt.Errorf("parse %s: %w", key, err)
 	}

@@ -12,12 +12,12 @@ import (
 )
 
 type App struct {
-	cfg    Config
 	logger *slog.Logger
 	db     *gorm.DB
 	sqlDB  *sql.DB
 	router *gin.Engine
 	server *http.Server
+	cfg    Config
 }
 
 func NewApp() (*App, error) {
@@ -38,6 +38,7 @@ func NewApp() (*App, error) {
 	ids, err := idgen.NewSnowflake(cfg.SnowflakeID)
 	if err != nil {
 		_ = sqlDB.Close()
+
 		return nil, fmt.Errorf("create id generator: %w", err)
 	}
 
@@ -45,6 +46,7 @@ func NewApp() (*App, error) {
 	router, err := newRouter()
 	if err != nil {
 		_ = sqlDB.Close()
+
 		return nil, err
 	}
 
@@ -58,6 +60,7 @@ func NewApp() (*App, error) {
 	server, err := newHTTPServer(cfg, router)
 	if err != nil {
 		_ = sqlDB.Close()
+
 		return nil, err
 	}
 
@@ -74,8 +77,10 @@ func NewApp() (*App, error) {
 func (a *App) Run() error {
 	a.logger.Info("server started", "addr", a.cfg.Addr)
 
-	if err := a.server.ListenAndServe(); err != nil {
+	err := a.server.ListenAndServe()
+	if err != nil {
 		a.logger.Error("server stopped unexpectedly", "error", err)
+
 		return err
 	}
 
@@ -87,7 +92,8 @@ func (a *App) Close() {
 		return
 	}
 
-	if err := a.sqlDB.Close(); err != nil {
+	err := a.sqlDB.Close()
+	if err != nil {
 		a.logger.Error("close database failed", "error", err)
 	}
 }

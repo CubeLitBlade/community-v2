@@ -82,5 +82,6 @@ func ArchiveUsername(username Username, id ID) (Username, error) {
 			MaxStoredUsernameLength,
 		)
 	}
+
 	return Username(value), nil
 }

@@ -12,7 +12,8 @@ func newRouter() (*gin.Engine, error) {
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 
-	if err := r.SetTrustedProxies(nil); err != nil {
+	err := r.SetTrustedProxies(nil)
+	if err != nil {
 		return nil, fmt.Errorf("set trusted proxies: %w", err)
 	}
 

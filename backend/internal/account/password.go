@@ -28,13 +28,11 @@ type PasswordHash struct {
 
 func HashPassword(raw string) (PasswordHash, error) {
 	err := ValidatePassword(raw)
-
 	if err != nil {
 		return PasswordHash{}, err
 	}
 
 	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(raw), passwordCost)
-
 	if err != nil {
 		return PasswordHash{}, err
 	}

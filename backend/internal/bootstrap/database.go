@@ -23,6 +23,7 @@ func OpenDatabase(dsn string) (*gorm.DB, *sql.DB, error) {
 
 	if err := sqlDB.Ping(); err != nil {
 		_ = sqlDB.Close()
+
 		return nil, nil, fmt.Errorf("ping database: %w", err)
 	}
 

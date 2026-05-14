@@ -11,9 +11,9 @@ import (
 
 func TestValidatePassword(t *testing.T) {
 	tests := []struct {
+		wantErr error
 		name    string
 		raw     string
-		wantErr error
 	}{
 		{
 			name:    "rejects empty password",
@@ -46,8 +46,10 @@ func TestValidatePassword(t *testing.T) {
 				if !errors.Is(gotErr, tt.wantErr) {
 					t.Errorf("ValidatePassword() error = %v, want %v", gotErr, tt.wantErr)
 				}
+
 				return
 			}
+
 			if tt.wantErr != nil {
 				t.Fatal("ValidatePassword() succeeded unexpectedly")
 			}

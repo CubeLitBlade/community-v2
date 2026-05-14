@@ -2,7 +2,7 @@ package bootstrap
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -22,8 +22,8 @@ func newHTTPServer(cfg Config, router *gin.Engine) (*http.Server, error) {
 }
 
 func newHTTPHandler(cfg Config, router *gin.Engine) (http.Handler, error) {
-	if len(cfg.CSRFAuthKey) != 32 {
-		return nil, fmt.Errorf("CSRF_AUTH_KEY must be exactly 32 bytes")
+	if len(cfg.CSRFAuthKey) != csrfAuthKeyBytes {
+		return nil, errors.New("CSRF_AUTH_KEY must be exactly 32 bytes")
 	}
 
 	csrfMiddleware := csrf.Protect(

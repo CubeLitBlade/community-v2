@@ -93,6 +93,7 @@ func waitNextMillis(lastTimestamp int64) int64 {
 
 	for timestamp <= lastTimestamp {
 		runtime.Gosched()
+
 		timestamp = time.Now().UnixMilli()
 	}
 

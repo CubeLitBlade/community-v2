@@ -9,10 +9,10 @@ import (
 type ProblemDetail struct {
 	Type     string `json:"type,omitempty"`
 	Title    string `json:"title"`
-	Status   int    `json:"status"`
 	Detail   string `json:"detail,omitempty"`
 	Instance string `json:"instance,omitempty"`
 	Code     string `json:"code,omitempty"`
+	Status   int    `json:"status"`
 }
 
 func writeProblem(c *gin.Context, status int, title string, detail string, code string) {
@@ -39,10 +39,10 @@ func writeInvalidRequest(c *gin.Context, detail string) {
 }
 
 type problemSpec struct {
-	status int
 	title  string
 	code   string
 	detail string
+	status int
 }
 
 func writeProblemSpec(c *gin.Context, spec problemSpec) {
@@ -55,6 +55,7 @@ func writeMappedError(c *gin.Context, err error, mappers ...errorMapper) {
 	for _, mapper := range mappers {
 		if spec, ok := mapper(err); ok {
 			writeProblemSpec(c, spec)
+
 			return
 		}
 	}

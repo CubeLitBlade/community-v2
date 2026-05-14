@@ -7,9 +7,7 @@ import (
 
 type Status string
 
-var (
-	ErrStatusUnknown = errors.New("unknown status")
-)
+var ErrStatusUnknown = errors.New("unknown status")
 
 const (
 	StatusActive    Status = "active"

@@ -7,9 +7,7 @@ import (
 
 type Role string
 
-var (
-	ErrRoleUnknown = errors.New("unknown role")
-)
+var ErrRoleUnknown = errors.New("unknown role")
 
 const (
 	RoleAdmin     = "admin"

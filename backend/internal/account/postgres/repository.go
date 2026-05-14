@@ -27,7 +27,8 @@ var _ account.Repository = (*Repository)(nil)
 func (r *Repository) Create(ctx context.Context, acc account.Account) error {
 	po := toRow(acc)
 
-	if err := r.db.WithContext(ctx).Create(&po).Error; err != nil {
+	err := r.db.WithContext(ctx).Create(&po).Error
+	if err != nil {
 		return fmt.Errorf("insert account: %w", err)
 	}
 
@@ -38,6 +39,7 @@ func toRow(acc account.Account) accountRow {
 	s := acc.Snapshot()
 
 	var lastLoginIP *string
+
 	if s.LastLoginIP != nil {
 		ip := s.LastLoginIP.String()
 		lastLoginIP = &ip
