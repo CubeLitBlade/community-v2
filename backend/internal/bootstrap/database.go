@@ -1,12 +1,17 @@
 package bootstrap
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
+
+const databasePingTimeout = 5 * time.Second
 
 func OpenDatabase(dsn string) (*gorm.DB, *sql.DB, error) {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
@@ -21,10 +26,22 @@ func OpenDatabase(dsn string) (*gorm.DB, *sql.DB, error) {
 		return nil, nil, fmt.Errorf("get database handle: %w", err)
 	}
 
-	if err := sqlDB.Ping(); err != nil {
-		_ = sqlDB.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), databasePingTimeout)
+	defer cancel()
 
-		return nil, nil, fmt.Errorf("ping database: %w", err)
+	err = sqlDB.PingContext(ctx)
+	if err != nil {
+		pingErr := fmt.Errorf("ping database: %w", err)
+
+		closeErr := sqlDB.Close()
+		if closeErr != nil {
+			return nil, nil, errors.Join(
+				pingErr,
+				fmt.Errorf("close database: %w", closeErr),
+			)
+		}
+
+		return nil, nil, pingErr
 	}
 
 	return db, sqlDB, nil

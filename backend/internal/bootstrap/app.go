@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -37,17 +38,19 @@ func NewApp() (*App, error) {
 
 	ids, err := idgen.NewSnowflake(cfg.SnowflakeID)
 	if err != nil {
-		_ = sqlDB.Close()
-
-		return nil, fmt.Errorf("create id generator: %w", err)
+		return nil, closeSQLDBAfterError(
+			sqlDB,
+			fmt.Errorf("create id generator: %w", err),
+		)
 	}
 
 	// build router and register modules
 	router, err := newRouter()
 	if err != nil {
-		_ = sqlDB.Close()
-
-		return nil, err
+		return nil, closeSQLDBAfterError(
+			sqlDB,
+			fmt.Errorf("create router: %w", err),
+		)
 	}
 
 	RegisterModules(router, ModuleDeps{
@@ -59,9 +62,10 @@ func NewApp() (*App, error) {
 	// build HTTP server
 	server, err := newHTTPServer(cfg, router)
 	if err != nil {
-		_ = sqlDB.Close()
-
-		return nil, err
+		return nil, closeSQLDBAfterError(
+			sqlDB,
+			fmt.Errorf("create HTTP server: %w", err),
+		)
 	}
 
 	return &App{
@@ -79,9 +83,7 @@ func (a *App) Run() error {
 
 	err := a.server.ListenAndServe()
 	if err != nil {
-		a.logger.Error("server stopped unexpectedly", "error", err)
-
-		return err
+		return fmt.Errorf("listen and serve: %w", err)
 	}
 
 	return nil
@@ -96,4 +98,17 @@ func (a *App) Close() {
 	if err != nil {
 		a.logger.Error("close database failed", "error", err)
 	}
+}
+
+func closeSQLDBAfterError(db *sql.DB, cause error) error {
+	if db == nil {
+		return cause
+	}
+
+	closeErr := db.Close()
+	if closeErr != nil {
+		return errors.Join(cause, fmt.Errorf("close database: %w", closeErr))
+	}
+
+	return cause
 }
