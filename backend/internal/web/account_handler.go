@@ -34,8 +34,8 @@ func NewAccountHandler(accounts AccountService, logger *slog.Logger) *AccountHan
 	}
 }
 
-func (h *AccountHandler) RegisterRoutes(router *gin.Engine) {
-	router.POST("/api/accounts", h.createAccount)
+func (h *AccountHandler) RegisterRoutes(router gin.IRouter) {
+	router.POST("/accounts", h.createAccount)
 }
 
 type createAccountRequest struct {
