@@ -12,6 +12,8 @@ import (
 const validPassword = "this-is-a-valid-password"
 
 func TestValidatePassword(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		wantErr error
 		name    string
@@ -37,8 +39,13 @@ func TestValidatePassword(t *testing.T) {
 			wantErr: account.ErrPasswordTooLong,
 		},
 	}
+
 	for _, tt := range tests {
+		tt := tt
+
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			gotErr := account.ValidatePassword(tt.raw)
 			if gotErr != nil {
 				if tt.wantErr == nil {
@@ -60,6 +67,8 @@ func TestValidatePassword(t *testing.T) {
 }
 
 func TestHashPassword(t *testing.T) {
+	t.Parallel()
+
 	raw := validPassword
 
 	hash, err := account.HashPassword(raw)
@@ -82,6 +91,8 @@ func TestHashPassword(t *testing.T) {
 }
 
 func TestPasswordMatches(t *testing.T) {
+	t.Parallel()
+
 	raw := validPassword
 
 	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(raw), bcrypt.DefaultCost)
@@ -122,7 +133,11 @@ func TestPasswordMatches(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
+
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got := account.PasswordMatches(hash, tt.raw)
 
 			if got != tt.want {
@@ -133,6 +148,8 @@ func TestPasswordMatches(t *testing.T) {
 }
 
 func TestPasswordHashAndMatchWorkTogether(t *testing.T) {
+	t.Parallel()
+
 	raw := validPassword
 
 	hash, err := account.HashPassword(raw)
