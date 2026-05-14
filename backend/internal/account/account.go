@@ -22,7 +22,7 @@ type Account struct {
 	passwordChangeRequired bool
 }
 
-func Register(id ID, username string, password string, now time.Time) (Account, error) {
+func Register(id ID, username, password string, now time.Time) (Account, error) {
 	if id <= 0 {
 		return Account{}, fmt.Errorf(
 			"%w: invalid account id '%d'",
@@ -53,23 +53,23 @@ func Register(id ID, username string, password string, now time.Time) (Account, 
 	}, nil
 }
 
-func (a Account) ID() ID {
+func (a *Account) ID() ID {
 	return a.id
 }
 
-func (a Account) Username() string {
+func (a *Account) Username() string {
 	return a.username.Value()
 }
 
-func (a Account) DisplayName() string {
+func (a *Account) DisplayName() string {
 	return a.displayName
 }
 
-func (a Account) Role() Role {
+func (a *Account) Role() Role {
 	return a.role
 }
 
-func (a Account) Status() Status {
+func (a *Account) Status() Status {
 	return a.status
 }
 
@@ -87,15 +87,18 @@ type Snapshot struct {
 	PasswordChangeRequired bool
 }
 
-func (a Account) Snapshot() Snapshot {
+func (a *Account) Snapshot() Snapshot {
 	var (
 		lastLoginAt *time.Time
 		lastLoginIP *netip.Addr
 	)
 
 	if a.audit.lastLogin != nil {
-		lastLoginAt = &a.audit.lastLogin.at
-		lastLoginIP = &a.audit.lastLogin.ip
+		at := a.audit.lastLogin.at
+		ip := a.audit.lastLogin.ip
+
+		lastLoginAt = &at
+		lastLoginIP = &ip
 	}
 
 	return Snapshot{

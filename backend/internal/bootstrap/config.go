@@ -95,7 +95,7 @@ func LoadConfig() (Config, error) {
 	return cfg, nil
 }
 
-func (c Config) validate() error {
+func (c *Config) validate() error {
 	if c.DatabaseURL == "" {
 		return errDatabaseURLUnset
 	}
@@ -119,7 +119,7 @@ func (c Config) validate() error {
 	return nil
 }
 
-func envString(key string, fallback string) string {
+func envString(key, fallback string) string {
 	value := os.Getenv(key)
 	if value == "" {
 		return fallback

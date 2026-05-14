@@ -1,7 +1,0 @@
-package account
-
-import "context"
-
-type Repository interface {
-	Create(ctx context.Context, acc Account) error
-}

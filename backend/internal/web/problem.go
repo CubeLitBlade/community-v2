@@ -15,7 +15,7 @@ type ProblemDetail struct {
 	Status   int    `json:"status"`
 }
 
-func writeProblem(c *gin.Context, status int, title string, detail string, code string) {
+func writeProblem(c *gin.Context, status int, title, detail, code string) {
 	c.Header("Content-Type", "application/problem+json")
 
 	c.AbortWithStatusJSON(status, ProblemDetail{

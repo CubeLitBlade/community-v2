@@ -23,9 +23,9 @@ func TestRegister(t *testing.T) {
 		t.Fatalf("Register() error = %v", err)
 	}
 
-	assertAccountIdentity(t, acc)
-	assertAccountDefaults(t, acc)
-	assertAccountAudit(t, acc, now)
+	assertAccountIdentity(t, &acc)
+	assertAccountDefaults(t, &acc)
+	assertAccountAudit(t, &acc, now)
 	assertPasswordHashMatches(t, acc.passwordHash, validPassword)
 }
 
@@ -51,7 +51,7 @@ func registrationTime() time.Time {
 	return time.Date(2026, 5, 13, 1, 30, 0, 0, time.UTC)
 }
 
-func assertAccountIdentity(t *testing.T, acc Account) {
+func assertAccountIdentity(t *testing.T, acc *Account) {
 	t.Helper()
 
 	if acc.id != ID(1) {
@@ -67,7 +67,7 @@ func assertAccountIdentity(t *testing.T, acc Account) {
 	}
 }
 
-func assertAccountDefaults(t *testing.T, acc Account) {
+func assertAccountDefaults(t *testing.T, acc *Account) {
 	t.Helper()
 
 	if acc.passwordChangeRequired {
@@ -83,7 +83,7 @@ func assertAccountDefaults(t *testing.T, acc Account) {
 	}
 }
 
-func assertAccountAudit(t *testing.T, acc Account, now time.Time) {
+func assertAccountAudit(t *testing.T, acc *Account, now time.Time) {
 	t.Helper()
 
 	if !acc.audit.createdAt.Equal(now) {

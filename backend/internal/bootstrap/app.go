@@ -60,7 +60,7 @@ func NewApp() (*App, error) {
 	})
 
 	// build HTTP server
-	server, err := newHTTPServer(cfg, router)
+	server, err := newHTTPServer(&cfg, router)
 	if err != nil {
 		return nil, closeSQLDBAfterError(
 			sqlDB,

@@ -98,7 +98,7 @@ func assertUsernameResult(
 	}
 }
 
-func assertUsernameError(t *testing.T, funcName string, gotErr error, wantErr error) {
+func assertUsernameError(t *testing.T, funcName string, gotErr, wantErr error) {
 	t.Helper()
 
 	if gotErr == nil {

@@ -12,7 +12,7 @@ import (
 
 const httpReadHeaderTimeout = 5 * time.Second
 
-func newHTTPServer(cfg Config, router *gin.Engine) (*http.Server, error) {
+func newHTTPServer(cfg *Config, router *gin.Engine) (*http.Server, error) {
 	handler, err := newHTTPHandler(cfg, router)
 	if err != nil {
 		return nil, err
@@ -25,7 +25,7 @@ func newHTTPServer(cfg Config, router *gin.Engine) (*http.Server, error) {
 	}, nil
 }
 
-func newHTTPHandler(cfg Config, router *gin.Engine) (http.Handler, error) {
+func newHTTPHandler(cfg *Config, router *gin.Engine) (http.Handler, error) {
 	if len(cfg.CSRFAuthKey) != csrfAuthKeyBytes {
 		return nil, errCSRFAuthKeyLength
 	}

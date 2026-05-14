@@ -2,11 +2,14 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/CubeLitBlade/community-v2/backend/internal/account"
 	"gorm.io/gorm"
 )
+
+var errAccountNil = errors.New("account is nil")
 
 type Repository struct {
 	db *gorm.DB
@@ -22,9 +25,11 @@ func NewRepository(db *gorm.DB) *Repository {
 	}
 }
 
-var _ account.Repository = (*Repository)(nil)
+func (r *Repository) Create(ctx context.Context, acc *account.Account) error {
+	if acc == nil {
+		return errAccountNil
+	}
 
-func (r *Repository) Create(ctx context.Context, acc account.Account) error {
 	po := toRow(acc)
 
 	err := r.db.WithContext(ctx).Create(&po).Error
@@ -35,7 +40,7 @@ func (r *Repository) Create(ctx context.Context, acc account.Account) error {
 	return nil
 }
 
-func toRow(acc account.Account) accountRow {
+func toRow(acc *account.Account) accountRow {
 	s := acc.Snapshot()
 
 	var lastLoginIP *string
