@@ -36,6 +36,14 @@ const (
 	envInt64Bits    = 64
 )
 
+var (
+	errDatabaseURLUnset           = fmt.Errorf("%s unset", envDatabaseURL)
+	errJWTSecretTooShort          = fmt.Errorf("%s should be at least %d bytes", envJWTSecret, minJWTSecretBytes)
+	errAccessTokenTTLPositive     = fmt.Errorf("%s must be positive", envAccessTokenTTL)
+	errCSRFAuthKeyLength          = fmt.Errorf("%s should be exactly %d bytes", envCSRFAuthKey, csrfAuthKeyBytes)
+	errAccessTokenCookieNameEmpty = fmt.Errorf("%s must not be empty", envAccessTokenCookieName)
+)
+
 type Config struct {
 	Addr                  string
 	DatabaseURL           string
@@ -89,23 +97,23 @@ func LoadConfig() (Config, error) {
 
 func (c Config) validate() error {
 	if c.DatabaseURL == "" {
-		return fmt.Errorf("%s is unset", envDatabaseURL)
+		return errDatabaseURLUnset
 	}
 
 	if len(c.JWTSecret) < minJWTSecretBytes {
-		return fmt.Errorf("%s must be at least %d bytes", envJWTSecret, minJWTSecretBytes)
+		return errJWTSecretTooShort
 	}
 
 	if c.AccessTokenTTL <= 0 {
-		return fmt.Errorf("%s must be positive", envAccessTokenTTL)
+		return errAccessTokenTTLPositive
 	}
 
 	if len(c.CSRFAuthKey) != csrfAuthKeyBytes {
-		return fmt.Errorf("%s must be exactly %d bytes", envCSRFAuthKey, csrfAuthKeyBytes)
+		return errCSRFAuthKeyLength
 	}
 
 	if c.AccessTokenCookieName == "" {
-		return fmt.Errorf("%s must not be empty", envAccessTokenCookieName)
+		return errAccessTokenCookieNameEmpty
 	}
 
 	return nil

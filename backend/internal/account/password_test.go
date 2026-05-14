@@ -9,6 +9,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const validPassword = "this-is-a-valid-password"
+
 func TestValidatePassword(t *testing.T) {
 	tests := []struct {
 		wantErr error
@@ -27,7 +29,7 @@ func TestValidatePassword(t *testing.T) {
 		},
 		{
 			name: "accepts valid password",
-			raw:  "this-is-a-valid-password",
+			raw:  validPassword,
 		},
 		{
 			name:    "rejects password longer than bcrypt byte limit",
@@ -58,7 +60,7 @@ func TestValidatePassword(t *testing.T) {
 }
 
 func TestHashPassword(t *testing.T) {
-	raw := "this-is-a-valid-password"
+	raw := validPassword
 
 	hash, err := account.HashPassword(raw)
 	if err != nil {
@@ -80,7 +82,7 @@ func TestHashPassword(t *testing.T) {
 }
 
 func TestPasswordMatches(t *testing.T) {
-	raw := "this-is-a-valid-password"
+	raw := validPassword
 
 	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(raw), bcrypt.DefaultCost)
 	if err != nil {
@@ -131,7 +133,7 @@ func TestPasswordMatches(t *testing.T) {
 }
 
 func TestPasswordHashAndMatchWorkTogether(t *testing.T) {
-	raw := "this-is-a-valid-password"
+	raw := validPassword
 
 	hash, err := account.HashPassword(raw)
 	if err != nil {

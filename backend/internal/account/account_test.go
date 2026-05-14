@@ -7,14 +7,18 @@ import (
 	"time"
 )
 
-const validPassword = "this-is-a-valid-password"
+const (
+	usernameAlice  = "alice"
+	validAccountID = ID(1)
+	validPassword  = "this-is-a-valid-password"
+)
 
 func TestRegister(t *testing.T) {
 	t.Parallel()
 
 	now := registrationTime()
 
-	acc, err := Register(ID(1), "alice", validPassword, now)
+	acc, err := Register(ID(1), usernameAlice, validPassword, now)
 	if err != nil {
 		t.Fatalf("Register() error = %v", err)
 	}
@@ -54,7 +58,7 @@ func assertAccountIdentity(t *testing.T, acc Account) {
 		t.Errorf("id = %d, want %d", acc.id, ID(1))
 	}
 
-	if acc.username.Value() != "alice" {
+	if acc.username.Value() != usernameAlice {
 		t.Errorf("username = %q, want %q", acc.username.Value(), "alice")
 	}
 
@@ -116,28 +120,28 @@ func invalidRegisterCases() []invalidRegisterCase {
 		{
 			name:      "zero id",
 			id:        0,
-			username:  "alice",
+			username:  usernameAlice,
 			password:  validPassword,
 			wantError: ErrInvalidAccountID,
 		},
 		{
 			name:      "negative id",
 			id:        -1,
-			username:  "alice",
+			username:  usernameAlice,
 			password:  validPassword,
 			wantError: ErrInvalidAccountID,
 		},
 		{
 			name:      "empty username",
-			id:        ID(1),
+			id:        validAccountID,
 			username:  "",
 			password:  validPassword,
 			wantError: ErrUsernameBlank,
 		},
 		{
 			name:      "short password",
-			id:        ID(1),
-			username:  "alice",
+			id:        validAccountID,
+			username:  usernameAlice,
 			password:  "short",
 			wantError: ErrPasswordTooShort,
 		},
