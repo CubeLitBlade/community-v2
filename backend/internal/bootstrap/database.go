@@ -13,6 +13,8 @@ import (
 
 const databasePingTimeout = 5 * time.Second
 
+// OpenDatabase connects to the database via DSN, pings to verify connectivity,
+// and returns both the GORM and standard database/sql DB instances.
 func OpenDatabase(dsn string) (gormDB *gorm.DB, sqlDB *sql.DB, err error) {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: NewGormLogger(),
@@ -26,7 +28,10 @@ func OpenDatabase(dsn string) (gormDB *gorm.DB, sqlDB *sql.DB, err error) {
 		return nil, nil, fmt.Errorf("get database handle: %w", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), databasePingTimeout)
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		databasePingTimeout,
+	)
 	defer cancel()
 
 	err = handle.PingContext(ctx)

@@ -1,17 +1,16 @@
+// package main starts the API server for the community-v2 backend
 package main
 
 import (
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/CubeLitBlade/community-v2/backend/internal/bootstrap"
 )
 
 func main() {
 	if err := run(); err != nil {
-		log.Print(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 }
 

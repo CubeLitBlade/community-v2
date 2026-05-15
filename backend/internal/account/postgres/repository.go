@@ -11,10 +11,14 @@ import (
 
 var errAccountNil = errors.New("account is nil")
 
+// Repository implements account persistence using PostgreSQL via GORM.
 type Repository struct {
 	db *gorm.DB
 }
 
+// NewRepository creates a new Repository backed by the given GORM database
+// connection.
+// Panics if db is nil.
 func NewRepository(db *gorm.DB) *Repository {
 	if db == nil {
 		panic("postgres.NewRepository: db is nil")
@@ -25,6 +29,7 @@ func NewRepository(db *gorm.DB) *Repository {
 	}
 }
 
+// Create persists a new Account to the database.
 func (r *Repository) Create(ctx context.Context, acc *account.Account) error {
 	if acc == nil {
 		return errAccountNil

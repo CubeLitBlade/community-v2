@@ -9,7 +9,33 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const validPassword = "this-is-a-valid-password"
+const (
+	validPassword = "this-is-a-valid-password"
+	empty         = ""
+	padChar       = "a"
+)
+
+var tooLongPassword = strings.Repeat(padChar, account.MaxPasswordBytes+1)
+
+func assertError(t *testing.T, gotErr, wantErr error) {
+	t.Helper()
+
+	if wantErr == nil {
+		if gotErr != nil {
+			t.Errorf("unexpected error: %v", gotErr)
+		}
+
+		return
+	}
+
+	if gotErr == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	if !errors.Is(gotErr, wantErr) {
+		t.Errorf("error = %v, want %v", gotErr, wantErr)
+	}
+}
 
 func TestValidatePassword(t *testing.T) {
 	t.Parallel()
@@ -21,12 +47,12 @@ func TestValidatePassword(t *testing.T) {
 	}{
 		{
 			name:    "rejects empty password",
-			raw:     "",
+			raw:     empty,
 			wantErr: account.ErrPasswordEmpty,
 		},
 		{
 			name:    "rejects password shorter than minimum length",
-			raw:     "a",
+			raw:     padChar,
 			wantErr: account.ErrPasswordTooShort,
 		},
 		{
@@ -35,7 +61,7 @@ func TestValidatePassword(t *testing.T) {
 		},
 		{
 			name:    "rejects password longer than bcrypt byte limit",
-			raw:     strings.Repeat("a", account.MaxPasswordBytes+1),
+			raw:     tooLongPassword,
 			wantErr: account.ErrPasswordTooLong,
 		},
 	}
@@ -45,21 +71,7 @@ func TestValidatePassword(t *testing.T) {
 			t.Parallel()
 
 			gotErr := account.ValidatePassword(tt.raw)
-			if gotErr != nil {
-				if tt.wantErr == nil {
-					t.Errorf("ValidatePassword() failed: %v", gotErr)
-				}
-
-				if !errors.Is(gotErr, tt.wantErr) {
-					t.Errorf("ValidatePassword() error = %v, want %v", gotErr, tt.wantErr)
-				}
-
-				return
-			}
-
-			if tt.wantErr != nil {
-				t.Fatal("ValidatePassword() succeeded unexpectedly")
-			}
+			assertError(t, gotErr, tt.wantErr)
 		})
 	}
 }
@@ -74,7 +86,7 @@ func TestHashPassword(t *testing.T) {
 		t.Fatalf("HashPassword() failed: %v", err)
 	}
 
-	if hash.Value() == "" {
+	if hash.Value() == empty {
 		t.Fatal("HashPassword() returned empty hash")
 	}
 
@@ -82,7 +94,9 @@ func TestHashPassword(t *testing.T) {
 		t.Fatal("HashPassword() returned raw password")
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(hash.Value()), []byte(raw))
+	err = bcrypt.CompareHashAndPassword(
+		[]byte(hash.Value()), []byte(raw),
+	)
 	if err != nil {
 		t.Fatalf("generated hash does not match raw password: %v", err)
 	}
@@ -93,12 +107,16 @@ func TestPasswordMatches(t *testing.T) {
 
 	raw := validPassword
 
-	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(raw), bcrypt.DefaultCost)
+	hashedBytes, err := bcrypt.GenerateFromPassword(
+		[]byte(raw), bcrypt.DefaultCost,
+	)
 	if err != nil {
 		t.Fatalf("bcrypt.GenerateFromPassword() failed: %v", err)
 	}
 
-	hash, err := account.PasswordHashFromStorage(string(hashedBytes))
+	hash, err := account.PasswordHashFromStorage(
+		string(hashedBytes),
+	)
 	if err != nil {
 		t.Fatalf("PasswordHashFromStorage() failed: %v", err)
 	}
@@ -120,12 +138,12 @@ func TestPasswordMatches(t *testing.T) {
 		},
 		{
 			name: "does not match empty password",
-			raw:  "",
+			raw:  empty,
 			want: false,
 		},
 		{
 			name: "does not match password longer than bcrypt byte limit",
-			raw:  strings.Repeat("a", account.MaxPasswordBytes+1),
+			raw:  tooLongPassword,
 			want: false,
 		},
 	}
@@ -137,7 +155,10 @@ func TestPasswordMatches(t *testing.T) {
 			got := account.PasswordMatches(hash, tt.raw)
 
 			if got != tt.want {
-				t.Errorf("PasswordMatches() = %v, want %v", got, tt.want)
+				t.Errorf(
+					"PasswordMatches() = %v, want %v",
+					got, tt.want,
+				)
 			}
 		})
 	}
@@ -154,6 +175,8 @@ func TestPasswordHashAndMatchWorkTogether(t *testing.T) {
 	}
 
 	if !account.PasswordMatches(hash, raw) {
-		t.Fatal("PasswordMatches() returned false for password hashed by HashPassword()")
+		t.Fatal(
+			"PasswordMatches() returned false for hash from HashPassword()",
+		)
 	}
 }

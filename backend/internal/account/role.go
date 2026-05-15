@@ -5,16 +5,22 @@ import (
 	"fmt"
 )
 
+// Role defines a user's privilege level within the system.
 type Role string
 
+// ErrRoleUnknown indicates that a role string does not correspond to a known
+// Role.
 var ErrRoleUnknown = errors.New("unknown role")
 
+// Available role constants.
 const (
 	RoleAdmin     = "admin"
 	RoleModerator = "moderator"
 	RoleMember    = "member"
 )
 
+// ParseRole converts a string to a Role.
+// It returns ErrRoleUnknown if the string is not a valid role.
 func ParseRole(value string) (Role, error) {
 	role := Role(value)
 
@@ -29,6 +35,7 @@ func ParseRole(value string) (Role, error) {
 	return role, nil
 }
 
+// IsValid reports whether r is a recognized Role value.
 func (r Role) IsValid() bool {
 	switch r {
 	case RoleAdmin, RoleModerator, RoleMember:

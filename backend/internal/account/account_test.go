@@ -1,4 +1,4 @@
-//nolint:testpackage // White-box domain tests inspect unexported invariants without exposing getters only for tests.
+//nolint:testpackage // White-box domain tests
 package account
 
 import (
@@ -8,17 +8,20 @@ import (
 )
 
 const (
-	usernameAlice  = "alice"
-	validAccountID = ID(1)
-	validPassword  = "this-is-a-valid-password"
+	usernameAlice       = "alice"
+	validAccountID      = 1
+	zeroAccountID       = 0
+	negativeAccountID   = -1
+	validPassword       = "this-is-a-valid-password"
+	registrationTimeRaw = "2026-05-13T00:00:00Z"
 )
 
 func TestRegister(t *testing.T) {
 	t.Parallel()
 
-	now := registrationTime()
+	now, _ := registrationTime()
 
-	acc, err := Register(ID(1), usernameAlice, validPassword, now)
+	acc, err := Register(validAccountID, usernameAlice, validPassword, now)
 	if err != nil {
 		t.Fatalf("Register() error = %v", err)
 	}
@@ -32,38 +35,47 @@ func TestRegister(t *testing.T) {
 func TestRegisterRejectsInvalidInput(t *testing.T) {
 	t.Parallel()
 
-	now := registrationTime()
+	now, _ := registrationTime()
 
 	for _, testCase := range invalidRegisterCases() {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := Register(testCase.id, testCase.username, testCase.password, now)
+			_, err := Register(
+				testCase.id,
+				testCase.username,
+				testCase.password,
+				now,
+			)
 
 			if !errors.Is(err, testCase.wantError) {
-				t.Fatalf("Register() error = %v, want %v", err, testCase.wantError)
+				t.Fatalf(
+					"Register() error = %v, want %v",
+					err,
+					testCase.wantError,
+				)
 			}
 		})
 	}
 }
 
-func registrationTime() time.Time {
-	return time.Date(2026, 5, 13, 1, 30, 0, 0, time.UTC)
+func registrationTime() (time.Time, error) {
+	return time.Parse(time.RFC3339, registrationTimeRaw)
 }
 
 func assertAccountIdentity(t *testing.T, acc *Account) {
 	t.Helper()
 
-	if acc.id != ID(1) {
-		t.Errorf("id = %d, want %d", acc.id, ID(1))
+	if acc.id != ID(validAccountID) {
+		t.Errorf("id = %d, want %d", acc.id, ID(validAccountID))
 	}
 
 	if acc.username.Value() != usernameAlice {
-		t.Errorf("username = %q, want %q", acc.username.Value(), "alice")
+		t.Errorf("username = %q, want %q", acc.username.Value(), usernameAlice)
 	}
 
-	if acc.displayName != "alice" {
-		t.Errorf("displayName = %q, want %q", acc.displayName, "alice")
+	if acc.displayName != usernameAlice {
+		t.Errorf("displayName = %q, want %q", acc.displayName, usernameAlice)
 	}
 }
 
@@ -71,7 +83,7 @@ func assertAccountDefaults(t *testing.T, acc *Account) {
 	t.Helper()
 
 	if acc.passwordChangeRequired {
-		t.Errorf("passwordChangeRequired = true, want false")
+		t.Error("passwordChangeRequired = true, want false")
 	}
 
 	if acc.role != RoleMember {
@@ -103,7 +115,7 @@ func assertPasswordHashMatches(t *testing.T, hash PasswordHash, raw string) {
 	t.Helper()
 
 	if !PasswordMatches(hash, raw) {
-		t.Errorf("passwordHash should match raw password")
+		t.Error("passwordHash should match raw password")
 	}
 }
 
@@ -112,21 +124,21 @@ type invalidRegisterCase struct {
 	name      string
 	username  string
 	password  string
-	id        ID
+	id        int64
 }
 
 func invalidRegisterCases() []invalidRegisterCase {
 	return []invalidRegisterCase{
 		{
 			name:      "zero id",
-			id:        0,
+			id:        zeroAccountID,
 			username:  usernameAlice,
 			password:  validPassword,
 			wantError: ErrInvalidAccountID,
 		},
 		{
 			name:      "negative id",
-			id:        -1,
+			id:        negativeAccountID,
 			username:  usernameAlice,
 			password:  validPassword,
 			wantError: ErrInvalidAccountID,

@@ -7,10 +7,13 @@ import (
 	"time"
 )
 
+// ErrInvalidAccountID is returned when the account ID is invalid.
 var ErrInvalidAccountID = errors.New("invalid account id")
 
+// ID represents the unique identifier of an Account.
 type ID int64
 
+// Account represents a user account with authentication and profile data.
 type Account struct {
 	audit                  Audit
 	username               Username
@@ -22,13 +25,15 @@ type Account struct {
 	passwordChangeRequired bool
 }
 
-func Register(id ID, username, password string, now time.Time) (Account, error) {
-	if id <= 0 {
-		return Account{}, fmt.Errorf(
-			"%w: invalid account id '%d'",
-			ErrInvalidAccountID,
-			id,
-		)
+// Register creates a new Account with the given ID, username, and password.
+func Register(
+	id int64,
+	username, password string,
+	now time.Time,
+) (Account, error) {
+	i, err := newID(id)
+	if err != nil {
+		return Account{}, err
 	}
 
 	u, err := NewUsername(username)
@@ -42,7 +47,7 @@ func Register(id ID, username, password string, now time.Time) (Account, error) 
 	}
 
 	return Account{
-		id:                     id,
+		id:                     i,
 		username:               u,
 		passwordHash:           hash,
 		passwordChangeRequired: false,
@@ -53,26 +58,45 @@ func Register(id ID, username, password string, now time.Time) (Account, error) 
 	}, nil
 }
 
+func newID(v int64) (ID, error) {
+	if v <= 0 {
+		return 0, fmt.Errorf(
+			"%w: invalid account id '%d'",
+			ErrInvalidAccountID,
+			v,
+		)
+	}
+
+	return ID(v), nil
+}
+
+// ID returns the ID of the account.
 func (a *Account) ID() ID {
 	return a.id
 }
 
+// Username returns the username of the account.
 func (a *Account) Username() string {
 	return a.username.Value()
 }
 
+// DisplayName returns the display name of the account.
 func (a *Account) DisplayName() string {
 	return a.displayName
 }
 
+// Role returns the role of the account.
 func (a *Account) Role() Role {
 	return a.role
 }
 
+// Status returns the status of the account.
 func (a *Account) Status() Status {
 	return a.status
 }
 
+// Snapshot represents a point-in-time copy of an Account's state,
+// including audit information and authentication details.
 type Snapshot struct {
 	CreatedAt              time.Time
 	UpdatedAt              time.Time
@@ -87,6 +111,8 @@ type Snapshot struct {
 	PasswordChangeRequired bool
 }
 
+// Snapshot returns a Snapshot containing the current state of the account,
+// including audit information and last login details.
 func (a *Account) Snapshot() Snapshot {
 	var (
 		lastLoginAt *time.Time

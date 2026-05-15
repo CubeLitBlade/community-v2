@@ -12,6 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// App holds the core dependencies and infrastructure for the application.
 type App struct {
 	logger *slog.Logger
 	db     *gorm.DB
@@ -21,6 +22,8 @@ type App struct {
 	cfg    Config
 }
 
+// NewApp initializes configuration, infrastructure, and HTTP server,
+// returning a ready-to-run App.
 func NewApp() (*App, error) {
 	// load configuration
 	cfg, err := LoadConfig()
@@ -78,6 +81,7 @@ func NewApp() (*App, error) {
 	}, nil
 }
 
+// Run starts the HTTP server to listen for incoming requests.
 func (a *App) Run() error {
 	a.logger.Info("server started", "addr", a.cfg.Addr)
 
@@ -89,6 +93,8 @@ func (a *App) Run() error {
 	return nil
 }
 
+// Close releases resources held by the App, including closing the database
+// connection.
 func (a *App) Close() {
 	if a.sqlDB == nil {
 		return

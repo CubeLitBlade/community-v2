@@ -37,13 +37,31 @@ const (
 )
 
 var (
-	errDatabaseURLUnset           = fmt.Errorf("%s unset", envDatabaseURL)
-	errJWTSecretTooShort          = fmt.Errorf("%s should be at least %d bytes", envJWTSecret, minJWTSecretBytes)
-	errAccessTokenTTLPositive     = fmt.Errorf("%s must be positive", envAccessTokenTTL)
-	errCSRFAuthKeyLength          = fmt.Errorf("%s should be exactly %d bytes", envCSRFAuthKey, csrfAuthKeyBytes)
-	errAccessTokenCookieNameEmpty = fmt.Errorf("%s must not be empty", envAccessTokenCookieName)
+	errDatabaseURLUnset = fmt.Errorf(
+		"%s unset",
+		envDatabaseURL,
+	)
+	errJWTSecretTooShort = fmt.Errorf(
+		"%s should be at least %d bytes",
+		envJWTSecret,
+		minJWTSecretBytes,
+	)
+	errAccessTokenTTLPositive = fmt.Errorf(
+		"%s must be positive",
+		envAccessTokenTTL,
+	)
+	errCSRFAuthKeyLength = fmt.Errorf(
+		"%s should be exactly %d bytes",
+		envCSRFAuthKey,
+		csrfAuthKeyBytes,
+	)
+	errAccessTokenCookieNameEmpty = fmt.Errorf(
+		"%s must not be empty",
+		envAccessTokenCookieName,
+	)
 )
 
+// Config holds the application configuration values.
 type Config struct {
 	Addr                  string
 	DatabaseURL           string
@@ -56,6 +74,7 @@ type Config struct {
 	CookieSecure          bool
 }
 
+// LoadConfig reads configuration from environment variables and validates them.
 func LoadConfig() (Config, error) {
 	snowflakeID, err := envInt64(envSnowflakeID, defaultSnowflakeID)
 	if err != nil {
@@ -83,9 +102,12 @@ func LoadConfig() (Config, error) {
 
 		CSRFAuthKey: []byte(os.Getenv(envCSRFAuthKey)),
 
-		CookieSecure:          cookieSecure,
-		CookieSameSite:        defaultCookieSameSite,
-		AccessTokenCookieName: envString(envAccessTokenCookieName, defaultAccessTokenCookieName),
+		CookieSecure:   cookieSecure,
+		CookieSameSite: defaultCookieSameSite,
+		AccessTokenCookieName: envString(
+			envAccessTokenCookieName,
+			defaultAccessTokenCookieName,
+		),
 	}
 
 	if err := cfg.validate(); err != nil {
@@ -136,7 +158,7 @@ func envBool(key string, fallback bool) (bool, error) {
 
 	parsed, err := strconv.ParseBool(value)
 	if err != nil {
-		return false, fmt.Errorf("parse %s: %w", key, err)
+		return false, fmt.Errorf("parse bool %s: %w", key, err)
 	}
 
 	return parsed, nil
@@ -150,7 +172,7 @@ func envInt64(key string, fallback int64) (int64, error) {
 
 	parsed, err := strconv.ParseInt(value, envIntParseBase, envInt64Bits)
 	if err != nil {
-		return 0, fmt.Errorf("parse %s: %w", key, err)
+		return 0, fmt.Errorf("parse int %s: %w", key, err)
 	}
 
 	return parsed, nil
@@ -164,7 +186,7 @@ func envDuration(key string, fallback time.Duration) (time.Duration, error) {
 
 	parsed, err := time.ParseDuration(value)
 	if err != nil {
-		return 0, fmt.Errorf("parse %s: %w", key, err)
+		return 0, fmt.Errorf("parse duration %s: %w", key, err)
 	}
 
 	return parsed, nil

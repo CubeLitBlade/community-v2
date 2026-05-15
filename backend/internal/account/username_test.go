@@ -8,7 +8,12 @@ import (
 	"github.com/CubeLitBlade/community-v2/backend/internal/account"
 )
 
-const maxArchiveID account.ID = 9223372036854775807
+const (
+	fill              string     = "a"
+	testID            account.ID = 1
+	maxArchiveID      account.ID = 9223372036854775807
+	maxArchivedSuffix            = "#archived_9223372036854775807"
+)
 
 type usernameCase struct {
 	wantErr error
@@ -49,8 +54,18 @@ func TestArchiveUsername(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, gotErr := account.ArchiveUsername(testCase.username, testCase.id)
-			assertUsernameResult(t, "ArchiveUsername", got, gotErr, testCase.want, testCase.wantErr)
+			got, gotErr := account.ArchiveUsername(
+				testCase.username,
+				testCase.id,
+			)
+			assertUsernameResult(
+				t,
+				"ArchiveUsername",
+				got,
+				gotErr,
+				testCase.want,
+				testCase.wantErr,
+			)
 		})
 	}
 }
@@ -68,7 +83,14 @@ func runUsernameCases(
 			t.Parallel()
 
 			got, gotErr := fn(testCase.value)
-			assertUsernameResult(t, funcName, got, gotErr, testCase.want, testCase.wantErr)
+			assertUsernameResult(
+				t,
+				funcName,
+				got,
+				gotErr,
+				testCase.want,
+				testCase.wantErr,
+			)
 		})
 	}
 }
@@ -111,8 +133,8 @@ func assertUsernameError(t *testing.T, funcName string, gotErr, wantErr error) {
 }
 
 func newUsernameCases() []usernameCase {
-	minUsername := strings.Repeat("a", account.MinUsernameLength)
-	maxUsername := strings.Repeat("a", account.MaxUsernameLength)
+	minUsername := strings.Repeat(fill, account.MinUsernameLength)
+	maxUsername := strings.Repeat(fill, account.MaxUsernameLength)
 
 	return []usernameCase{
 		{
@@ -127,12 +149,12 @@ func newUsernameCases() []usernameCase {
 		},
 		{
 			name:    "rejects username shorter than minimum length",
-			value:   "a",
+			value:   fill,
 			wantErr: account.ErrUsernameLength,
 		},
 		{
 			name:    "rejects username longer than maximum length",
-			value:   strings.Repeat("a", account.MaxUsernameLength+1),
+			value:   strings.Repeat(fill, account.MaxUsernameLength+1),
 			wantErr: account.ErrUsernameLength,
 		},
 		{
@@ -149,8 +171,11 @@ func newUsernameCases() []usernameCase {
 }
 
 func usernameFromStorageCases() []usernameCase {
-	tooLongNormalUsername := strings.Repeat("a", account.MaxUsernameLength+1)
-	tooLongStoredUsername := strings.Repeat("a", account.MaxStoredUsernameLength+1)
+	tooLongNormalUsername := strings.Repeat(fill, account.MaxUsernameLength+1)
+	tooLongStoredUsername := strings.Repeat(
+		fill,
+		account.MaxStoredUsernameLength+1,
+	)
 
 	return []usernameCase{
 		{
@@ -182,26 +207,29 @@ func usernameFromStorageCases() []usernameCase {
 }
 
 func archiveUsernameCases() []archiveUsernameCase {
-	maxUsername := strings.Repeat("a", account.MaxUsernameLength)
-	tooLongStoredUsername := strings.Repeat("a", account.MaxStoredUsernameLength)
+	maxUsername := strings.Repeat(fill, account.MaxUsernameLength)
+	tooLongStoredUsername := strings.Repeat(
+		fill,
+		account.MaxStoredUsernameLength,
+	)
 
 	return []archiveUsernameCase{
 		{
 			name:     "generates archived username from normal username",
 			username: account.Username("alice"),
 			id:       maxArchiveID,
-			want:     account.Username("alice#archived_9223372036854775807"),
+			want:     account.Username("alice" + maxArchivedSuffix),
 		},
 		{
 			name:     "keeps archived username within storage limit",
 			username: account.Username(maxUsername),
 			id:       maxArchiveID,
-			want:     account.Username(maxUsername + "#archived_9223372036854775807"),
+			want:     account.Username(maxUsername + maxArchivedSuffix),
 		},
 		{
 			name:     "rejects archived username longer than storage limit",
 			username: account.Username(tooLongStoredUsername),
-			id:       account.ID(1),
+			id:       testID,
 			wantErr:  account.ErrUsernameLength,
 		},
 	}

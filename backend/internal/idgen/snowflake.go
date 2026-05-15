@@ -1,3 +1,4 @@
+// Package idgen provides utilities for generating unique Snowflake IDs.
 package idgen
 
 import (
@@ -9,8 +10,12 @@ import (
 )
 
 var (
+	// ErrWorkerIDOutOfRange indicates that the provided worker ID exceeds the
+	// allowed limit.
 	ErrWorkerIDOutOfRange = errors.New("worker id out of range")
-	ErrClockMovedBack     = errors.New("clock moved back")
+
+	// ErrClockMovedBack indicates that the system clock moved backwards.
+	ErrClockMovedBack = errors.New("clock moved back")
 )
 
 const (
@@ -26,6 +31,7 @@ const (
 	timestampShift = sequenceBits + workerIDBits
 )
 
+// Snowflake represents a Snowflake ID generator instance.
 type Snowflake struct {
 	mu            sync.Mutex
 	workerID      int64
@@ -33,6 +39,7 @@ type Snowflake struct {
 	lastTimestamp int64
 }
 
+// NewSnowflake creates a new Snowflake ID generator with the given worker ID.
 func NewSnowflake(workerID int64) (*Snowflake, error) {
 	if workerID < 0 || workerID > maxWorkerID {
 		return nil, fmt.Errorf(
@@ -49,28 +56,29 @@ func NewSnowflake(workerID int64) (*Snowflake, error) {
 	}, nil
 }
 
+// NextID generates and returns a unique Snowflake ID.
 func (s *Snowflake) NextID() (int64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	currentTimestamp := time.Now().UnixMilli()
+	currentTimestampMilli := time.Now().UnixMilli()
 
-	if currentTimestamp < s.lastTimestamp {
+	if currentTimestampMilli < s.lastTimestamp {
 		return 0, fmt.Errorf(
 			"%w: current timestamp %d is before last timestamp %d",
 			ErrClockMovedBack,
-			currentTimestamp,
+			currentTimestampMilli,
 			s.lastTimestamp,
 		)
 	}
 
 	var seq int64
 
-	if currentTimestamp == s.lastTimestamp {
+	if currentTimestampMilli == s.lastTimestamp {
 		seq = (s.sequence + 1) & maxSequence
 
 		if seq == 0 {
-			currentTimestamp = waitNextMillis(s.lastTimestamp)
+			currentTimestampMilli = waitNextMillis(s.lastTimestamp)
 		}
 
 		s.sequence = seq
@@ -79,9 +87,9 @@ func (s *Snowflake) NextID() (int64, error) {
 		s.sequence = 0
 	}
 
-	s.lastTimestamp = currentTimestamp
+	s.lastTimestamp = currentTimestampMilli
 
-	id := ((currentTimestamp - epochMillis) << timestampShift) |
+	id := ((currentTimestampMilli - epochMillis) << timestampShift) |
 		(s.workerID << workerIDShift) |
 		seq
 
@@ -89,13 +97,13 @@ func (s *Snowflake) NextID() (int64, error) {
 }
 
 func waitNextMillis(lastTimestamp int64) int64 {
-	timestamp := time.Now().UnixMilli()
+	timestampMilli := time.Now().UnixMilli()
 
-	for timestamp <= lastTimestamp {
+	for timestampMilli <= lastTimestamp {
 		runtime.Gosched()
 
-		timestamp = time.Now().UnixMilli()
+		timestampMilli = time.Now().UnixMilli()
 	}
 
-	return timestamp
+	return timestampMilli
 }

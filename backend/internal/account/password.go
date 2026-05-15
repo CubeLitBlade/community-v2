@@ -9,23 +9,39 @@ import (
 )
 
 var (
-	ErrPasswordEmpty     = errors.New("password cannot be empty")
-	ErrPasswordTooShort  = errors.New("password too short")
-	ErrPasswordTooLong   = errors.New("password too long")
+	// ErrPasswordEmpty indicates that the password string is empty.
+	ErrPasswordEmpty = errors.New("password cannot be empty")
+
+	// ErrPasswordTooShort indicates thatthe password is shorter than
+	// MinPasswordLength.
+	ErrPasswordTooShort = errors.New("password too short")
+
+	// ErrPasswordTooLong indicates that the password exceeds MaxPasswordBytes.
+	ErrPasswordTooLong = errors.New("password too long")
+
+	// ErrPasswordHashEmpty indicates that a stored password hash is empty.
 	ErrPasswordHashEmpty = errors.New("password hash cannot be empty")
 )
 
 const (
+	// MinPasswordLength is the minimal number of characters a password should
+	// have.
 	MinPasswordLength = 15
-	MaxPasswordBytes  = 72
+
+	// MaxPasswordBytes is the maximum length in bytes for bcrypt passwords.
+	MaxPasswordBytes = 72
 
 	passwordCost = bcrypt.DefaultCost
+	emptyString  = ""
 )
 
+// PasswordHash holds a bcrypt-hashed password.
 type PasswordHash struct {
 	value string
 }
 
+// HashPassword hashes a plaintext password and returns a PasswordHash.
+// Returns an error if the password is invalid or hashing fails.
 func HashPassword(raw string) (PasswordHash, error) {
 	err := ValidatePassword(raw)
 	if err != nil {
@@ -40,16 +56,19 @@ func HashPassword(raw string) (PasswordHash, error) {
 	return PasswordHash{value: string(hashedBytes)}, nil
 }
 
+// PasswordMatches returns true if the plaintext password matches the hashed
+// password.
 func PasswordMatches(hash PasswordHash, raw string) bool {
-	if raw == "" || len([]byte(raw)) > MaxPasswordBytes {
+	if raw == emptyString || len([]byte(raw)) > MaxPasswordBytes {
 		return false
 	}
 
 	return bcrypt.CompareHashAndPassword([]byte(hash.value), []byte(raw)) == nil
 }
 
+// ValidatePassword checks if a password meets security requirements.
 func ValidatePassword(raw string) error {
-	if raw == "" {
+	if raw == emptyString {
 		return fmt.Errorf(
 			"%w: password cannot be empty",
 			ErrPasswordEmpty,
@@ -76,8 +95,9 @@ func ValidatePassword(raw string) error {
 	return nil
 }
 
+// PasswordHashFromStorage constructs a PasswordHash from a stored hash string.
 func PasswordHashFromStorage(hash string) (PasswordHash, error) {
-	if hash == "" {
+	if hash == emptyString {
 		return PasswordHash{}, fmt.Errorf(
 			"%w: stored password hash is required",
 			ErrPasswordHashEmpty,
@@ -87,11 +107,12 @@ func PasswordHashFromStorage(hash string) (PasswordHash, error) {
 	return PasswordHash{value: hash}, nil
 }
 
+// Value returns the bcrypt string value of the password hash.
 func (p PasswordHash) Value() string {
 	return p.value
 }
 
-func (p PasswordHash) String() string {
-	// Avoid plaintext during debugging
+// String returns a redacted string to avoid exposing the password hash.
+func (PasswordHash) String() string {
 	return "[redacted]"
 }

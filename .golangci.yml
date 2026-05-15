@@ -70,6 +70,12 @@ linters:
       directives:
         - name: specify-disable-reason
           severity: error
+      rules:
+        - name: add-constant
+          arguments:
+            - allow-strs: '""'
+              allow-ints: "0,1,2"
+              allow-floats: "0.0,0.,1.0,1.,2.0,2."
 
     nolintlint:
       allow-unused: false

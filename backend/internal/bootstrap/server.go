@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/CubeLitBlade/community-v2/backend/internal/web"
+	"github.com/CubeLitBlade/community-v2/backend/internal/httperr"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/csrf"
 )
@@ -48,7 +48,7 @@ func writeCSRFError(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(http.StatusForbidden)
 
-	response := web.ProblemDetail{
+	response := httperr.ProblemDetail{
 		Type:     "about:blank",
 		Title:    "CSRF token invalid",
 		Status:   http.StatusForbidden,
