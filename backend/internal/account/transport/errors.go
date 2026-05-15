@@ -9,6 +9,7 @@ import (
 	"github.com/CubeLitBlade/community-v2/backend/internal/httperr"
 )
 
+//nolint:gochecknoglobals // read-only static mapping used for error translation
 var accountErrorProblems = []struct {
 	err  error
 	spec httperr.ProblemSpec
@@ -77,5 +78,10 @@ func accountProblem(err error) (httperr.ProblemSpec, bool) {
 		}
 	}
 
-	return httperr.ProblemSpec{}, false
+	return httperr.ProblemSpec{
+		Title:  "",
+		Code:   "",
+		Detail: "",
+		Status: 0,
+	}, false
 }

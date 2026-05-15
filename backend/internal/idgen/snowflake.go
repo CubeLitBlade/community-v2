@@ -51,7 +51,9 @@ func NewSnowflake(workerID int64) (*Snowflake, error) {
 	}
 
 	return &Snowflake{
+		mu:            sync.Mutex{},
 		workerID:      workerID,
+		sequence:      0,
 		lastTimestamp: -1,
 	}, nil
 }

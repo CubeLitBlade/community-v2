@@ -23,6 +23,8 @@ func NewAppLogger() *slog.Logger {
 
 // NewGormLogger creates and returns a new GORM logger.Interface for database
 // operation logging.
+//
+//nolint:ireturn // GORM's logger.New only returns an Interface
 func NewGormLogger() logger.Interface {
 	return logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags),

@@ -8,23 +8,77 @@ run:
   issues-exit-code: 1
   allow-parallel-runners: false
 
-linters:
-  default: all
+linters: 
+  default: standard
+
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - ineffassign
+    - gosec
+    - nilnil
+    - nilerr
+    - errorlint
+    - contextcheck
+    - noctx
+    - bodyclose
+    - rowserrcheck
+    - sqlclosecheck
+    - gocritic
+    - revive
+    - unparam
+    - unconvert
+    - prealloc
+    - predeclared
+    - durationcheck
+    - depguard
+    - errchkjson
+    - exhaustruct
+    - nolintlint
+    - reassign
+    - paralleltest
+    - varnamelen
+    - misspell
+    - errname 
+    - fatcontext 
+    - intrange
+    - wastedassign
+    - modernize
+    - usetesting
+    - canonicalheader
+    - perfsprint
+    - containedctx
+    - thelper
+    - gocheckcompilerdirectives
+    - iotamixing
+    - asasalint
+    - usestdlibvars
+    - unqueryvet
+    - gomoddirectives
+    - nosprintfhostport
+    - nilnesserr
+    - tagliatelle
+    - exhaustive
+    - musttag
+    - wrapcheck
+    - funlen
+    - cyclop
+    - nestif
+    - forcetypeassert
+    - nakedret
+    - err113
+    - recvcheck
+    - embeddedstructfieldcheck
+    - grouper
+    - goconst
+    - mnd
   
-  disable:
-    # Deprecated: use gomodguard_v2 instead.
-    - gomodguard
-
-    # Deprecated: use wsl_v5 instead.
-    - wsl
-
-    # use inline error
-    - noinlineerr
-
   exclusions:
     generated: strict
     warn-unused: true
-
+  
   settings:
     depguard:
       rules:
@@ -41,78 +95,165 @@ linters:
             - "gorm.io/gorm"
             - "gorm.io/driver/postgres"
 
+    ignoreSigs:
+      - .Errorf(
+      - errors.New(
+      - .Wrap(
+      - .Wrapf(
+      - fmt.Errorf(
+      - gorm.io/gorm.DB.Error
+      - gorm.io/gorm.DB.Find(
+      - gorm.io/gorm.DB.Create(
+      - gorm.io/gorm.DB.Update(
+      - gorm.io/gorm.DB.Delete(
+      - gorm.io/gorm.DB.Exec(
+      - .Close()
+      - .Decode(
+      - .Unmarshal(
+      
+    ignorePackageGlobs:
+      - gorm.io/gorm
+      - gorm.io/driver/*
+      - github.com/gin-gonic/gin.*
+      - encoding/*
+      - crypto/*
+    
     errcheck:
       check-type-assertions: true
       check-blank: true
-      disable-default-exclusions: true
-      verbose: true
-
-    errchkjson:
-      check-error-free-encoding: true
-      report-no-exported: true
-
+      disable-default-exclusions: false
+    
+    
     errorlint:
       errorf: true
       errorf-multi: true
       asserts: true
       comparison: true
+    
+    exhaustruct:
+      include:
+        - 'github.com/CubeLitBlade/community-v2/backend/internal/.*'
+      exclude:
+        - 'gorm.io/gorm.Config'
+        - 'net/http.Client'
+        - 'net/http.Transport'
 
-    govet:
-      enable-all: true
+    gosec:
+      excludes:
+        - G104 
+        - G404 
 
     gocritic:
-      enable-all: true
-
+      enabled-tags:
+        - diagnostic
+        - style
+      disabled-checks:
+        - paramTypeCombine
+    
     revive:
-      severity: error
-      enable-all-rules: true
-      confidence: 0.1
-      directives:
-        - name: specify-disable-reason
-          severity: error
+      severity: warning
+      confidence: 0.8
       rules:
-        - name: add-constant
-          arguments:
-            - allow-strs: '""'
-              allow-ints: "0,1,2"
-              allow-floats: "0.0,0.,1.0,1.,2.0,2."
-
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: exported
+        - name: increment-decrement
+        - name: var-naming
+        - name: package-comments
+        - name: range
+        - name: receiver-naming
+        - name: time-naming
+        - name: unexported-return
+        - name: indent-error-flow
+        - name: errorf
+        - name: unnecessary-stmt
+    
     nolintlint:
       allow-unused: false
       allow-no-explanation: []
       require-explanation: true
       require-specific: true
-
+  
     nilnil:
       only-two: false
       detect-opposite: true
-
-    nonamedreturns:
-      report-error-in-defer: true
-
-    paralleltest:
-      ignore-missing: false
-      ignore-missing-subtests: false
-      check-cleanup: true
-
+    
     reassign:
       patterns:
         - ".*"
 
+    cyclop:
+      max-complexity: 10
+
+    funlen:
+      lines: 80
+      statements: 50
+
+    nestif:
+      min-complexity: 4
+    
+    exhaustive:
+      default-signifies-exhaustive: true
+
+    goconst:
+      min-occurrences: 4
+
+    mnd:
+      ignored-numbers:
+        - "0"
+        - "1"
+        - "2"
+        - "3"
+        - "4"
+        - "5"
+    
+    varnamelen:
+      ignore-names:
+        - tt
+        - tc
+        - ok
+        - err
+      ignore-decls:
+        - c echo.Context
+        - t testing.T
+        - f *foo.Bar
+        - e error
+        - i int
+        - const C
+        - T any
+        - m map[string]int
+        - r *http.Request
+        - w http.ResponseWriter
+        - c *gin.Context 
+        - db *gorm.DB
+        - tx *gorm.DB
+        - tt *testing.T
+        - tc TestCase
+
 formatters:
   enable:
-    - gofmt
     - gofumpt
-    - goimports
     - gci
 
   exclusions:
     generated: strict
     warn-unused: true
 
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/CubeLitBlade/community-v2/backend)
+
 issues:
-  max-issues-per-linter: 0
-  max-same-issues: 0
+  max-issues-per-linter: 50  
+  max-same-issues: 10
   uniq-by-line: false
 
 severity:

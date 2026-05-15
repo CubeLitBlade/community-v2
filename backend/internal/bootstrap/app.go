@@ -7,9 +7,10 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+
+	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
 )
 
 // App holds the core dependencies and infrastructure for the application.

@@ -7,9 +7,10 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/CubeLitBlade/community-v2/backend/internal/account"
 	"github.com/CubeLitBlade/community-v2/backend/internal/httperr"
-	"github.com/gin-gonic/gin"
 )
 
 // Service defines the interface for account-related operations.

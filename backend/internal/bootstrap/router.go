@@ -7,15 +7,15 @@ import (
 )
 
 func newRouter() (*gin.Engine, error) {
-	r := gin.New()
+	router := gin.New()
 
-	r.Use(gin.Logger())
-	r.Use(gin.Recovery())
+	router.Use(gin.Logger())
+	router.Use(gin.Recovery())
 
-	err := r.SetTrustedProxies(nil)
+	err := router.SetTrustedProxies(nil)
 	if err != nil {
 		return nil, fmt.Errorf("set trusted proxies: %w", err)
 	}
 
-	return r, nil
+	return router, nil
 }

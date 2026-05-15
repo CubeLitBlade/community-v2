@@ -31,43 +31,43 @@ func Register(
 	username, password string,
 	now time.Time,
 ) (Account, error) {
-	i, err := newID(id)
+	accountID, err := newID(id)
 	if err != nil {
 		return Account{}, err
 	}
 
-	u, err := NewUsername(username)
+	accountUsername, err := NewUsername(username)
 	if err != nil {
 		return Account{}, err
 	}
 
-	hash, err := HashPassword(password)
+	accountPasswordHash, err := HashPassword(password)
 	if err != nil {
 		return Account{}, err
 	}
 
 	return Account{
-		id:                     i,
-		username:               u,
-		passwordHash:           hash,
+		id:                     accountID,
+		username:               accountUsername,
+		passwordHash:           accountPasswordHash,
 		passwordChangeRequired: false,
-		displayName:            u.Value(),
+		displayName:            accountUsername.Value(),
 		role:                   RoleMember,
 		status:                 StatusActive,
 		audit:                  NewAudit(now),
 	}, nil
 }
 
-func newID(v int64) (ID, error) {
-	if v <= 0 {
+func newID(value int64) (ID, error) {
+	if value <= 0 {
 		return 0, fmt.Errorf(
 			"%w: invalid account id '%d'",
 			ErrInvalidAccountID,
-			v,
+			value,
 		)
 	}
 
-	return ID(v), nil
+	return ID(value), nil
 }
 
 // ID returns the ID of the account.

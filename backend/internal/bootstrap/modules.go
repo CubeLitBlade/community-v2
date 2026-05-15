@@ -3,12 +3,13 @@ package bootstrap
 import (
 	"log/slog"
 
-	"github.com/CubeLitBlade/community-v2/backend/internal/account"
-	accountpostgres "github.com/CubeLitBlade/community-v2/backend/internal/account/postgres"   //nolint:revive // import path cannot be shortened
-	accounttransport "github.com/CubeLitBlade/community-v2/backend/internal/account/transport" //nolint:revive // import path cannot be shortened
-	authtransport "github.com/CubeLitBlade/community-v2/backend/internal/auth/transport"       //nolint:revive // import path cannot be shortened
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+
+	"github.com/CubeLitBlade/community-v2/backend/internal/account"
+	accountpostgres "github.com/CubeLitBlade/community-v2/backend/internal/account/postgres"
+	accounttransport "github.com/CubeLitBlade/community-v2/backend/internal/account/transport"
+	authtransport "github.com/CubeLitBlade/community-v2/backend/internal/auth/transport"
 )
 
 // ModuleDeps holds the shared dependencies required by application modules.

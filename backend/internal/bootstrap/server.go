@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/CubeLitBlade/community-v2/backend/internal/httperr"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/csrf"
+
+	"github.com/CubeLitBlade/community-v2/backend/internal/httperr"
 )
 
 const httpReadHeaderTimeout = 5 * time.Second

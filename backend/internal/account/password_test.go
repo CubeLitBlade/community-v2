@@ -5,8 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CubeLitBlade/community-v2/backend/internal/account"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/CubeLitBlade/community-v2/backend/internal/account"
 )
 
 const (
@@ -15,6 +16,7 @@ const (
 	padChar       = "a"
 )
 
+//nolint:gochecknoglobals // test data requiring runtime initialization
 var tooLongPassword = strings.Repeat(padChar, account.MaxPasswordBytes+1)
 
 func assertError(t *testing.T, gotErr, wantErr error) {
@@ -56,8 +58,9 @@ func TestValidatePassword(t *testing.T) {
 			wantErr: account.ErrPasswordTooShort,
 		},
 		{
-			name: "accepts valid password",
-			raw:  validPassword,
+			name:    "accepts valid password",
+			raw:     validPassword,
+			wantErr: nil,
 		},
 		{
 			name:    "rejects password longer than bcrypt byte limit",

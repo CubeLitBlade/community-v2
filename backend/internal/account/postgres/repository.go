@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/CubeLitBlade/community-v2/backend/internal/account"
 	"gorm.io/gorm"
+
+	"github.com/CubeLitBlade/community-v2/backend/internal/account"
 )
 
 var errAccountNil = errors.New("account is nil")
@@ -46,26 +47,26 @@ func (r *Repository) Create(ctx context.Context, acc *account.Account) error {
 }
 
 func toRow(acc *account.Account) accountRow {
-	s := acc.Snapshot()
+	snapshot := acc.Snapshot()
 
 	var lastLoginIP *string
 
-	if s.LastLoginIP != nil {
-		ip := s.LastLoginIP.String()
+	if snapshot.LastLoginIP != nil {
+		ip := snapshot.LastLoginIP.String()
 		lastLoginIP = &ip
 	}
 
 	return accountRow{
-		ID:                     int64(s.ID),
-		Username:               s.Username,
-		PasswordHash:           s.PasswordHash,
-		PasswordChangeRequired: s.PasswordChangeRequired,
-		DisplayName:            s.DisplayName,
-		Role:                   s.Role.String(),
-		Status:                 s.Status.String(),
-		CreatedAt:              s.CreatedAt,
-		UpdatedAt:              s.UpdatedAt,
-		LastLoginAt:            s.LastLoginAt,
+		ID:                     int64(snapshot.ID),
+		Username:               snapshot.Username,
+		PasswordHash:           snapshot.PasswordHash,
+		PasswordChangeRequired: snapshot.PasswordChangeRequired,
+		DisplayName:            snapshot.DisplayName,
+		Role:                   snapshot.Role.String(),
+		Status:                 snapshot.Status.String(),
+		CreatedAt:              snapshot.CreatedAt,
+		UpdatedAt:              snapshot.UpdatedAt,
+		LastLoginAt:            snapshot.LastLoginAt,
 		LastLoginIP:            lastLoginIP,
 	}
 }

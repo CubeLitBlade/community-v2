@@ -3,6 +3,7 @@ package account
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 )
@@ -19,7 +20,7 @@ const (
 func TestRegister(t *testing.T) {
 	t.Parallel()
 
-	now, _ := registrationTime()
+	now := mustRegistrationTime()
 
 	acc, err := Register(validAccountID, usernameAlice, validPassword, now)
 	if err != nil {
@@ -35,7 +36,7 @@ func TestRegister(t *testing.T) {
 func TestRegisterRejectsInvalidInput(t *testing.T) {
 	t.Parallel()
 
-	now, _ := registrationTime()
+	now := mustRegistrationTime()
 
 	for _, testCase := range invalidRegisterCases() {
 		t.Run(testCase.name, func(t *testing.T) {
@@ -59,8 +60,13 @@ func TestRegisterRejectsInvalidInput(t *testing.T) {
 	}
 }
 
-func registrationTime() (time.Time, error) {
-	return time.Parse(time.RFC3339, registrationTimeRaw)
+func mustRegistrationTime() time.Time {
+	t, err := time.Parse(time.RFC3339, registrationTimeRaw)
+	if err != nil {
+		panic(fmt.Sprintf("invalid registration time constant: %v", err))
+	}
+
+	return t
 }
 
 func assertAccountIdentity(t *testing.T, acc *Account) {
