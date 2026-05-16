@@ -29,8 +29,14 @@ func RegisterModules(router *gin.Engine, deps ModuleDeps) {
 }
 
 func registerAccountModule(router gin.IRouter, deps ModuleDeps) {
-	accountRepo := accountpostgres.NewRepository(deps.DB)
-	accountService := account.NewService(deps.IDs, accountRepo, deps.Logger)
+	accountReader := accountpostgres.NewReader(deps.DB)
+	accountWriter := accountpostgres.NewWriter(deps.DB)
+	accountService := account.NewService(
+		deps.IDs,
+		accountWriter,
+		accountReader,
+		deps.Logger,
+	)
 
 	accountHandler := accounttransport.NewHandler(accountService, deps.Logger)
 	accountHandler.RegisterRoutes(router)

@@ -35,6 +35,15 @@ func ParseRole(value string) (Role, error) {
 	return role, nil
 }
 
+func mustParseRole(value string) Role {
+	role, err := ParseRole(value)
+	if err != nil {
+		panic(err)
+	}
+
+	return role
+}
+
 // IsValid reports whether r is a recognized Role value.
 func (r Role) IsValid() bool {
 	switch r {

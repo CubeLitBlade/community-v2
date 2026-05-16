@@ -105,9 +105,9 @@ type Snapshot struct {
 	Username               string
 	PasswordHash           string
 	DisplayName            string
-	Role                   Role
-	Status                 Status
-	ID                     ID
+	Role                   string
+	Status                 string
+	ID                     int64
 	PasswordChangeRequired bool
 }
 
@@ -120,24 +120,47 @@ func (a *Account) Snapshot() Snapshot {
 	)
 
 	if a.audit.lastLogin != nil {
-		at := a.audit.lastLogin.at
-		ip := a.audit.lastLogin.ip
-
-		lastLoginAt = &at
-		lastLoginIP = &ip
+		lastLoginAt = new(a.audit.lastLogin.at)
+		lastLoginIP = new(a.audit.lastLogin.ip)
 	}
 
 	return Snapshot{
-		ID:                     a.id,
+		ID:                     int64(a.id),
 		Username:               a.username.Value(),
 		PasswordHash:           a.passwordHash.value,
 		PasswordChangeRequired: a.passwordChangeRequired,
 		DisplayName:            a.displayName,
-		Role:                   a.role,
-		Status:                 a.status,
+		Role:                   a.role.String(),
+		Status:                 a.status.String(),
 		CreatedAt:              a.audit.createdAt,
 		UpdatedAt:              a.audit.updatedAt,
 		LastLoginAt:            lastLoginAt,
 		LastLoginIP:            lastLoginIP,
+	}
+}
+
+// NewAccountFromSnapshot reconstructs account from snapshot.
+func NewAccountFromSnapshot(snap Snapshot) Account {
+	var lastLogin *LoginAudit
+	if snap.LastLoginAt != nil && snap.LastLoginIP != nil {
+		lastLogin = &LoginAudit{
+			at: *snap.LastLoginAt,
+			ip: *snap.LastLoginIP,
+		}
+	}
+
+	return Account{
+		id:                     ID(snap.ID),
+		username:               Username(snap.Username),
+		passwordHash:           PasswordHash{value: snap.PasswordHash},
+		passwordChangeRequired: snap.PasswordChangeRequired,
+		displayName:            snap.DisplayName,
+		role:                   mustParseRole(snap.Role),
+		status:                 mustParseStatus(snap.Status),
+		audit: Audit{
+			createdAt: snap.CreatedAt,
+			updatedAt: snap.UpdatedAt,
+			lastLogin: lastLogin,
+		},
 	}
 }

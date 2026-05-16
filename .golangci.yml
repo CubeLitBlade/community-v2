@@ -151,7 +151,7 @@ linters:
         - paramTypeCombine
     
     revive:
-      severity: warning
+      severity: error
       confidence: 0.8
       rules:
         - name: blank-imports

@@ -2,7 +2,9 @@ package postgres
 
 import "time"
 
-type accountRow struct {
+// Row represents a record in the "accounts" PostgreSQL table.
+// Pointer fields are used to represent nullable database columns
+type Row struct {
 	CreatedAt              time.Time  `gorm:"column:created_at"`
 	UpdatedAt              time.Time  `gorm:"column:updated_at"`
 	LastLoginAt            *time.Time `gorm:"column:last_login_at"`
@@ -16,6 +18,7 @@ type accountRow struct {
 	PasswordChangeRequired bool       `gorm:"column:password_change_required"`
 }
 
-func (accountRow) TableName() string {
+// TableName overrides the default Gorm table name to "accounts".
+func (Row) TableName() string {
 	return "accounts"
 }

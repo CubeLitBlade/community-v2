@@ -35,6 +35,15 @@ func ParseStatus(value string) (Status, error) {
 	return status, nil
 }
 
+func mustParseStatus(value string) Status {
+	status, err := ParseStatus(value)
+	if err != nil {
+		panic(err)
+	}
+
+	return status
+}
+
 // IsValid reports whether s is a recognized Status value.
 func (s Status) IsValid() bool {
 	switch s {

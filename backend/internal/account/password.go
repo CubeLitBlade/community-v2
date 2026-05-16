@@ -12,7 +12,7 @@ var (
 	// ErrPasswordEmpty indicates that the password string is empty.
 	ErrPasswordEmpty = errors.New("password cannot be empty")
 
-	// ErrPasswordTooShort indicates thatthe password is shorter than
+	// ErrPasswordTooShort indicates that the password is shorter than
 	// MinPasswordLength.
 	ErrPasswordTooShort = errors.New("password too short")
 

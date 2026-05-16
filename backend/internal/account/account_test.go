@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	usernameAlice       = "alice"
+	usernameAlice       = "Alice"
 	validAccountID      = 1
 	zeroAccountID       = 0
 	negativeAccountID   = -1

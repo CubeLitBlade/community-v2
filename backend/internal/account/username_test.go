@@ -152,25 +152,25 @@ func newUsernameCases() []usernameCase {
 		{
 			name:    "rejects username shorter than minimum length",
 			value:   fill,
-			want:    account.Username(""),
+			want:    "",
 			wantErr: account.ErrUsernameLength,
 		},
 		{
 			name:    "rejects username longer than maximum length",
 			value:   strings.Repeat(fill, account.MaxUsernameLength+1),
-			want:    account.Username(""),
+			want:    "",
 			wantErr: account.ErrUsernameLength,
 		},
 		{
 			name:    "trims surrounding spaces",
-			value:   " alice ",
-			want:    account.Username("alice"),
+			value:   " Alice ",
+			want:    "Alice",
 			wantErr: nil,
 		},
 		{
 			name:    "rejects blank username",
 			value:   "   ",
-			want:    account.Username(""),
+			want:    "",
 			wantErr: account.ErrUsernameBlank,
 		},
 	}
@@ -187,13 +187,13 @@ func usernameFromStorageCases() []usernameCase {
 		{
 			name:    "accepts normal username",
 			value:   "bob",
-			want:    account.Username("bob"),
+			want:    "bob",
 			wantErr: nil,
 		},
 		{
 			name:    "accepts archived username",
-			value:   "alice#archived_123",
-			want:    account.Username("alice#archived_123"),
+			value:   "Alice#archived_123",
+			want:    "Alice#archived_123",
 			wantErr: nil,
 		},
 		{
@@ -205,13 +205,13 @@ func usernameFromStorageCases() []usernameCase {
 		{
 			name:    "rejects blank stored username",
 			value:   "   ",
-			want:    account.Username(""),
+			want:    "",
 			wantErr: account.ErrUsernameBlank,
 		},
 		{
 			name:    "rejects username longer than storage limit",
 			value:   tooLongStoredUsername,
-			want:    account.Username(""),
+			want:    "",
 			wantErr: account.ErrUsernameLength,
 		},
 	}
@@ -227,9 +227,9 @@ func archiveUsernameCases() []archiveUsernameCase {
 	return []archiveUsernameCase{
 		{
 			name:     "generates archived username from normal username",
-			username: account.Username("alice"),
+			username: "Alice",
 			id:       maxArchiveID,
-			want:     account.Username("alice" + maxArchivedSuffix),
+			want:     "Alice" + maxArchivedSuffix,
 			wantErr:  nil,
 		},
 		{
@@ -243,7 +243,7 @@ func archiveUsernameCases() []archiveUsernameCase {
 			name:     "rejects archived username longer than storage limit",
 			username: account.Username(tooLongStoredUsername),
 			id:       testID,
-			want:     account.Username(""),
+			want:     "",
 			wantErr:  account.ErrUsernameLength,
 		},
 	}

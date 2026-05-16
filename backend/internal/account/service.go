@@ -2,24 +2,37 @@ package account
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
 )
+
+// ErrUsernameAlreadyExists is returned when attempting to create an account
+// with a username that is already taken.
+var ErrUsernameAlreadyExists = errors.New("username already exists")
 
 // IDGenerator generates unique identifiers for new accounts.
 type IDGenerator interface {
 	NextID() (int64, error)
 }
 
-type repository interface {
+// Writer defines the interface for persisting account aggregates.
+type Writer interface {
 	Create(ctx context.Context, acc *Account) error
+}
+
+// Reader defines the interface for querying account aggregates.
+type Reader interface {
+	LookupByUsername(ctx context.Context, username string) (Account, error)
+	ExistsUsername(ctx context.Context, username string) (bool, error)
 }
 
 // Service provides business logic for account operations.
 type Service struct {
 	ids    IDGenerator
-	repo   repository
+	writer Writer
+	reader Reader
 	now    func() time.Time
 	logger *slog.Logger
 }
@@ -28,7 +41,8 @@ type Service struct {
 // It panics if logger is nil.
 func NewService(
 	ids IDGenerator,
-	repo repository,
+	writer Writer,
+	reader Reader,
 	logger *slog.Logger,
 ) *Service {
 	if logger == nil {
@@ -37,7 +51,8 @@ func NewService(
 
 	return &Service{
 		ids:    ids,
-		repo:   repo,
+		writer: writer,
+		reader: reader,
 		now:    time.Now,
 		logger: logger,
 	}
@@ -48,6 +63,14 @@ func (s *Service) CreateAccount(
 	ctx context.Context,
 	username, password string,
 ) (Account, error) {
+	existsUsername, err := s.reader.ExistsUsername(ctx, username)
+	if err != nil {
+		return Account{}, fmt.Errorf("checking account exists: %w", err)
+	}
+	if existsUsername {
+		return Account{}, ErrUsernameAlreadyExists
+	}
+
 	id, err := s.ids.NextID()
 	if err != nil {
 		return Account{}, fmt.Errorf("generate account id: %w", err)
@@ -58,7 +81,7 @@ func (s *Service) CreateAccount(
 		return Account{}, fmt.Errorf("create account: %w", err)
 	}
 
-	if err := s.repo.Create(ctx, &acc); err != nil {
+	if err := s.writer.Create(ctx, &acc); err != nil {
 		return Account{}, fmt.Errorf("create account: %w", err)
 	}
 
