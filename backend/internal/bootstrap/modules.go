@@ -7,8 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/CubeLitBlade/community-v2/backend/internal/account"
-	accountpostgres "github.com/CubeLitBlade/community-v2/backend/internal/account/postgres"
-	accounttransport "github.com/CubeLitBlade/community-v2/backend/internal/account/transport"
+	"github.com/CubeLitBlade/community-v2/backend/internal/account/setup"
 	authtransport "github.com/CubeLitBlade/community-v2/backend/internal/auth/transport"
 )
 
@@ -24,22 +23,12 @@ type ModuleDeps struct {
 func RegisterModules(router *gin.Engine, deps ModuleDeps) {
 	api := router.Group("/api")
 
-	registerAccountModule(api, deps)
+	setup.RegisterAccountModule(api, setup.ModuleDeps{
+		DB:     deps.DB,
+		IDs:    deps.IDs,
+		Logger: deps.Logger,
+	})
 	registerAuthModule(api)
-}
-
-func registerAccountModule(router gin.IRouter, deps ModuleDeps) {
-	accountReader := accountpostgres.NewReader(deps.DB)
-	accountWriter := accountpostgres.NewWriter(deps.DB)
-	accountService := account.NewService(
-		deps.IDs,
-		accountWriter,
-		accountReader,
-		deps.Logger,
-	)
-
-	accountHandler := accounttransport.NewHandler(accountService, deps.Logger)
-	accountHandler.RegisterRoutes(router)
 }
 
 func registerAuthModule(router gin.IRouter) {

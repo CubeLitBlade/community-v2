@@ -16,7 +16,10 @@ type Reader struct {
 	db *gorm.DB
 }
 
-var _ account.Reader = (*Reader)(nil)
+// Reader interface is temporarily unused in the account domain.
+// Registration uniqueness is enforced by DB unique constraints.
+// It will be re-introduced when implementing the Authenticator.
+// var _ account.Reader = (*Reader)(nil)
 
 // NewReader creates a new Reader backed by the given Gorm DB instance.
 // It panics if db is nil.

@@ -13,37 +13,40 @@ import (
 	"github.com/CubeLitBlade/community-v2/backend/internal/httperr"
 )
 
-// Service defines the interface for account-related operations.
-type Service interface {
-	CreateAccount(
+// AccountRegistrar defines the interface for account-related operations.
+type AccountRegistrar interface {
+	Register(
 		ctx context.Context,
 		username string,
 		password string,
 	) (account.Account, error)
 }
 
-// Handler handles HTTP requests for account resources.
-type Handler struct {
-	accounts Service
-	logger   *slog.Logger
+// Deps holds the dependencies required for the account Handler.
+type Deps struct {
+	Registrar AccountRegistrar
+	Logger    *slog.Logger
 }
 
-// NewHandler creates and returns a new AccountHandler.
-func NewHandler(
-	accounts Service,
-	logger *slog.Logger,
-) *Handler {
-	if accounts == nil {
-		panic("web.NewAccountHandler: accounts is nil")
+// Handler handles HTTP requests for account resources.
+type Handler struct {
+	registrar AccountRegistrar
+	logger    *slog.Logger
+}
+
+// NewHandler creates and returns a new Handler.
+func NewHandler(deps Deps) *Handler {
+	if deps.Registrar == nil {
+		panic("nil registrar")
 	}
 
-	if logger == nil {
-		panic("web.NewAccountHandler: logger is nil")
+	if deps.Logger == nil {
+		panic("nil logger")
 	}
 
 	return &Handler{
-		accounts: accounts,
-		logger:   logger,
+		registrar: deps.Registrar,
+		logger:    deps.Logger,
 	}
 }
 
@@ -70,13 +73,13 @@ func (h *Handler) createAccount(c *gin.Context) {
 		return
 	}
 
-	acc, err := h.accounts.CreateAccount(
+	acc, err := h.registrar.Register(
 		c.Request.Context(),
 		req.Username,
 		req.Password,
 	)
 	if err != nil {
-		h.logger.Warn(
+		h.logger.Debug(
 			"create account failed",
 			"username", req.Username,
 			"error", err,

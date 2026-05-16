@@ -218,6 +218,7 @@ linters:
         - tc
         - ok
         - err
+        - id
       ignore-decls:
         - c echo.Context
         - t testing.T
