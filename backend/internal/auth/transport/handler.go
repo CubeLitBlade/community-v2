@@ -2,10 +2,7 @@
 package transport
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/csrf"
 )
 
 // Handler handles HTTP requests for authentication.
@@ -18,12 +15,4 @@ func NewHandler() *Handler {
 
 // RegisterRoutes registers the authentication routes on the given router.
 func (h *Handler) RegisterRoutes(router gin.IRouter) {
-	auth := router.Group("/auth")
-
-	auth.GET("/csrf", h.csrf)
-}
-
-func (*Handler) csrf(c *gin.Context) {
-	c.Header("X-CSRF-Token", csrf.Token(c.Request))
-	c.Status(http.StatusNoContent)
 }

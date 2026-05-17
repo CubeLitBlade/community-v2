@@ -2,64 +2,49 @@ package bootstrap
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/csrf"
 
 	"github.com/CubeLitBlade/community-v2/backend/internal/httperr"
 )
 
 const httpReadHeaderTimeout = 5 * time.Second
 
-func newHTTPServer(cfg *Config, router *gin.Engine) (*http.Server, error) {
-	handler, err := newHTTPHandler(cfg, router)
-	if err != nil {
-		return nil, err
-	}
+func newHTTPServer(cfg *Config, router *gin.Engine) *http.Server {
+	handler := newHTTPHandler(router)
 
 	return &http.Server{
 		Addr:              cfg.Addr,
 		Handler:           handler,
 		ReadHeaderTimeout: httpReadHeaderTimeout,
-	}, nil
-}
-
-func newHTTPHandler(cfg *Config, router *gin.Engine) (http.Handler, error) {
-	if len(cfg.CSRFAuthKey) != csrfAuthKeyBytes {
-		return nil, errCSRFAuthKeyLength
 	}
-
-	csrfMiddleware := csrf.Protect(
-		cfg.CSRFAuthKey,
-		csrf.CookieName("csrf_token"),
-		csrf.RequestHeader("X-CSRF-Token"),
-		csrf.Path("/"),
-		csrf.Secure(cfg.CookieSecure),
-		csrf.HttpOnly(true),
-		csrf.SameSite(csrf.SameSiteLaxMode),
-		csrf.ErrorHandler(http.HandlerFunc(writeCSRFError)),
-	)
-
-	return csrfMiddleware(router), nil
 }
 
-func writeCSRFError(w http.ResponseWriter, r *http.Request) {
+func newHTTPHandler(router *gin.Engine) http.Handler {
+	protection := http.NewCrossOriginProtection()
+	protection.SetDenyHandler(http.HandlerFunc(writeCrossOriginError))
+
+	return protection.Handler(router)
+}
+
+func writeCrossOriginError(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(http.StatusForbidden)
 
-	response := httperr.ProblemDetail{
+	err := json.NewEncoder(w).Encode(httperr.ProblemDetail{
 		Type:     "about:blank",
-		Title:    "CSRF token invalid",
+		Title:    "Cross-origin request rejected",
 		Status:   http.StatusForbidden,
-		Detail:   "The CSRF token is missing or invalid.",
+		Detail:   "The request was blocked by cross-origin protection.",
 		Instance: r.URL.Path,
-		Code:     "CSRF_TOKEN_INVALID",
-	}
-
-	err := json.NewEncoder(w).Encode(response)
+		Code:     "CROSS_ORIGIN_REJECTED",
+	})
 	if err != nil {
-		return
+		log.Printf(
+			"Failed to write cross-origin error response: %v", err,
+		)
 	}
 }

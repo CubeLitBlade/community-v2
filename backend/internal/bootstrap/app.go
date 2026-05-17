@@ -64,13 +64,7 @@ func NewApp() (*App, error) {
 	})
 
 	// build HTTP server
-	server, err := newHTTPServer(&cfg, router)
-	if err != nil {
-		return nil, closeSQLDBAfterError(
-			sqlDB,
-			fmt.Errorf("create HTTP server: %w", err),
-		)
-	}
+	server := newHTTPServer(&cfg, router)
 
 	return &App{
 		cfg:    cfg,

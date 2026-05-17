@@ -14,7 +14,6 @@ const (
 	envSnowflakeID           = "SNOWFLAKE_ID"
 	envJWTSecret             = "JWT_SECRET"
 	envAccessTokenTTL        = "JWT_ACCESS_TOKEN_TTL"
-	envCSRFAuthKey           = "CSRF_AUTH_KEY"
 	envCookieSecure          = "COOKIE_SECURE"
 	envAccessTokenCookieName = "ACCESS_TOKEN_COOKIE_NAME"
 )
@@ -30,7 +29,6 @@ const (
 
 const (
 	minJWTSecretBytes = 32
-	csrfAuthKeyBytes  = 32
 
 	envIntParseBase = 10
 	envInt64Bits    = 64
@@ -50,11 +48,6 @@ var (
 		"%s must be positive",
 		envAccessTokenTTL,
 	)
-	errCSRFAuthKeyLength = fmt.Errorf(
-		"%s should be exactly %d bytes",
-		envCSRFAuthKey,
-		csrfAuthKeyBytes,
-	)
 	errAccessTokenCookieNameEmpty = fmt.Errorf(
 		"%s must not be empty",
 		envAccessTokenCookieName,
@@ -67,7 +60,6 @@ type Config struct {
 	DatabaseURL           string
 	AccessTokenCookieName string
 	JWTSecret             []byte
-	CSRFAuthKey           []byte
 	SnowflakeID           int64
 	AccessTokenTTL        time.Duration
 	CookieSameSite        http.SameSite
@@ -100,8 +92,6 @@ func LoadConfig() (Config, error) {
 		JWTSecret:      []byte(os.Getenv(envJWTSecret)),
 		AccessTokenTTL: accessTokenTTL,
 
-		CSRFAuthKey: []byte(os.Getenv(envCSRFAuthKey)),
-
 		CookieSecure:   cookieSecure,
 		CookieSameSite: defaultCookieSameSite,
 		AccessTokenCookieName: envString(
@@ -128,10 +118,6 @@ func (c *Config) validate() error {
 
 	if c.AccessTokenTTL <= 0 {
 		return errAccessTokenTTLPositive
-	}
-
-	if len(c.CSRFAuthKey) != csrfAuthKeyBytes {
-		return errCSRFAuthKeyLength
 	}
 
 	if c.AccessTokenCookieName == "" {
