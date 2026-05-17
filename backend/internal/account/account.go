@@ -164,3 +164,7 @@ func NewAccountFromSnapshot(snap Snapshot) Account {
 		},
 	}
 }
+
+func (a *Account) VerifyPassword(password string) bool {
+	return a.passwordHash.matches(password)
+}

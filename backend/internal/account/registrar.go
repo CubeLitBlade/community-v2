@@ -12,23 +12,23 @@ type IDGenerator interface {
 	NextID() (int64, error)
 }
 
-// Writer defines the interface for persisting account aggregates.
-type Writer interface {
+// Creator defines the interface for persisting account aggregates.
+type Creator interface {
 	Create(ctx context.Context, acc *Account) error
 }
 
 // Registrar orchestrates the account registration process.
 type Registrar struct {
-	ids    IDGenerator
-	writer Writer
-	now    func() time.Time
-	logger *slog.Logger
+	ids     IDGenerator
+	creator Creator
+	now     func() time.Time
+	logger  *slog.Logger
 }
 
 // NewRegistrar creates and returns a new Registrar.
 func NewRegistrar(
 	ids IDGenerator,
-	writer Writer,
+	creator Creator,
 	logger *slog.Logger,
 ) *Registrar {
 	if logger == nil {
@@ -36,10 +36,10 @@ func NewRegistrar(
 	}
 
 	return &Registrar{
-		ids:    ids,
-		writer: writer,
-		now:    time.Now,
-		logger: logger,
+		ids:     ids,
+		creator: creator,
+		now:     time.Now,
+		logger:  logger,
 	}
 }
 
@@ -64,7 +64,7 @@ func (r *Registrar) Register(
 		)
 	}
 
-	if err := r.writer.Create(ctx, &acc); err != nil {
+	if err := r.creator.Create(ctx, &acc); err != nil {
 		return Account{}, fmt.Errorf(
 			"could not create account: %w",
 			err,

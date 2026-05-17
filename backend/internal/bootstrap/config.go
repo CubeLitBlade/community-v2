@@ -59,7 +59,7 @@ type Config struct {
 	Addr                  string
 	DatabaseURL           string
 	AccessTokenCookieName string
-	JWTSecret             []byte
+	JWTSecret             string
 	SnowflakeID           int64
 	AccessTokenTTL        time.Duration
 	CookieSameSite        http.SameSite
@@ -89,7 +89,7 @@ func LoadConfig() (Config, error) {
 
 		SnowflakeID: snowflakeID,
 
-		JWTSecret:      []byte(os.Getenv(envJWTSecret)),
+		JWTSecret:      os.Getenv(envJWTSecret),
 		AccessTokenTTL: accessTokenTTL,
 
 		CookieSecure:   cookieSecure,

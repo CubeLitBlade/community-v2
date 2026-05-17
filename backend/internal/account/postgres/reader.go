@@ -16,16 +16,13 @@ type Reader struct {
 	db *gorm.DB
 }
 
-// Reader interface is temporarily unused in the account domain.
-// Registration uniqueness is enforced by DB unique constraints.
-// It will be re-introduced when implementing the Authenticator.
-// var _ account.Reader = (*Reader)(nil)
+var _ account.ByUsernameFinder = (*Reader)(nil)
 
 // NewReader creates a new Reader backed by the given Gorm DB instance.
 // It panics if db is nil.
 func NewReader(db *gorm.DB) *Reader {
 	if db == nil {
-		panic("postgres.NewReader: db is nil")
+		panic("nil db")
 	}
 
 	return &Reader{
@@ -33,22 +30,22 @@ func NewReader(db *gorm.DB) *Reader {
 	}
 }
 
-// LookupByUsername retrieves the account that matches the given username.
+// FindByUsername retrieves the account that matches the given username.
 // It returns account.ErrAccountNotFound if no matching record exists.
-func (r *Reader) LookupByUsername(
+func (r *Reader) FindByUsername(
 	ctx context.Context,
 	username string,
-) (account.Account, error) {
+) (*account.Account, error) {
 	row, err := gorm.G[Row](r.db).
 		Where("username = ?", username).
 		First(ctx)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return account.Account{}, account.ErrAccountNotFound
+			return nil, account.ErrAccountNotFound
 		}
 
-		return account.Account{}, fmt.Errorf(
-			"lookup account by username: %w",
+		return nil, fmt.Errorf(
+			"find account by username: %w",
 			err,
 		)
 	}
@@ -84,7 +81,7 @@ func (r *Reader) ExistsUsername(
 // rowToAccount converts a database Row into a domain Account.
 // If the row's LastLoginIP is non-nil and parseable, it is converted to a
 // netip.Addr; otherwise LastLoginIP on the resulting account is left nil.
-func rowToAccount(row *Row) account.Account {
+func rowToAccount(row *Row) *account.Account {
 	var lastLoginIP *netip.Addr
 
 	if row.LastLoginIP != nil {
@@ -108,5 +105,5 @@ func rowToAccount(row *Row) account.Account {
 		LastLoginIP:            lastLoginIP,
 	}
 
-	return account.NewAccountFromSnapshot(snap)
+	return new(account.NewAccountFromSnapshot(snap))
 }

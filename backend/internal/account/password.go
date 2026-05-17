@@ -56,14 +56,14 @@ func HashPassword(raw string) (PasswordHash, error) {
 	return PasswordHash{value: string(hashedBytes)}, nil
 }
 
-// PasswordMatches returns true if the plaintext password matches the hashed
+// matches returns true if the plaintext password matches the hashed
 // password.
-func PasswordMatches(hash PasswordHash, raw string) bool {
+func (p PasswordHash) matches(raw string) bool {
 	if raw == emptyString || len([]byte(raw)) > MaxPasswordBytes {
 		return false
 	}
 
-	return bcrypt.CompareHashAndPassword([]byte(hash.value), []byte(raw)) == nil
+	return bcrypt.CompareHashAndPassword([]byte(p.value), []byte(raw)) == nil
 }
 
 // ValidatePassword checks if a password meets security requirements.

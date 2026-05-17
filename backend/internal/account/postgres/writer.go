@@ -15,14 +15,14 @@ type Writer struct {
 	db *gorm.DB
 }
 
-var _ account.Writer = (*Writer)(nil)
+var _ account.Creator = (*Writer)(nil)
 
 // NewWriter creates a new Writer backed by the given GORM database
 // connection.
 // Panics if db is nil.
 func NewWriter(db *gorm.DB) *Writer {
 	if db == nil {
-		panic("postgres.NewWriter: db is nil")
+		panic("nil db")
 	}
 
 	return &Writer{
@@ -33,10 +33,10 @@ func NewWriter(db *gorm.DB) *Writer {
 // Create persists a new Account to the database.
 func (w *Writer) Create(ctx context.Context, acc *account.Account) error {
 	if acc == nil {
-		panic("postgres.NewWriter: acc is nil")
+		panic("nil account")
 	}
 
-	err := gorm.G[Row](w.db).Create(ctx, new(accountToRow(acc)))
+	err := gorm.G[Row](w.db).Create(ctx, accountToRow(acc))
 	if err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			return account.ErrUsernameAlreadyExists
@@ -48,7 +48,7 @@ func (w *Writer) Create(ctx context.Context, acc *account.Account) error {
 	return nil
 }
 
-func accountToRow(acc *account.Account) Row {
+func accountToRow(acc *account.Account) *Row {
 	snapshot := acc.Snapshot()
 
 	var lastLoginIP *string
@@ -57,7 +57,7 @@ func accountToRow(acc *account.Account) Row {
 		lastLoginIP = new(snapshot.LastLoginIP.String())
 	}
 
-	return Row{
+	return &Row{
 		ID:                     snapshot.ID,
 		Username:               snapshot.Username,
 		PasswordHash:           snapshot.PasswordHash,

@@ -120,7 +120,7 @@ func assertAccountAudit(t *testing.T, acc *Account, now time.Time) {
 func assertPasswordHashMatches(t *testing.T, hash PasswordHash, raw string) {
 	t.Helper()
 
-	if !PasswordMatches(hash, raw) {
+	if !hash.matches(raw) {
 		t.Error("passwordHash should match raw password")
 	}
 }

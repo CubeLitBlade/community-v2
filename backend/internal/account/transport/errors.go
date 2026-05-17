@@ -18,7 +18,7 @@ var accountErrorProblems = []struct {
 		err: account.ErrUsernameBlank,
 		spec: httperr.ProblemSpec{
 			Status: http.StatusBadRequest,
-			Title:  "Username blank",
+			Title:  "Invalid username",
 			Code:   "ACCOUNT_USERNAME_BLANK",
 			Detail: "Username cannot be blank.",
 		},
@@ -27,7 +27,7 @@ var accountErrorProblems = []struct {
 		err: account.ErrUsernameLength,
 		spec: httperr.ProblemSpec{
 			Status: http.StatusBadRequest,
-			Title:  "Username bad length",
+			Title:  "Invalid username",
 			Code:   "ACCOUNT_USERNAME_BAD_LENGTH",
 			Detail: fmt.Sprintf(
 				"Username must be between %d and %d characters.",
@@ -40,7 +40,7 @@ var accountErrorProblems = []struct {
 		err: account.ErrPasswordEmpty,
 		spec: httperr.ProblemSpec{
 			Status: http.StatusBadRequest,
-			Title:  "Password empty",
+			Title:  "Invalid password",
 			Code:   "ACCOUNT_PASSWORD_EMPTY",
 			Detail: "Password cannot be empty.",
 		},
@@ -49,7 +49,7 @@ var accountErrorProblems = []struct {
 		err: account.ErrPasswordTooShort,
 		spec: httperr.ProblemSpec{
 			Status: http.StatusBadRequest,
-			Title:  "Password too short",
+			Title:  "Invalid password",
 			Code:   "ACCOUNT_PASSWORD_TOO_SHORT",
 			Detail: fmt.Sprintf(
 				"Password should be at least %d characters.",
@@ -61,12 +61,30 @@ var accountErrorProblems = []struct {
 		err: account.ErrPasswordTooLong,
 		spec: httperr.ProblemSpec{
 			Status: http.StatusBadRequest,
-			Title:  "Password too long",
+			Title:  "Invalid password",
 			Code:   "ACCOUNT_PASSWORD_TOO_LONG",
 			Detail: fmt.Sprintf(
 				"Password should be no more than %d bytes.",
 				account.MaxPasswordBytes,
 			),
+		},
+	},
+	{
+		err: account.ErrUsernameAlreadyExists,
+		spec: httperr.ProblemSpec{
+			Status: http.StatusConflict,
+			Title:  "Username conflict",
+			Code:   "ACCOUNT_USERNAME_ALREADY_EXISTS",
+			Detail: "Username already exists.",
+		},
+	},
+	{
+		err: account.ErrInvalidCredentials,
+		spec: httperr.ProblemSpec{
+			Status: http.StatusUnauthorized,
+			Title:  "Invalid credentials",
+			Code:   "ACCOUNT_INVALID_CREDENTIALS",
+			Detail: "Username or password is incorrect.",
 		},
 	},
 }

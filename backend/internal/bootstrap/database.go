@@ -17,7 +17,8 @@ const databasePingTimeout = 5 * time.Second
 // and returns both the GORM and standard database/sql DB instances.
 func OpenDatabase(dsn string) (gormDB *gorm.DB, sqlDB *sql.DB, err error) {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: NewGormLogger(),
+		Logger:         NewGormLogger(),
+		TranslateError: true,
 	})
 	if err != nil {
 		return nil, nil, fmt.Errorf("open database: %w", err)

@@ -21,16 +21,34 @@ type ModuleDeps struct {
 	Logger *slog.Logger
 }
 
-// RegisterAccountModule initializes the account module (including repository
-// and domain services) and registers its HTTP handlers on the provided router.
-func RegisterAccountModule(router gin.IRouter, deps ModuleDeps) {
+type Module struct {
+	Registrar     *account.Registrar
+	Authenticator *account.Authenticator
+
+	handler *transport.Handler
+}
+
+func NewModule(deps ModuleDeps) *Module {
 	writer := postgres.NewWriter(deps.DB)
+	reader := postgres.NewReader(deps.DB)
 
 	registrar := account.NewRegistrar(deps.IDs, writer, deps.Logger)
+	authenticator := account.NewAuthenticator(reader, deps.Logger)
 
 	handler := transport.NewHandler(transport.Deps{
 		Registrar: registrar,
 		Logger:    deps.Logger,
 	})
-	handler.RegisterRoutes(router)
+
+	return &Module{
+		Registrar:     registrar,
+		Authenticator: authenticator,
+		handler:       handler,
+	}
+}
+
+// Mount initializes the account module (including repository
+// and domain services) and registers its HTTP handlers on the provided router.
+func (m *Module) Mount(router gin.IRouter) {
+	m.handler.RegisterRoutes(router)
 }

@@ -60,6 +60,7 @@ func NewApp() (*App, error) {
 	RegisterModules(router, ModuleDeps{
 		DB:     db,
 		IDs:    ids,
+		JWTKey: cfg.JWTSecret,
 		Logger: appLogger,
 	})
 
