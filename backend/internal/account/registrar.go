@@ -5,12 +5,9 @@ import (
 	"fmt"
 	"log/slog"
 	"time"
-)
 
-// IDGenerator generates unique identifiers for new accounts.
-type IDGenerator interface {
-	NextID() (int64, error)
-}
+	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
+)
 
 // Creator defines the interface for persisting account aggregates.
 type Creator interface {
@@ -19,7 +16,7 @@ type Creator interface {
 
 // Registrar orchestrates the account registration process.
 type Registrar struct {
-	ids     IDGenerator
+	ids     idgen.Generator
 	creator Creator
 	now     func() time.Time
 	logger  *slog.Logger
@@ -27,7 +24,7 @@ type Registrar struct {
 
 // NewRegistrar creates and returns a new Registrar.
 func NewRegistrar(
-	ids IDGenerator,
+	ids idgen.Generator,
 	creator Creator,
 	logger *slog.Logger,
 ) *Registrar {

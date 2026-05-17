@@ -3,22 +3,27 @@ package account
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 )
 
+// ErrInvalidCredentials is returned when authentication fails due to mismatched credentials.
 var ErrInvalidCredentials = errors.New("invalid credentials")
 
+// ByUsernameFinder looks up an account by its username.
 type ByUsernameFinder interface {
 	FindByUsername(ctx context.Context, username string) (*Account, error)
 }
 
+// Authenticator verifies username/password credentials against stored accounts.
 type Authenticator struct {
 	finder ByUsernameFinder
 	now    func() time.Time
 	logger *slog.Logger
 }
 
+// NewAuthenticator creates a new Authenticator.
 func NewAuthenticator(
 	finder ByUsernameFinder, logger *slog.Logger,
 ) *Authenticator {
@@ -29,6 +34,7 @@ func NewAuthenticator(
 	}
 }
 
+// Authenticate verifies the given username and password and returns the matching account.
 func (a *Authenticator) Authenticate(
 	ctx context.Context, username, password string,
 ) (*Account, error) {
@@ -37,7 +43,7 @@ func (a *Authenticator) Authenticate(
 		if errors.Is(err, ErrAccountNotFound) {
 			return nil, ErrInvalidCredentials // hide details
 		}
-		return nil, err
+		return nil, fmt.Errorf("find by username: %w", err)
 	}
 
 	if acc == nil {

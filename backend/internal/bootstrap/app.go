@@ -42,7 +42,7 @@ func NewApp() (*App, error) {
 
 	ids, err := idgen.NewSnowflake(cfg.SnowflakeID)
 	if err != nil {
-		return nil, closeSQLDBAfterError(
+		return nil, closeDBOnError(
 			sqlDB,
 			fmt.Errorf("create id generator: %w", err),
 		)
@@ -51,7 +51,7 @@ func NewApp() (*App, error) {
 	// build router and register modules
 	router, err := newRouter()
 	if err != nil {
-		return nil, closeSQLDBAfterError(
+		return nil, closeDBOnError(
 			sqlDB,
 			fmt.Errorf("create router: %w", err),
 		)
@@ -102,7 +102,7 @@ func (a *App) Close() {
 	}
 }
 
-func closeSQLDBAfterError(db *sql.DB, cause error) error {
+func closeDBOnError(db *sql.DB, cause error) error {
 	if db == nil {
 		return cause
 	}

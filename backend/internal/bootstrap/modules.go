@@ -4,23 +4,26 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/CubeLitBlade/community-v2/backend/internal/auth"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"github.com/CubeLitBlade/community-v2/backend/internal/account"
 	accountSetup "github.com/CubeLitBlade/community-v2/backend/internal/account/setup"
+	"github.com/CubeLitBlade/community-v2/backend/internal/auth"
 	authSetup "github.com/CubeLitBlade/community-v2/backend/internal/auth/setup"
+	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
 )
+
+const defaultAccessTokenTTLHours = 24
 
 // ModuleDeps holds the shared dependencies required by application modules.
 type ModuleDeps struct {
 	DB     *gorm.DB
-	IDs    account.IDGenerator
+	IDs    idgen.Generator
 	JWTKey string
 	Logger *slog.Logger
 }
 
+// HTTPMounter is implemented by modules that register routes on a Gin router.
 type HTTPMounter interface {
 	Mount(router gin.IRouter)
 }
@@ -40,7 +43,7 @@ func RegisterModules(router *gin.Engine, deps ModuleDeps) {
 		JWTConfig: &auth.JWTConfig{
 			Key:      deps.JWTKey,
 			Issuer:   "community-v2",
-			Validity: time.Hour * 24,
+			Validity: time.Hour * defaultAccessTokenTTLHours,
 		},
 		AccountAuth: accountMod.Authenticator,
 		Logger:      deps.Logger,

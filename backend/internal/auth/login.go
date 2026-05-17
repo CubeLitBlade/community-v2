@@ -8,39 +8,44 @@ import (
 	"github.com/CubeLitBlade/community-v2/backend/internal/account"
 )
 
+// ErrInvalidCredentials is returned when login fails due to invalid credentials.
 var ErrInvalidCredentials = errors.New("invalid credentials")
 
+// AccountAuthenticator authenticates a user by username and password.
 type AccountAuthenticator interface {
 	Authenticate(
 		ctx context.Context, username, password string,
 	) (*account.Account, error)
 }
 
+// Login executes the login flow: authenticate credentials and issue a JWT.
 type Login struct {
-	Auth   AccountAuthenticator
-	Issuer *JWTIssuer
+	auth   AccountAuthenticator
+	issuer *JWTIssuer
 }
 
+// NewLogin creates a new Login service.
 func NewLogin(authenticator AccountAuthenticator, issuer *JWTIssuer) *Login {
 	return &Login{
-		Auth:   authenticator,
-		Issuer: issuer,
+		auth:   authenticator,
+		issuer: issuer,
 	}
 }
 
+// Execute authenticates the given credentials and returns a signed JWT.
 func (l *Login) Execute(
 	ctx context.Context, username, password string,
 ) (string, error) {
-	acc, err := l.Auth.Authenticate(ctx, username, password)
+	acc, err := l.auth.Authenticate(ctx, username, password)
 	if err != nil {
 		if errors.Is(err, account.ErrInvalidCredentials) {
 			return "", ErrInvalidCredentials
 		}
 
-		return "", err
+		return "", fmt.Errorf("authenticate: %w", err)
 	}
 
-	jwt, err := l.Issuer.Issue(acc.ID(), acc.Role())
+	jwt, err := l.issuer.Issue(acc.ID(), acc.Role())
 	if err != nil {
 		return "", fmt.Errorf("issue token: %w", err)
 	}

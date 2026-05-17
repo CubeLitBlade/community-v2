@@ -17,6 +17,7 @@ type Handler struct {
 	logger *slog.Logger
 }
 
+// Deps holds the dependencies required by the auth Handler.
 type Deps struct {
 	Login  *auth.Login
 	Logger *slog.Logger
@@ -54,6 +55,7 @@ type loginResponse struct {
 	Token string `json:"token"`
 }
 
+// Login handles POST /auth — authenticates credentials and returns a JWT.
 func (h *Handler) Login(c *gin.Context) {
 	var req loginRequest
 

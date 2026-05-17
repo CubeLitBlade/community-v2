@@ -29,9 +29,6 @@ const (
 
 const (
 	minJWTSecretBytes = 32
-
-	envIntParseBase = 10
-	envInt64Bits    = 64
 )
 
 var (
@@ -156,7 +153,7 @@ func envInt64(key string, fallback int64) (int64, error) {
 		return fallback, nil
 	}
 
-	parsed, err := strconv.ParseInt(value, envIntParseBase, envInt64Bits)
+	parsed, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("parse int %s: %w", key, err)
 	}

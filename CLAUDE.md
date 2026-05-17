@@ -1,8 +1,10 @@
-# AGENTS.md
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project layout
 
-Single Go module — the module root is `backend/`, **not** the repo root.  
+Single Go module — the module root is `backend/`, **not** the repo root.
 The repo root holds non-Go config: `.golangci.yml`, `.env.example`, `qodana.yaml`.
 
 ```
@@ -44,7 +46,7 @@ cd backend && gofumpt -l -w . && gci write .
 
 ## Stack
 
-- **HTTP**: Gin (`gin-gonic/gin`) — uses `gin.New()` (no default middleware), with custom `gin.Logger()` + `gin.Recovery()` + Cross-Origin protection
+- **HTTP**: Gin (`gin-gonic/gin`) — uses `gin.New()` (no default middleware), with custom `gin.Logger()` + `gin.Recovery()`
 - **ORM**: GORM v2 with PostgreSQL driver — `TranslateError: true` enabled
 - **Auth**: JWT HS256 via `golang-jwt/jwt/v5`, access token in cookie
 - **IDs**: Custom Snowflake generator (`internal/idgen/`) — epoch 2026-03-11
@@ -67,23 +69,23 @@ Use `direnv allow` to auto-load `.env` via `.envrc`.
 
 ## Architecture conventions
 
-- Domain objects (`account.Account`) are **unexported struct fields** — access via getter methods and `Snapshot()`. Reconstruction from DB uses `NewAccountFromSnapshot`.
-- Modules follow a Setup pattern: `internal/<domain>/setup/module.go` wires dependencies and calls `handler.RegisterRoutes()` on the Gin router.
-- Error-to-HTTP mapping uses `httperr.ErrorMapper` funcs declared in each `transport/` package. Domain sentinel errors are mapped 1:1 to RFC 9457 problem details.
-- GORM models are private (`postgres.Row`), mapped to domain objects via `accountToRow` / `rowToAccount`.
-- The `bootstrap` package is the composition root — it owns `OpenDatabase`, `LoadConfig`, `newRouter`, `RegisterModules`.
+- **All struct fields are unexported** unless the struct is a config/params bag (`Config`, `ModuleDeps`, `Deps`, `Snapshot`). Domain objects and service structs (`Registrar`, `Authenticator`, `Login`, `JWTIssuer`) use unexported fields populated via constructor injection.
+- **Module Setup pattern**: `internal/<domain>/setup/module.go` wires dependencies and calls `handler.RegisterRoutes()` on the Gin router. Each module exposes a `Mount(router gin.IRouter)` method.
+- **Error-to-HTTP mapping**: `httperr.ErrorMapper` funcs declared in each `transport/` package. Domain sentinel errors are mapped 1:1 to RFC 9457 problem details via `httperr.WriteMappedError`.
+- **GORM models** are private (`postgres.Row`), mapped to domain objects via `accountToRow` / `rowToAccount`.
+- **Reader/Writer separation**: The `postgres` package exports `Reader` (queries) and `Writer` (mutations), never exposing GORM directly.
+- **The `bootstrap` package** is the composition root — it owns `OpenDatabase`, `LoadConfig`, `newRouter`, `RegisterModules`.
 
 ## Testing
 
-- Only `internal/account` has tests (white-box, `//nolint:testpackage`).
-- `internal/account/password_test.go` is entirely **commented out** — do not uncomment blindly; the password validation API changed.
 - Tests use `t.Parallel()` everywhere. Use table-driven tests with helper assertion funcs.
 - No integration tests; no test DB fixtures.
+- `internal/account` tests use `//nolint:testpackage` (white-box tests in `package account`), others use `_test` suffix (black-box).
 
 ## Lint strictness
 
-The `.golangci.yml` is aggressive (70+ linters). Notable pain points:
-- **depguard**: Only allows stdlib + listed third-party imports. Add new dependencies to `.golangci.yml` `depguard.rules.main.allow`.
+The `.golangci.yml` is aggressive (70+ linters). Key pain points:
+- **depguard**: Only allows stdlib + listed third-party imports. Add new dependencies to `.golangci.yml` `linters.settings.depguard.rules.main.allow`.
 - **exhaustruct**: All structs in `internal/` must be fully initialized.
 - **revive** `exported`: Every exported symbol needs a doc comment.
 - **wrapcheck**: Errors from external packages and interface methods must be wrapped.

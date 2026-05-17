@@ -9,6 +9,11 @@ import (
 	"time"
 )
 
+// Generator generates unique identifiers for new accounts.
+type Generator interface {
+	NextID() (int64, error)
+}
+
 var (
 	// ErrWorkerIDOutOfRange indicates that the provided worker ID exceeds the
 	// allowed limit.

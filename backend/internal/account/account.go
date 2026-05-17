@@ -165,6 +165,7 @@ func NewAccountFromSnapshot(snap Snapshot) Account {
 	}
 }
 
+// VerifyPassword checks whether the given password matches the account's password hash.
 func (a *Account) VerifyPassword(password string) bool {
 	return a.passwordHash.matches(password)
 }

@@ -11,16 +11,18 @@ import (
 	"github.com/CubeLitBlade/community-v2/backend/internal/account"
 	"github.com/CubeLitBlade/community-v2/backend/internal/account/postgres"
 	"github.com/CubeLitBlade/community-v2/backend/internal/account/transport"
+	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
 )
 
 // ModuleDeps holds the external dependencies required to initialize the account
 // module.
 type ModuleDeps struct {
 	DB     *gorm.DB
-	IDs    account.IDGenerator
+	IDs    idgen.Generator
 	Logger *slog.Logger
 }
 
+// Module is the account domain module, holding its services and HTTP handler.
 type Module struct {
 	Registrar     *account.Registrar
 	Authenticator *account.Authenticator
@@ -28,6 +30,7 @@ type Module struct {
 	handler *transport.Handler
 }
 
+// NewModule wires the account domain services and returns a Module.
 func NewModule(deps ModuleDeps) *Module {
 	writer := postgres.NewWriter(deps.DB)
 	reader := postgres.NewReader(deps.DB)
