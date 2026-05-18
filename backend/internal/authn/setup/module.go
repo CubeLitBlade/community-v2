@@ -1,4 +1,4 @@
-// Package setup wires the auth module dependencies and registers its HTTP routes.
+// Package setup wires the authn module dependencies and registers its HTTP routes.
 package setup
 
 import (
@@ -6,32 +6,32 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/CubeLitBlade/community-v2/backend/internal/auth"
-	"github.com/CubeLitBlade/community-v2/backend/internal/auth/transport"
+	"github.com/CubeLitBlade/community-v2/backend/internal/authn"
+	"github.com/CubeLitBlade/community-v2/backend/internal/authn/transport"
 	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
 	"github.com/CubeLitBlade/community-v2/backend/internal/jwt"
 )
 
-// Module is the auth domain module, holding its services and HTTP handler.
+// Module is the authn domain module, holding its services and HTTP handler.
 type Module struct {
 	Issuer *jwt.Issuer
-	Login  *auth.Login
+	Login  *authn.Login
 
 	handler *transport.Handler
 }
 
-// ModuleDeps holds the external dependencies needed to initialize the auth module.
+// ModuleDeps holds the external dependencies needed to initialize the authn module.
 type ModuleDeps struct {
 	IDs         idgen.Generator
 	JWTConfig   *jwt.Config
-	AccountAuth auth.AccountAuthenticator
+	AccountAuth authn.AccountAuthenticator
 	Logger      *slog.Logger
 }
 
-// NewModule wires the auth domain services and returns a Module.
+// NewModule wires the authn domain services and returns a Module.
 func NewModule(deps ModuleDeps) *Module {
 	issuer := jwt.NewIssuer(deps.JWTConfig, deps.IDs)
-	login := auth.NewLogin(deps.AccountAuth, issuer)
+	login := authn.NewLogin(deps.AccountAuth, issuer)
 
 	handler := transport.NewHandler(transport.Deps{
 		Login:  login,
@@ -45,7 +45,7 @@ func NewModule(deps ModuleDeps) *Module {
 	}
 }
 
-// Mount registers the auth module's HTTP routes on the given router.
+// Mount registers the authn module's HTTP routes on the given router.
 func (m *Module) Mount(router gin.IRouter) {
 	m.handler.RegisterRoutes(router)
 }

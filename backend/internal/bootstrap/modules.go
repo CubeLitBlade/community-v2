@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	accountSetup "github.com/CubeLitBlade/community-v2/backend/internal/account/setup"
-	authSetup "github.com/CubeLitBlade/community-v2/backend/internal/auth/setup"
+	authnSetup "github.com/CubeLitBlade/community-v2/backend/internal/authn/setup"
 	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
 	"github.com/CubeLitBlade/community-v2/backend/internal/jwt"
 )
@@ -38,7 +38,7 @@ func RegisterModules(router *gin.Engine, deps ModuleDeps) {
 		Logger: deps.Logger,
 	})
 
-	authMod := authSetup.NewModule(authSetup.ModuleDeps{
+	authMod := authnSetup.NewModule(authnSetup.ModuleDeps{
 		IDs: deps.IDs,
 		JWTConfig: &jwt.Config{
 			Key:      deps.JWTKey,

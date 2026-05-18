@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/CubeLitBlade/community-v2/backend/internal/auth"
+	"github.com/CubeLitBlade/community-v2/backend/internal/authn"
 	"github.com/CubeLitBlade/community-v2/backend/internal/httperr"
 )
 
@@ -14,7 +14,7 @@ var authErrorProblems = []struct {
 	spec httperr.ProblemSpec
 }{
 	{
-		err: auth.ErrInvalidCredentials,
+		err: authn.ErrInvalidCredentials,
 		spec: httperr.ProblemSpec{
 			Status: http.StatusUnauthorized,
 			Title:  "Invalid credentials",

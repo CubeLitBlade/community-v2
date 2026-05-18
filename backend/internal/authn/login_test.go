@@ -1,4 +1,4 @@
-package auth_test
+package authn_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/CubeLitBlade/community-v2/backend/internal/account"
-	"github.com/CubeLitBlade/community-v2/backend/internal/auth"
+	"github.com/CubeLitBlade/community-v2/backend/internal/authn"
 	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
 	"github.com/CubeLitBlade/community-v2/backend/internal/jwt"
 )
@@ -46,7 +46,7 @@ func (a *stubAuthenticator) Authenticate(
 }
 
 // compile-time check
-var _ auth.AccountAuthenticator = (*stubAuthenticator)(nil)
+var _ authn.AccountAuthenticator = (*stubAuthenticator)(nil)
 
 func makeTestAccount(t *testing.T) *account.Account {
 	t.Helper()
@@ -73,7 +73,7 @@ func TestLogin_Execute_Success(t *testing.T) {
 
 	issuer := jwt.NewIssuer(cfg, &stubIDGen{id: 99, err: nil})
 	acc := makeTestAccount(t)
-	login := auth.NewLogin(
+	login := authn.NewLogin(
 		&stubAuthenticator{acc: acc, err: nil},
 		issuer,
 	)
@@ -100,7 +100,7 @@ func TestLogin_Execute_InvalidCredentials(t *testing.T) {
 	}
 
 	issuer := jwt.NewIssuer(cfg, &stubIDGen{id: 99, err: nil})
-	login := auth.NewLogin(
+	login := authn.NewLogin(
 		&stubAuthenticator{acc: nil, err: account.ErrInvalidCredentials},
 		issuer,
 	)
@@ -108,9 +108,9 @@ func TestLogin_Execute_InvalidCredentials(t *testing.T) {
 	_, err := login.Execute(
 		context.Background(), "bad", "password",
 	)
-	if !errors.Is(err, auth.ErrInvalidCredentials) {
+	if !errors.Is(err, authn.ErrInvalidCredentials) {
 		t.Errorf("error = %v, want %v",
-			err, auth.ErrInvalidCredentials)
+			err, authn.ErrInvalidCredentials)
 	}
 }
 
@@ -124,7 +124,7 @@ func TestLogin_Execute_UnexpectedError(t *testing.T) {
 	}
 
 	issuer := jwt.NewIssuer(cfg, &stubIDGen{id: 99, err: nil})
-	login := auth.NewLogin(
+	login := authn.NewLogin(
 		&stubAuthenticator{acc: nil, err: errAuthTimeout},
 		issuer,
 	)
@@ -147,7 +147,7 @@ func TestNewLogin(t *testing.T) {
 	}
 
 	issuer := jwt.NewIssuer(cfg, &stubIDGen{id: 1, err: nil})
-	login := auth.NewLogin(
+	login := authn.NewLogin(
 		&stubAuthenticator{acc: nil, err: nil},
 		issuer,
 	)

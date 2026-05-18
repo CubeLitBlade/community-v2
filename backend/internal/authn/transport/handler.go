@@ -1,4 +1,4 @@
-// Package transport provides HTTP transport adapters for the auth domain.
+// Package transport provides HTTP transport adapters for the authn domain.
 package transport
 
 import (
@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/CubeLitBlade/community-v2/backend/internal/auth"
+	"github.com/CubeLitBlade/community-v2/backend/internal/authn"
 	"github.com/CubeLitBlade/community-v2/backend/internal/httperr"
 )
 
@@ -16,13 +16,13 @@ const defaultMaxAge = int(time.Hour * 24 / time.Second)
 
 // Handler handles HTTP requests for authentication.
 type Handler struct {
-	login  *auth.Login
+	login  *authn.Login
 	logger *slog.Logger
 }
 
 // Deps holds the dependencies required by the auth Handler.
 type Deps struct {
-	Login  *auth.Login
+	Login  *authn.Login
 	Logger *slog.Logger
 }
 
