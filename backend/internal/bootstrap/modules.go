@@ -8,9 +8,9 @@ import (
 	"gorm.io/gorm"
 
 	accountSetup "github.com/CubeLitBlade/community-v2/backend/internal/account/setup"
-	"github.com/CubeLitBlade/community-v2/backend/internal/auth"
 	authSetup "github.com/CubeLitBlade/community-v2/backend/internal/auth/setup"
 	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
+	"github.com/CubeLitBlade/community-v2/backend/internal/jwt"
 )
 
 const defaultAccessTokenTTLHours = 24
@@ -40,7 +40,7 @@ func RegisterModules(router *gin.Engine, deps ModuleDeps) {
 
 	authMod := authSetup.NewModule(authSetup.ModuleDeps{
 		IDs: deps.IDs,
-		JWTConfig: &auth.JWTConfig{
+		JWTConfig: &jwt.Config{
 			Key:      deps.JWTKey,
 			Issuer:   "community-v2",
 			Validity: time.Hour * defaultAccessTokenTTLHours,

@@ -1,15 +1,12 @@
-package auth_test
+package jwt_test
 
 import (
 	"errors"
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
-
-	"github.com/CubeLitBlade/community-v2/backend/internal/account"
-	"github.com/CubeLitBlade/community-v2/backend/internal/auth"
 	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
+	"github.com/CubeLitBlade/community-v2/backend/internal/jwt"
 )
 
 const (
@@ -30,21 +27,20 @@ func (g *stubIDGen) NextID() (int64, error) {
 	return g.id, g.err
 }
 
-// compile-time check
 var _ idgen.Generator = (*stubIDGen)(nil)
 
-func TestJWTIssuer_Issue(t *testing.T) {
+func TestIssuer_Issue(t *testing.T) {
 	t.Parallel()
 
-	cfg := &auth.JWTConfig{
+	cfg := &jwt.Config{
 		Key:      testJWTKey,
 		Issuer:   testIssuer,
 		Validity: 24 * time.Hour,
 	}
 
-	issuer := auth.NewJWTIssuer(cfg, &stubIDGen{id: 42, err: nil})
+	issuer := jwt.NewIssuer(cfg, &stubIDGen{id: 42, err: nil})
 
-	token, err := issuer.Issue(account.ID(7), account.RoleMember)
+	token, err := issuer.Issue(7, "member")
 	if err != nil {
 		t.Fatalf("Issue() error = %v", err)
 	}
@@ -53,68 +49,56 @@ func TestJWTIssuer_Issue(t *testing.T) {
 		t.Fatal("Issue() returned empty token")
 	}
 
-	claims := parseToken(t, token, cfg.Key)
+	claims, err := jwt.Parse(token, []byte(cfg.Key))
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+
 	assertClaims(t, claims)
 }
 
-func TestJWTIssuer_Issue_IDGenError(t *testing.T) {
+func TestIssuer_Issue_IDGenError(t *testing.T) {
 	t.Parallel()
 
-	cfg := &auth.JWTConfig{
+	cfg := &jwt.Config{
 		Key:      testJWTKey,
 		Issuer:   testIssuer,
 		Validity: 24 * time.Hour,
 	}
 
-	issuer := auth.NewJWTIssuer(cfg, &stubIDGen{id: 0, err: errIDGen})
+	issuer := jwt.NewIssuer(cfg, &stubIDGen{id: 0, err: errIDGen})
 
-	_, err := issuer.Issue(account.ID(1), account.RoleMember)
+	_, err := issuer.Issue(1, "member")
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
 }
 
-func TestNewJWTIssuer(t *testing.T) {
+func TestNewIssuer(t *testing.T) {
 	t.Parallel()
 
-	cfg := &auth.JWTConfig{
+	cfg := &jwt.Config{
 		Key:      testJWTKey,
 		Issuer:   testIssuer,
 		Validity: 24 * time.Hour,
 	}
 
-	issuer := auth.NewJWTIssuer(cfg, &stubIDGen{id: 1, err: nil})
+	issuer := jwt.NewIssuer(cfg, &stubIDGen{id: 1, err: nil})
 	if issuer == nil {
-		t.Fatal("NewJWTIssuer() returned nil")
+		t.Fatal("NewIssuer() returned nil")
 	}
 }
 
-func parseToken(t *testing.T, token, key string) *auth.Claims {
-	t.Helper()
+func TestParse_InvalidToken(t *testing.T) {
+	t.Parallel()
 
-	claims := &auth.Claims{
-		Role:             "",
-		RegisteredClaims: jwt.RegisteredClaims{},
+	_, err := jwt.Parse("invalid-token", []byte(testJWTKey))
+	if err == nil {
+		t.Fatal("expected error for invalid token, got nil")
 	}
-
-	parsed, err := jwt.ParseWithClaims(
-		token, claims,
-		func(_ *jwt.Token) (any, error) {
-			return []byte(key), nil
-		},
-	)
-	if err != nil {
-		t.Fatalf("failed to parse token: %v", err)
-	}
-
-	if !parsed.Valid {
-		t.Fatal("parsed token is not valid")
-	}
-
-	return claims
 }
 
-func assertClaims(t *testing.T, claims *auth.Claims) {
+func assertClaims(t *testing.T, claims *jwt.Claims) {
 	t.Helper()
 
 	now := time.Now()

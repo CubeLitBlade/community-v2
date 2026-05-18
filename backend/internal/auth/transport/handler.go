@@ -4,12 +4,15 @@ package transport
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/CubeLitBlade/community-v2/backend/internal/auth"
 	"github.com/CubeLitBlade/community-v2/backend/internal/httperr"
 )
+
+const defaultMaxAge = int(time.Hour * 24 / time.Second)
 
 // Handler handles HTTP requests for authentication.
 type Handler struct {
@@ -43,7 +46,7 @@ func NewHandler(deps Deps) *Handler {
 func (h *Handler) RegisterRoutes(router gin.IRouter) {
 	g := router.Group("/auth")
 
-	g.POST("/", h.Login)
+	g.POST("/login", h.Login)
 }
 
 type loginRequest struct {
@@ -52,10 +55,11 @@ type loginRequest struct {
 }
 
 type loginResponse struct {
-	Token string `json:"token"`
+	ID   int64  `json:"uid"`
+	Role string `json:"role"`
 }
 
-// Login handles POST /auth — authenticates credentials and returns a JWT.
+// Login handles POST /auth/login — authenticates credentials and returns a JWT.
 func (h *Handler) Login(c *gin.Context) {
 	var req loginRequest
 
@@ -69,7 +73,9 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	jwt, err := h.login.Execute(c.Request.Context(), req.Username, req.Password)
+	session, err := h.login.Execute(
+		c.Request.Context(), req.Username, req.Password,
+	)
 	if err != nil {
 		h.logger.Debug(
 			"login failed",
@@ -82,7 +88,20 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
+	cookie := &http.Cookie{
+		Name:     "access_token",
+		Value:    session.Token,
+		Path:     "/api",
+		MaxAge:   defaultMaxAge,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	http.SetCookie(c.Writer, cookie)
+
 	c.JSON(http.StatusOK, loginResponse{
-		Token: jwt,
+		ID:   session.ID,
+		Role: session.Role,
 	})
 }

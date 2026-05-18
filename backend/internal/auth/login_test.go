@@ -8,9 +8,27 @@ import (
 
 	"github.com/CubeLitBlade/community-v2/backend/internal/account"
 	"github.com/CubeLitBlade/community-v2/backend/internal/auth"
+	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
+	"github.com/CubeLitBlade/community-v2/backend/internal/jwt"
+)
+
+const (
+	testJWTKey = "super-secret-key-at-least-32-bytes!"
+	testIssuer = "community-v2"
 )
 
 var errAuthTimeout = errors.New("db timeout")
+
+type stubIDGen struct {
+	id  int64
+	err error
+}
+
+func (g *stubIDGen) NextID() (int64, error) {
+	return g.id, g.err
+}
+
+var _ idgen.Generator = (*stubIDGen)(nil)
 
 type stubAuthenticator struct {
 	acc *account.Account
@@ -47,27 +65,27 @@ func makeTestAccount(t *testing.T) *account.Account {
 func TestLogin_Execute_Success(t *testing.T) {
 	t.Parallel()
 
-	cfg := &auth.JWTConfig{
+	cfg := &jwt.Config{
 		Key:      testJWTKey,
 		Issuer:   testIssuer,
 		Validity: 24 * time.Hour,
 	}
 
-	issuer := auth.NewJWTIssuer(cfg, &stubIDGen{id: 99, err: nil})
+	issuer := jwt.NewIssuer(cfg, &stubIDGen{id: 99, err: nil})
 	acc := makeTestAccount(t)
 	login := auth.NewLogin(
 		&stubAuthenticator{acc: acc, err: nil},
 		issuer,
 	)
 
-	token, err := login.Execute(
+	session, err := login.Execute(
 		context.Background(), "testuser", "this-is-a-valid-password",
 	)
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
 
-	if token == "" {
+	if session.Token == "" {
 		t.Fatal("Execute() returned empty token")
 	}
 }
@@ -75,13 +93,13 @@ func TestLogin_Execute_Success(t *testing.T) {
 func TestLogin_Execute_InvalidCredentials(t *testing.T) {
 	t.Parallel()
 
-	cfg := &auth.JWTConfig{
+	cfg := &jwt.Config{
 		Key:      testJWTKey,
 		Issuer:   testIssuer,
 		Validity: 24 * time.Hour,
 	}
 
-	issuer := auth.NewJWTIssuer(cfg, &stubIDGen{id: 99, err: nil})
+	issuer := jwt.NewIssuer(cfg, &stubIDGen{id: 99, err: nil})
 	login := auth.NewLogin(
 		&stubAuthenticator{acc: nil, err: account.ErrInvalidCredentials},
 		issuer,
@@ -99,13 +117,13 @@ func TestLogin_Execute_InvalidCredentials(t *testing.T) {
 func TestLogin_Execute_UnexpectedError(t *testing.T) {
 	t.Parallel()
 
-	cfg := &auth.JWTConfig{
+	cfg := &jwt.Config{
 		Key:      testJWTKey,
 		Issuer:   testIssuer,
 		Validity: 24 * time.Hour,
 	}
 
-	issuer := auth.NewJWTIssuer(cfg, &stubIDGen{id: 99, err: nil})
+	issuer := jwt.NewIssuer(cfg, &stubIDGen{id: 99, err: nil})
 	login := auth.NewLogin(
 		&stubAuthenticator{acc: nil, err: errAuthTimeout},
 		issuer,
@@ -122,13 +140,13 @@ func TestLogin_Execute_UnexpectedError(t *testing.T) {
 func TestNewLogin(t *testing.T) {
 	t.Parallel()
 
-	cfg := &auth.JWTConfig{
+	cfg := &jwt.Config{
 		Key:      testJWTKey,
 		Issuer:   testIssuer,
 		Validity: 24 * time.Hour,
 	}
 
-	issuer := auth.NewJWTIssuer(cfg, &stubIDGen{id: 1, err: nil})
+	issuer := jwt.NewIssuer(cfg, &stubIDGen{id: 1, err: nil})
 	login := auth.NewLogin(
 		&stubAuthenticator{acc: nil, err: nil},
 		issuer,

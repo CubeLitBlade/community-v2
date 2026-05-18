@@ -9,11 +9,12 @@ import (
 	"github.com/CubeLitBlade/community-v2/backend/internal/auth"
 	"github.com/CubeLitBlade/community-v2/backend/internal/auth/transport"
 	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
+	"github.com/CubeLitBlade/community-v2/backend/internal/jwt"
 )
 
 // Module is the auth domain module, holding its services and HTTP handler.
 type Module struct {
-	Issuer *auth.JWTIssuer
+	Issuer *jwt.Issuer
 	Login  *auth.Login
 
 	handler *transport.Handler
@@ -22,14 +23,14 @@ type Module struct {
 // ModuleDeps holds the external dependencies needed to initialize the auth module.
 type ModuleDeps struct {
 	IDs         idgen.Generator
-	JWTConfig   *auth.JWTConfig
+	JWTConfig   *jwt.Config
 	AccountAuth auth.AccountAuthenticator
 	Logger      *slog.Logger
 }
 
 // NewModule wires the auth domain services and returns a Module.
 func NewModule(deps ModuleDeps) *Module {
-	issuer := auth.NewJWTIssuer(deps.JWTConfig, deps.IDs)
+	issuer := jwt.NewIssuer(deps.JWTConfig, deps.IDs)
 	login := auth.NewLogin(deps.AccountAuth, issuer)
 
 	handler := transport.NewHandler(transport.Deps{
