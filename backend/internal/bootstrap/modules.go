@@ -8,7 +8,8 @@ import (
 	"gorm.io/gorm"
 
 	accountSetup "github.com/CubeLitBlade/community-v2/backend/internal/account/setup"
-	authnSetup "github.com/CubeLitBlade/community-v2/backend/internal/authn/setup"
+	authSetup "github.com/CubeLitBlade/community-v2/backend/internal/auth/setup"
+	"github.com/CubeLitBlade/community-v2/backend/internal/authn"
 	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
 	"github.com/CubeLitBlade/community-v2/backend/internal/jwt"
 )
@@ -31,25 +32,30 @@ type HTTPMounter interface {
 // RegisterModules registers all application modules and their routes onto the
 // given router.
 func RegisterModules(router *gin.Engine, deps ModuleDeps) {
+	// setup API group and middlewares
 	api := router.Group("/api")
+	authnMW := authn.Middleware(deps.JWTKey, deps.Logger)
+
+	// initialize modules with dependencies
 	accountMod := accountSetup.NewModule(accountSetup.ModuleDeps{
 		DB:     deps.DB,
 		IDs:    deps.IDs,
 		Logger: deps.Logger,
 	})
 
-	authMod := authnSetup.NewModule(authnSetup.ModuleDeps{
+	authMod := authSetup.NewModule(authSetup.ModuleDeps{
 		IDs: deps.IDs,
 		JWTConfig: &jwt.Config{
 			Key:      deps.JWTKey,
 			Issuer:   "community-v2",
 			Validity: time.Hour * defaultAccessTokenTTLHours,
 		},
+		AuthnMW:     authnMW,
 		AccountAuth: accountMod.Authenticator,
 		Logger:      deps.Logger,
 	})
 
-	// mount APIs
+	// mount module routes
 	mounters := []HTTPMounter{
 		accountMod,
 		authMod,

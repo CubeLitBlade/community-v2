@@ -45,6 +45,17 @@ func WriteInvalidRequest(c *gin.Context, detail string) {
 	)
 }
 
+// WriteUnauthorized writes a standard 401 Unauthorized problem detail
+func WriteUnauthorized(c *gin.Context, detail string) {
+	WriteProblem(
+		c,
+		http.StatusUnauthorized,
+		"Unauthorized",
+		detail,
+		"UNAUTHORIZED",
+	)
+}
+
 // ProblemSpec defines the specification for mapping an internal error to an
 // HTTP problem.
 type ProblemSpec struct {

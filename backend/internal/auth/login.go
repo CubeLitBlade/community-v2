@@ -1,4 +1,4 @@
-package authn
+package auth
 
 import (
 	"context"
@@ -22,7 +22,7 @@ type AccountAuthenticator interface {
 // Login executes the login flow: authenticate credentials and issue a JWT.
 type Login struct {
 	auth   AccountAuthenticator
-	issuer *jwt.Issuer
+	issuer *jwt.JWT
 }
 
 // Session holds the result of a successful login: a signed JWT and basic user info.
@@ -33,7 +33,7 @@ type Session struct {
 }
 
 // NewLogin creates a new Login service.
-func NewLogin(authenticator AccountAuthenticator, issuer *jwt.Issuer) *Login {
+func NewLogin(authenticator AccountAuthenticator, issuer *jwt.JWT) *Login {
 	return &Login{
 		auth:   authenticator,
 		issuer: issuer,

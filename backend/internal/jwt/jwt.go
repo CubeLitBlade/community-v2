@@ -11,6 +11,14 @@ import (
 	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
 )
 
+var (
+	// ErrInvalidToken is returned when the token is invalid.
+	ErrInvalidToken = errors.New("invalid token")
+
+	// ErrTokenExpired is returned when the token is expired.
+	ErrTokenExpired = errors.New("token is expired")
+)
+
 // Claims represents the JWT claims for an authenticated user.
 type Claims struct {
 	gojwt.RegisteredClaims
@@ -28,8 +36,8 @@ type Config struct {
 	Validity time.Duration
 }
 
-// Issuer creates signed JWT access tokens.
-type Issuer struct {
+// JWT creates and parses signed JWT access tokens.
+type JWT struct {
 	key      []byte
 	issuer   string
 	now      func() time.Time
@@ -37,11 +45,11 @@ type Issuer struct {
 	ids      idgen.Generator
 }
 
-// NewIssuer creates a new Issuer with the given configuration and ID generator.
-func NewIssuer(
+// New creates a new JWT with the given configuration and ID generator.
+func New(
 	cfg *Config, ids idgen.Generator,
-) *Issuer {
-	return &Issuer{
+) *JWT {
+	return &JWT{
 		key:      []byte(cfg.Key),
 		issuer:   cfg.Issuer,
 		now:      time.Now,
@@ -51,8 +59,8 @@ func NewIssuer(
 }
 
 // Issue creates a signed JWT for the given user ID and role.
-func (i *Issuer) Issue(uid int64, role string) (string, error) {
-	id, err := i.ids.NextID()
+func (j *JWT) Issue(uid int64, role string) (string, error) {
+	id, err := j.ids.NextID()
 	if err != nil {
 		return "", fmt.Errorf(
 			"could not generate token ID: %w",
@@ -63,17 +71,17 @@ func (i *Issuer) Issue(uid int64, role string) (string, error) {
 	claims := Claims{
 		Role: role,
 		RegisteredClaims: gojwt.RegisteredClaims{
-			Issuer:    i.issuer,
+			Issuer:    j.issuer,
 			Subject:   strconv.FormatInt(uid, 10),
-			ExpiresAt: gojwt.NewNumericDate(i.now().Add(i.validity)),
-			IssuedAt:  gojwt.NewNumericDate(i.now()),
+			ExpiresAt: gojwt.NewNumericDate(j.now().Add(j.validity)),
+			IssuedAt:  gojwt.NewNumericDate(j.now()),
 			ID:        strconv.FormatInt(id, 10),
 		},
 	}
 
 	token := gojwt.NewWithClaims(gojwt.SigningMethodHS256, claims)
 
-	signed, err := token.SignedString(i.key)
+	signed, err := token.SignedString(j.key)
 	if err != nil {
 		return "", fmt.Errorf("sign token: %w", err)
 	}
@@ -81,28 +89,28 @@ func (i *Issuer) Issue(uid int64, role string) (string, error) {
 	return signed, nil
 }
 
-var errTokenNotValid = errors.New("token is not valid")
-
 // Parse validates and parses a JWT token string, returning its claims.
-func Parse(tokenString string, key []byte) (*Claims, error) {
+func Parse(tokenString string, key string) (*Claims, error) {
 	claims := &Claims{
 		RegisteredClaims: gojwt.RegisteredClaims{},
 		Role:             "",
 	}
 
-	parsed, err := gojwt.ParseWithClaims(
+	token, err := gojwt.ParseWithClaims(
 		tokenString, claims,
-		func(_ *gojwt.Token) (any, error) {
-			return key, nil
+		func(token *gojwt.Token) (any, error) {
+			return []byte(key), nil
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("parse token: %w", err)
+		if errors.Is(err, gojwt.ErrTokenExpired) {
+			return nil, ErrInvalidToken
+		}
+
+		return nil, ErrInvalidToken
+	} else if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		return claims, nil
 	}
 
-	if !parsed.Valid {
-		return nil, errTokenNotValid
-	}
-
-	return claims, nil
+	return nil, ErrInvalidToken
 }

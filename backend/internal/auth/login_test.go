@@ -1,4 +1,4 @@
-package authn_test
+package auth_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/CubeLitBlade/community-v2/backend/internal/account"
-	"github.com/CubeLitBlade/community-v2/backend/internal/authn"
+	"github.com/CubeLitBlade/community-v2/backend/internal/auth"
 	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
 	"github.com/CubeLitBlade/community-v2/backend/internal/jwt"
 )
@@ -46,7 +46,7 @@ func (a *stubAuthenticator) Authenticate(
 }
 
 // compile-time check
-var _ authn.AccountAuthenticator = (*stubAuthenticator)(nil)
+var _ auth.AccountAuthenticator = (*stubAuthenticator)(nil)
 
 func makeTestAccount(t *testing.T) *account.Account {
 	t.Helper()
@@ -71,9 +71,9 @@ func TestLogin_Execute_Success(t *testing.T) {
 		Validity: 24 * time.Hour,
 	}
 
-	issuer := jwt.NewIssuer(cfg, &stubIDGen{id: 99, err: nil})
+	issuer := jwt.New(cfg, &stubIDGen{id: 99, err: nil})
 	acc := makeTestAccount(t)
-	login := authn.NewLogin(
+	login := auth.NewLogin(
 		&stubAuthenticator{acc: acc, err: nil},
 		issuer,
 	)
@@ -99,8 +99,8 @@ func TestLogin_Execute_InvalidCredentials(t *testing.T) {
 		Validity: 24 * time.Hour,
 	}
 
-	issuer := jwt.NewIssuer(cfg, &stubIDGen{id: 99, err: nil})
-	login := authn.NewLogin(
+	issuer := jwt.New(cfg, &stubIDGen{id: 99, err: nil})
+	login := auth.NewLogin(
 		&stubAuthenticator{acc: nil, err: account.ErrInvalidCredentials},
 		issuer,
 	)
@@ -108,9 +108,9 @@ func TestLogin_Execute_InvalidCredentials(t *testing.T) {
 	_, err := login.Execute(
 		context.Background(), "bad", "password",
 	)
-	if !errors.Is(err, authn.ErrInvalidCredentials) {
+	if !errors.Is(err, auth.ErrInvalidCredentials) {
 		t.Errorf("error = %v, want %v",
-			err, authn.ErrInvalidCredentials)
+			err, auth.ErrInvalidCredentials)
 	}
 }
 
@@ -123,8 +123,8 @@ func TestLogin_Execute_UnexpectedError(t *testing.T) {
 		Validity: 24 * time.Hour,
 	}
 
-	issuer := jwt.NewIssuer(cfg, &stubIDGen{id: 99, err: nil})
-	login := authn.NewLogin(
+	issuer := jwt.New(cfg, &stubIDGen{id: 99, err: nil})
+	login := auth.NewLogin(
 		&stubAuthenticator{acc: nil, err: errAuthTimeout},
 		issuer,
 	)
@@ -146,8 +146,8 @@ func TestNewLogin(t *testing.T) {
 		Validity: 24 * time.Hour,
 	}
 
-	issuer := jwt.NewIssuer(cfg, &stubIDGen{id: 1, err: nil})
-	login := authn.NewLogin(
+	issuer := jwt.New(cfg, &stubIDGen{id: 1, err: nil})
+	login := auth.NewLogin(
 		&stubAuthenticator{acc: nil, err: nil},
 		issuer,
 	)

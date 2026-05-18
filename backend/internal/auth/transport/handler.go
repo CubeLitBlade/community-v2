@@ -1,29 +1,37 @@
-// Package transport provides HTTP transport adapters for the authn domain.
+// Package transport provides HTTP transport adapters for the auth domain.
 package transport
 
 import (
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/CubeLitBlade/community-v2/backend/internal/authn"
+	"github.com/CubeLitBlade/community-v2/backend/internal/auth"
 	"github.com/CubeLitBlade/community-v2/backend/internal/httperr"
 )
 
-const defaultMaxAge = int(time.Hour * 24 / time.Second)
+const (
+	cookieName     = "access_token"
+	cookiePath     = "/api/"
+	cookieMaxAge   = 15 * 60
+	cookieHTTPOnly = true
+	cookieSecure   = true
+	cookieSameSite = http.SameSiteLaxMode
+)
 
 // Handler handles HTTP requests for authentication.
 type Handler struct {
-	login  *authn.Login
-	logger *slog.Logger
+	login   *auth.Login
+	logger  *slog.Logger
+	authnMW func(c *gin.Context)
 }
 
 // Deps holds the dependencies required by the auth Handler.
 type Deps struct {
-	Login  *authn.Login
-	Logger *slog.Logger
+	Login   *auth.Login
+	Logger  *slog.Logger
+	AuthnMW func(c *gin.Context)
 }
 
 // NewHandler creates and returns a new AuthHandler.
@@ -37,8 +45,9 @@ func NewHandler(deps Deps) *Handler {
 	}
 
 	return &Handler{
-		login:  deps.Login,
-		logger: deps.Logger,
+		login:   deps.Login,
+		logger:  deps.Logger,
+		authnMW: deps.AuthnMW,
 	}
 }
 
@@ -46,7 +55,8 @@ func NewHandler(deps Deps) *Handler {
 func (h *Handler) RegisterRoutes(router gin.IRouter) {
 	g := router.Group("/auth")
 
-	g.POST("/login", h.Login)
+	g.POST("/", h.Login)
+	g.DELETE("/", h.authnMW, h.Logout)
 }
 
 type loginRequest struct {
@@ -59,7 +69,7 @@ type loginResponse struct {
 	Role string `json:"role"`
 }
 
-// Login handles POST /auth/login — authenticates credentials and returns a JWT.
+// Login handles POST /auth/ — authenticates credentials and returns a JWT.
 func (h *Handler) Login(c *gin.Context) {
 	var req loginRequest
 
@@ -89,13 +99,13 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 
 	cookie := &http.Cookie{
-		Name:     "access_token",
+		Name:     cookieName,
 		Value:    session.Token,
-		Path:     "/api",
-		MaxAge:   defaultMaxAge,
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
+		Path:     cookiePath,
+		MaxAge:   cookieMaxAge,
+		HttpOnly: cookieHTTPOnly,
+		Secure:   cookieSecure,
+		SameSite: cookieSameSite,
 	}
 
 	http.SetCookie(c.Writer, cookie)
@@ -104,4 +114,20 @@ func (h *Handler) Login(c *gin.Context) {
 		ID:   session.ID,
 		Role: session.Role,
 	})
+}
+
+// Logout handles DELETE /auth/ — erase access token cookie.
+func (h *Handler) Logout(c *gin.Context) {
+	cookie := &http.Cookie{
+		Name:     cookieName,
+		Value:    "",
+		Path:     cookiePath,
+		MaxAge:   -1, // delete cookie immediately
+		HttpOnly: cookieHTTPOnly,
+		Secure:   cookieSecure,
+		SameSite: cookieSameSite,
+	}
+
+	http.SetCookie(c.Writer, cookie)
+	c.Status(http.StatusNoContent)
 }
