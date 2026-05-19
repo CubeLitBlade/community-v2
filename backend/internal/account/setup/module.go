@@ -1,11 +1,10 @@
-// Package setup wires together the dependencies for the account module
-// and registers its HTTP routes.
+// Package setup provides constructors that wire together account domain services,
+// persistence, and HTTP transport.
 package setup
 
 import (
 	"log/slog"
 
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
 	"github.com/CubeLitBlade/community-v2/backend/internal/account"
@@ -14,44 +13,21 @@ import (
 	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
 )
 
-// ModuleDeps holds the external dependencies required to initialize the account
-// module.
-type ModuleDeps struct {
-	DB     *gorm.DB
-	IDs    idgen.Generator
-	Logger *slog.Logger
-}
+// NewHandler creates the account HTTP handler with all dependencies wired.
+func NewHandler(db *gorm.DB, ids idgen.Generator, logger *slog.Logger) *transport.Handler {
+	writer := postgres.NewWriter(db)
 
-// Module is the account domain module, holding its services and HTTP handler.
-type Module struct {
-	Registrar     *account.Registrar
-	Authenticator *account.Authenticator
+	registrar := account.NewRegistrar(ids, writer, logger)
 
-	handler *transport.Handler
-}
-
-// NewModule wires the account domain services and returns a Module.
-func NewModule(deps ModuleDeps) *Module {
-	writer := postgres.NewWriter(deps.DB)
-	reader := postgres.NewReader(deps.DB)
-
-	registrar := account.NewRegistrar(deps.IDs, writer, deps.Logger)
-	authenticator := account.NewAuthenticator(reader, deps.Logger)
-
-	handler := transport.NewHandler(transport.Deps{
+	return transport.NewHandler(transport.Deps{
 		Registrar: registrar,
-		Logger:    deps.Logger,
+		Logger:    logger,
 	})
-
-	return &Module{
-		Registrar:     registrar,
-		Authenticator: authenticator,
-		handler:       handler,
-	}
 }
 
-// Mount initializes the account module (including repository
-// and domain services) and registers its HTTP handlers on the provided router.
-func (m *Module) Mount(router gin.IRouter) {
-	m.handler.RegisterRoutes(router)
+// NewAuthenticator creates the account authenticator for cross-module injection.
+func NewAuthenticator(db *gorm.DB, logger *slog.Logger) *account.Authenticator {
+	reader := postgres.NewReader(db)
+
+	return account.NewAuthenticator(reader, logger)
 }

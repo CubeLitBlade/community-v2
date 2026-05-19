@@ -95,6 +95,7 @@ linters:
             - "github.com/golang-jwt/jwt/v5"
             - "gorm.io/gorm"
             - "gorm.io/driver/postgres"
+            - "go.uber.org/fx"
 
     ignoreSigs:
       - .Errorf(

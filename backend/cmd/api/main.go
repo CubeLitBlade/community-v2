@@ -2,28 +2,14 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/CubeLitBlade/community-v2/backend/internal/bootstrap"
 )
 
 func main() {
-	if err := run(); err != nil {
-		log.Fatal(err)
-	}
-}
+	app := bootstrap.NewApp()
+	app.Run()
 
-func run() error {
-	app, err := bootstrap.NewApp()
-	if err != nil {
-		return fmt.Errorf("bootstrap app: %w", err)
-	}
-	defer app.Close()
-
-	if err := app.Run(); err != nil {
-		return fmt.Errorf("run app: %w", err)
-	}
-
-	return nil
+	log.Println("server stopped")
 }
