@@ -48,26 +48,20 @@ func (w *Writer) Create(ctx context.Context, acc *account.Account) error {
 	return nil
 }
 
-func accountToRow(acc *account.Account) *Row {
-	snapshot := acc.Snapshot()
-
-	var lastLoginIP *string
-
-	if snapshot.LastLoginIP != nil {
-		lastLoginIP = new(snapshot.LastLoginIP.String())
+func (w *Writer) UpdateLastLogin(ctx context.Context, acc *account.Account) error {
+	if acc == nil {
+		panic("nil account")
 	}
 
-	return &Row{
-		ID:                     snapshot.ID,
-		Username:               snapshot.Username,
-		PasswordHash:           snapshot.PasswordHash,
-		PasswordChangeRequired: snapshot.PasswordChangeRequired,
-		DisplayName:            snapshot.DisplayName,
-		Role:                   snapshot.Role,
-		Status:                 snapshot.Status,
-		CreatedAt:              snapshot.CreatedAt,
-		UpdatedAt:              snapshot.UpdatedAt,
-		LastLoginAt:            snapshot.LastLoginAt,
-		LastLoginIP:            lastLoginIP,
+	accRow := accountToRow(acc)
+
+	_, err := gorm.G[Row](w.db).Where(RowFields.ID.Eq(accRow.ID)).
+		Set(RowFields.LastLoginAt.Set(*accRow.LastLoginAt),
+			RowFields.LastLoginIP.Set(*accRow.LastLoginIP)).
+		Update(ctx)
+	if err != nil {
+		return fmt.Errorf("update account: %w", err)
 	}
+
+	return nil
 }

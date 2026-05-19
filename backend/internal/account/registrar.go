@@ -75,7 +75,7 @@ func (r *Registrar) Register(
 		"display_name", acc.displayName,
 		"role", acc.role,
 		"status", acc.status,
-		"created_at", acc.audit.createdAt.Format(time.RFC3339),
+		"created_at", acc.createdAt.Format(time.RFC3339),
 	)
 
 	return acc, nil

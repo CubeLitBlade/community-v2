@@ -104,16 +104,16 @@ func assertAccountDefaults(t *testing.T, acc *Account) {
 func assertAccountAudit(t *testing.T, acc *Account, now time.Time) {
 	t.Helper()
 
-	if !acc.audit.createdAt.Equal(now) {
-		t.Errorf("createdAt = %v, want %v", acc.audit.createdAt, now)
+	if !acc.createdAt.Equal(now) {
+		t.Errorf("createdAt = %v, want %v", acc.createdAt, now)
 	}
 
-	if !acc.audit.updatedAt.Equal(now) {
-		t.Errorf("updatedAt = %v, want %v", acc.audit.updatedAt, now)
+	if !acc.updatedAt.Equal(now) {
+		t.Errorf("updatedAt = %v, want %v", acc.updatedAt, now)
 	}
 
-	if acc.audit.lastLogin != nil {
-		t.Errorf("lastLogin = %v, want nil", acc.audit.lastLogin)
+	if acc.lastLogin != nil {
+		t.Errorf("lastLogin = %v, want nil", acc.lastLogin)
 	}
 }
 

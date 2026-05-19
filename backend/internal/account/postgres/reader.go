@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/netip"
 
 	"gorm.io/gorm"
 
@@ -76,34 +75,4 @@ func (r *Reader) ExistsUsername(
 	}
 
 	return exists > 0, nil
-}
-
-// rowToAccount converts a database Row into a domain Account.
-// If the row's LastLoginIP is non-nil and parseable, it is converted to a
-// netip.Addr; otherwise LastLoginIP on the resulting account is left nil.
-func rowToAccount(row *Row) *account.Account {
-	var lastLoginIP *netip.Addr
-
-	if row.LastLoginIP != nil {
-		ip, err := netip.ParseAddr(*row.LastLoginIP)
-		if err == nil {
-			lastLoginIP = new(ip)
-		}
-	}
-
-	snap := account.Snapshot{
-		ID:                     row.ID,
-		Username:               row.Username,
-		PasswordHash:           row.PasswordHash,
-		PasswordChangeRequired: row.PasswordChangeRequired,
-		DisplayName:            row.DisplayName,
-		Role:                   row.Role,
-		Status:                 row.Status,
-		CreatedAt:              row.CreatedAt,
-		UpdatedAt:              row.UpdatedAt,
-		LastLoginAt:            row.LastLoginAt,
-		LastLoginIP:            lastLoginIP,
-	}
-
-	return new(account.NewAccountFromSnapshot(snap))
 }

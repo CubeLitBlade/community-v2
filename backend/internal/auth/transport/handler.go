@@ -4,6 +4,7 @@ package transport
 import (
 	"log/slog"
 	"net/http"
+	"net/netip"
 
 	"github.com/gin-gonic/gin"
 
@@ -76,21 +77,26 @@ func (h *Handler) Login(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		httperr.WriteInvalidRequest(
 			c,
-			"Request body must be valid JSON and include"+
-				"username and password.",
+			"Request body must be valid JSON and include username "+
+				"and password.",
 		)
 
 		return
 	}
 
-	session, err := h.login.Execute(
-		c.Request.Context(), req.Username, req.Password,
+	ipaddr, err := netip.ParseAddr(c.ClientIP())
+	if err != nil {
+		httperr.WriteInvalidRequest(c, "Invalid IP address")
+
+		return
+	}
+
+	credentials, err := h.login.Execute(
+		c.Request.Context(), req.Username, req.Password, ipaddr,
 	)
 	if err != nil {
 		h.logger.Debug(
-			"login failed",
-			"username", req.Username,
-			"error", err,
+			"login failed", "username", req.Username, "error", err,
 		)
 
 		httperr.WriteMappedError(c, err, authProblem)
@@ -100,7 +106,7 @@ func (h *Handler) Login(c *gin.Context) {
 
 	cookie := &http.Cookie{
 		Name:     cookieName,
-		Value:    session.Token,
+		Value:    credentials.Token,
 		Path:     cookiePath,
 		MaxAge:   cookieMaxAge,
 		HttpOnly: cookieHTTPOnly,
@@ -111,8 +117,8 @@ func (h *Handler) Login(c *gin.Context) {
 	http.SetCookie(c.Writer, cookie)
 
 	c.JSON(http.StatusOK, loginResponse{
-		ID:   session.ID,
-		Role: session.Role,
+		ID:   credentials.ID,
+		Role: credentials.Role,
 	})
 }
 

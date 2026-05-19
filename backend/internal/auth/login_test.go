@@ -3,6 +3,7 @@ package auth_test
 import (
 	"context"
 	"errors"
+	"net/netip"
 	"testing"
 	"time"
 
@@ -45,8 +46,19 @@ func (a *stubAuthenticator) Authenticate(
 	return a.acc, nil
 }
 
+type stubLoginRecorder struct{}
+
+func (r *stubLoginRecorder) Record(
+	_ context.Context, _ *account.Account, _ netip.Addr,
+) error {
+	return nil
+}
+
 // compile-time check
-var _ auth.AccountAuthenticator = (*stubAuthenticator)(nil)
+var (
+	_ auth.AccountAuthenticator = (*stubAuthenticator)(nil)
+	_ auth.LoginRecorder        = (*stubLoginRecorder)(nil)
+)
 
 func makeTestAccount(t *testing.T) *account.Account {
 	t.Helper()
@@ -76,10 +88,15 @@ func TestLogin_Execute_Success(t *testing.T) {
 	login := auth.NewLogin(
 		&stubAuthenticator{acc: acc, err: nil},
 		issuer,
+		&stubLoginRecorder{},
 	)
+	ip := netip.MustParseAddr("127.0.0.1")
 
 	session, err := login.Execute(
-		context.Background(), "testuser", "this-is-a-valid-password",
+		context.Background(),
+		"testuser",
+		"this-is-a-valid-password",
+		ip,
 	)
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
@@ -103,10 +120,12 @@ func TestLogin_Execute_InvalidCredentials(t *testing.T) {
 	login := auth.NewLogin(
 		&stubAuthenticator{acc: nil, err: account.ErrInvalidCredentials},
 		issuer,
+		&stubLoginRecorder{},
 	)
+	ip := netip.MustParseAddr("127.0.0.1")
 
 	_, err := login.Execute(
-		context.Background(), "bad", "password",
+		context.Background(), "bad", "password", ip,
 	)
 	if !errors.Is(err, auth.ErrInvalidCredentials) {
 		t.Errorf("error = %v, want %v",
@@ -127,10 +146,12 @@ func TestLogin_Execute_UnexpectedError(t *testing.T) {
 	login := auth.NewLogin(
 		&stubAuthenticator{acc: nil, err: errAuthTimeout},
 		issuer,
+		&stubLoginRecorder{},
 	)
+	ip := netip.MustParseAddr("127.0.0.1")
 
 	_, err := login.Execute(
-		context.Background(), "any", "password",
+		context.Background(), "any", "password", ip,
 	)
 	if !errors.Is(err, errAuthTimeout) {
 		t.Errorf("error = %v, want %v", err, errAuthTimeout)
@@ -150,6 +171,7 @@ func TestNewLogin(t *testing.T) {
 	login := auth.NewLogin(
 		&stubAuthenticator{acc: nil, err: nil},
 		issuer,
+		&stubLoginRecorder{},
 	)
 	if login == nil {
 		t.Fatal("NewLogin() returned nil")

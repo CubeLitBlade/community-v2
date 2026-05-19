@@ -1,9 +1,17 @@
 package postgres
 
-import "time"
+import (
+	"net/netip"
+	"time"
+
+	"gorm.io/cli/gorm/field"
+
+	"github.com/CubeLitBlade/community-v2/backend/internal/account"
+)
 
 // Row represents a record in the "accounts" PostgreSQL table.
 // Pointer fields are used to represent nullable database columns
+
 type Row struct {
 	CreatedAt              time.Time  `gorm:"column:created_at"`
 	UpdatedAt              time.Time  `gorm:"column:updated_at"`
@@ -21,4 +29,84 @@ type Row struct {
 // TableName overrides the default Gorm table name to "accounts".
 func (Row) TableName() string {
 	return "accounts"
+}
+
+var RowFields = struct {
+	CreatedAt              field.Time
+	UpdatedAt              field.Time
+	LastLoginAt            field.Time
+	LastLoginIP            field.String
+	Username               field.String
+	PasswordHash           field.String
+	DisplayName            field.String
+	Role                   field.String
+	Status                 field.String
+	ID                     field.Number[int64]
+	PasswordChangeRequired field.Bool
+}{
+	CreatedAt:              field.Time{}.WithColumn("created_at"),
+	UpdatedAt:              field.Time{}.WithColumn("updated_at"),
+	LastLoginAt:            field.Time{}.WithColumn("last_login_at"),
+	LastLoginIP:            field.String{}.WithColumn("last_login_ip"),
+	Username:               field.String{}.WithColumn("username"),
+	PasswordHash:           field.String{}.WithColumn("password_hash"),
+	DisplayName:            field.String{}.WithColumn("display_name"),
+	Role:                   field.String{}.WithColumn("role"),
+	Status:                 field.String{}.WithColumn("status"),
+	ID:                     field.Number[int64]{}.WithColumn("id"),
+	PasswordChangeRequired: field.Bool{}.WithColumn("password_change_required"),
+}
+
+func accountToRow(acc *account.Account) *Row {
+	snapshot := acc.Snapshot()
+
+	var lastLoginIP *string
+
+	if snapshot.LastLoginIP != nil {
+		lastLoginIP = new(snapshot.LastLoginIP.String())
+	}
+
+	return &Row{
+		ID:                     snapshot.ID,
+		Username:               snapshot.Username,
+		PasswordHash:           snapshot.PasswordHash,
+		PasswordChangeRequired: snapshot.PasswordChangeRequired,
+		DisplayName:            snapshot.DisplayName,
+		Role:                   snapshot.Role,
+		Status:                 snapshot.Status,
+		CreatedAt:              snapshot.CreatedAt,
+		UpdatedAt:              snapshot.UpdatedAt,
+		LastLoginAt:            snapshot.LastLoginAt,
+		LastLoginIP:            lastLoginIP,
+	}
+}
+
+// rowToAccount converts a database Row into a domain Account.
+// If the row's LastLoginIP is non-nil and parseable, it is converted to a
+// netip.Addr; otherwise LastLoginIP on the resulting account is left nil.
+func rowToAccount(row *Row) *account.Account {
+	var lastLoginIP *netip.Addr
+
+	if row.LastLoginIP != nil {
+		ip, err := netip.ParseAddr(*row.LastLoginIP)
+		if err == nil {
+			lastLoginIP = new(ip)
+		}
+	}
+
+	snap := account.Snapshot{
+		ID:                     row.ID,
+		Username:               row.Username,
+		PasswordHash:           row.PasswordHash,
+		PasswordChangeRequired: row.PasswordChangeRequired,
+		DisplayName:            row.DisplayName,
+		Role:                   row.Role,
+		Status:                 row.Status,
+		CreatedAt:              row.CreatedAt,
+		UpdatedAt:              row.UpdatedAt,
+		LastLoginAt:            row.LastLoginAt,
+		LastLoginIP:            lastLoginIP,
+	}
+
+	return new(account.NewAccountFromSnapshot(snap))
 }

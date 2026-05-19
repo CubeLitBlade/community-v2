@@ -77,6 +77,8 @@ func moduleProviders() fx.Option {
 	return fx.Options(
 		fx.Provide(provideAuthnMiddleware),
 		fx.Provide(provideJWTConfig),
+		fx.Provide(accountSetup.NewReader),
+		fx.Provide(accountSetup.NewWriter),
 		fx.Provide(
 			fx.Annotate(
 				accountSetup.NewHandler,
@@ -88,6 +90,12 @@ func moduleProviders() fx.Option {
 			fx.Annotate(
 				accountSetup.NewAuthenticator,
 				fx.As(new(auth.AccountAuthenticator)),
+			),
+		),
+		fx.Provide(
+			fx.Annotate(
+				accountSetup.NewLoginRecorder,
+				fx.As(new(auth.LoginRecorder)),
 			),
 		),
 		fx.Provide(

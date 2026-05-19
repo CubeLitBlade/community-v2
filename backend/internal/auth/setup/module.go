@@ -18,11 +18,12 @@ func NewHandler(
 	ids idgen.Generator,
 	jwtCfg *jwt.Config,
 	accAuth auth.AccountAuthenticator,
+	recorder auth.LoginRecorder,
 	authnMW func(*gin.Context),
 	logger *slog.Logger,
 ) *transport.Handler {
 	issuer := jwt.New(jwtCfg, ids)
-	login := auth.NewLogin(accAuth, issuer)
+	login := auth.NewLogin(accAuth, issuer, recorder)
 
 	return transport.NewHandler(transport.Deps{
 		Login:   login,

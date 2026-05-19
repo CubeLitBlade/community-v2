@@ -96,6 +96,7 @@ linters:
             - "gorm.io/gorm"
             - "gorm.io/driver/postgres"
             - "go.uber.org/fx"
+            - "gorm.io/cli/gorm/field"
 
     ignoreSigs:
       - .Errorf(

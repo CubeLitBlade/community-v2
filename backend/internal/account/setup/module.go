@@ -4,6 +4,7 @@ package setup
 
 import (
 	"log/slog"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -13,10 +14,16 @@ import (
 	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
 )
 
-// NewHandler creates the account HTTP handler with all dependencies wired.
-func NewHandler(db *gorm.DB, ids idgen.Generator, logger *slog.Logger) *transport.Handler {
-	writer := postgres.NewWriter(db)
+func NewReader(db *gorm.DB) *postgres.Reader {
+	return postgres.NewReader(db)
+}
 
+func NewWriter(db *gorm.DB) *postgres.Writer {
+	return postgres.NewWriter(db)
+}
+
+// NewHandler creates the account HTTP handler with all dependencies wired.
+func NewHandler(writer *postgres.Writer, ids idgen.Generator, logger *slog.Logger) *transport.Handler {
 	registrar := account.NewRegistrar(ids, writer, logger)
 
 	return transport.NewHandler(transport.Deps{
@@ -26,8 +33,10 @@ func NewHandler(db *gorm.DB, ids idgen.Generator, logger *slog.Logger) *transpor
 }
 
 // NewAuthenticator creates the account authenticator for cross-module injection.
-func NewAuthenticator(db *gorm.DB, logger *slog.Logger) *account.Authenticator {
-	reader := postgres.NewReader(db)
-
+func NewAuthenticator(reader *postgres.Reader, logger *slog.Logger) *account.Authenticator {
 	return account.NewAuthenticator(reader, logger)
+}
+
+func NewLoginRecorder(writer *postgres.Writer, logger *slog.Logger) *account.LoginRecorder {
+	return account.NewLoginRecorder(time.Now, writer, logger)
 }

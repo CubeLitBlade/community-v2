@@ -15,7 +15,8 @@ type ID int64
 
 // Account represents a user account with authentication and profile data.
 type Account struct {
-	audit                  Audit
+	createdAt, updatedAt   time.Time
+	lastLogin              *LoginAudit
 	username               Username
 	passwordHash           PasswordHash
 	displayName            string
@@ -54,8 +55,17 @@ func Register(
 		displayName:            accountUsername.Value(),
 		role:                   RoleMember,
 		status:                 StatusActive,
-		audit:                  NewAudit(now),
+		createdAt:              now,
+		updatedAt:              now,
+		lastLogin:              nil,
 	}, nil
+}
+
+func (a *Account) RecordLogin(at time.Time, addr netip.Addr) {
+	a.lastLogin = &LoginAudit{
+		at: at,
+		ip: addr,
+	}
 }
 
 func newID(value int64) (ID, error) {
@@ -119,9 +129,9 @@ func (a *Account) Snapshot() Snapshot {
 		lastLoginIP *netip.Addr
 	)
 
-	if a.audit.lastLogin != nil {
-		lastLoginAt = new(a.audit.lastLogin.at)
-		lastLoginIP = new(a.audit.lastLogin.ip)
+	if a.lastLogin != nil {
+		lastLoginAt = new(a.lastLogin.at)
+		lastLoginIP = new(a.lastLogin.ip)
 	}
 
 	return Snapshot{
@@ -132,8 +142,8 @@ func (a *Account) Snapshot() Snapshot {
 		DisplayName:            a.displayName,
 		Role:                   a.role.String(),
 		Status:                 a.status.String(),
-		CreatedAt:              a.audit.createdAt,
-		UpdatedAt:              a.audit.updatedAt,
+		CreatedAt:              a.createdAt,
+		UpdatedAt:              a.updatedAt,
 		LastLoginAt:            lastLoginAt,
 		LastLoginIP:            lastLoginIP,
 	}
@@ -143,10 +153,7 @@ func (a *Account) Snapshot() Snapshot {
 func NewAccountFromSnapshot(snap Snapshot) Account {
 	var lastLogin *LoginAudit
 	if snap.LastLoginAt != nil && snap.LastLoginIP != nil {
-		lastLogin = &LoginAudit{
-			at: *snap.LastLoginAt,
-			ip: *snap.LastLoginIP,
-		}
+		lastLogin = NewLoginAudit(*snap.LastLoginAt, *snap.LastLoginIP)
 	}
 
 	return Account{
@@ -157,11 +164,9 @@ func NewAccountFromSnapshot(snap Snapshot) Account {
 		displayName:            snap.DisplayName,
 		role:                   mustParseRole(snap.Role),
 		status:                 mustParseStatus(snap.Status),
-		audit: Audit{
-			createdAt: snap.CreatedAt,
-			updatedAt: snap.UpdatedAt,
-			lastLogin: lastLogin,
-		},
+		createdAt:              snap.CreatedAt,
+		updatedAt:              snap.UpdatedAt,
+		lastLogin:              lastLogin,
 	}
 }
 
