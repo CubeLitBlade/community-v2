@@ -11,7 +11,6 @@ import (
 
 // Row represents a record in the "accounts" PostgreSQL table.
 // Pointer fields are used to represent nullable database columns
-
 type Row struct {
 	CreatedAt              time.Time  `gorm:"column:created_at"`
 	UpdatedAt              time.Time  `gorm:"column:updated_at"`
@@ -31,6 +30,7 @@ func (Row) TableName() string {
 	return "accounts"
 }
 
+// RowFields provides strongly-typed Gorm field references for the accounts table columns.
 var RowFields = struct {
 	CreatedAt              field.Time
 	UpdatedAt              field.Time
@@ -57,6 +57,7 @@ var RowFields = struct {
 	PasswordChangeRequired: field.Bool{}.WithColumn("password_change_required"),
 }
 
+// accountToRow converts a domain Account into a database Row for persistence.
 func accountToRow(acc *account.Account) *Row {
 	snapshot := acc.Snapshot()
 

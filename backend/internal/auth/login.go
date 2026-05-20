@@ -14,15 +14,16 @@ import (
 // ErrInvalidCredentials is returned when login fails due to invalid credentials.
 var ErrInvalidCredentials = errors.New("invalid credentials")
 
-type LoginRecorder interface {
-	Record(ctx context.Context, acc *account.Account, ip netip.Addr) error
-}
-
 // AccountAuthenticator authenticates a user by username and password.
 type AccountAuthenticator interface {
 	Authenticate(
 		ctx context.Context, username, password string,
 	) (*account.Account, error)
+}
+
+// LoginRecorder records a successful login event.
+type LoginRecorder interface {
+	Record(ctx context.Context, acc *account.Account, ip netip.Addr) error
 }
 
 // Login executes the login flow: authenticate credentials and issue a JWT.
@@ -52,7 +53,7 @@ func NewLogin(
 
 // Execute authenticates the given credentials and returns a signed JWT.
 func (l *Login) Execute(
-	ctx context.Context, username, password string, ip netip.Addr,
+	ctx context.Context, username, password string, ipaddr netip.Addr,
 ) (Credentials, error) {
 	acc, err := l.auth.Authenticate(ctx, username, password)
 	if err != nil {
@@ -68,7 +69,7 @@ func (l *Login) Execute(
 		return Credentials{}, fmt.Errorf("issue token: %w", err)
 	}
 
-	if err := l.recorder.Record(ctx, acc, ip); err != nil {
+	if err := l.recorder.Record(ctx, acc, ipaddr); err != nil {
 		log.Printf("failed to record access record: %v", err)
 	}
 

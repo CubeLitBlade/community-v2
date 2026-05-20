@@ -9,15 +9,14 @@ import (
 	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
 )
 
-// Creator defines the interface for persisting account aggregates.
-type Creator interface {
+type creator interface {
 	Create(ctx context.Context, acc *Account) error
 }
 
 // Registrar orchestrates the account registration process.
 type Registrar struct {
 	ids     idgen.Generator
-	creator Creator
+	creator creator
 	now     func() time.Time
 	logger  *slog.Logger
 }
@@ -25,7 +24,7 @@ type Registrar struct {
 // NewRegistrar creates and returns a new Registrar.
 func NewRegistrar(
 	ids idgen.Generator,
-	creator Creator,
+	creator creator,
 	logger *slog.Logger,
 ) *Registrar {
 	if logger == nil {

@@ -90,13 +90,13 @@ func TestLogin_Execute_Success(t *testing.T) {
 		issuer,
 		&stubLoginRecorder{},
 	)
-	ip := netip.MustParseAddr("127.0.0.1")
+	ipaddr := netip.MustParseAddr("127.0.0.1")
 
 	session, err := login.Execute(
 		context.Background(),
 		"testuser",
 		"this-is-a-valid-password",
-		ip,
+		ipaddr,
 	)
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)

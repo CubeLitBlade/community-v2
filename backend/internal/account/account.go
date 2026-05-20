@@ -16,7 +16,7 @@ type ID int64
 // Account represents a user account with authentication and profile data.
 type Account struct {
 	createdAt, updatedAt   time.Time
-	lastLogin              *LoginAudit
+	lastLogin              *LastLogin
 	username               Username
 	passwordHash           PasswordHash
 	displayName            string
@@ -61,10 +61,11 @@ func Register(
 	}, nil
 }
 
+// RecordLogin updates last login time and last login ip
 func (a *Account) RecordLogin(at time.Time, addr netip.Addr) {
-	a.lastLogin = &LoginAudit{
-		at: at,
-		ip: addr,
+	a.lastLogin = &LastLogin{
+		Time:   at,
+		IPAddr: addr,
 	}
 }
 
@@ -130,8 +131,8 @@ func (a *Account) Snapshot() Snapshot {
 	)
 
 	if a.lastLogin != nil {
-		lastLoginAt = new(a.lastLogin.at)
-		lastLoginIP = new(a.lastLogin.ip)
+		lastLoginAt = new(a.lastLogin.Time)
+		lastLoginIP = new(a.lastLogin.IPAddr)
 	}
 
 	return Snapshot{
@@ -151,9 +152,9 @@ func (a *Account) Snapshot() Snapshot {
 
 // NewAccountFromSnapshot reconstructs account from snapshot.
 func NewAccountFromSnapshot(snap Snapshot) Account {
-	var lastLogin *LoginAudit
+	var lastLogin *LastLogin
 	if snap.LastLoginAt != nil && snap.LastLoginIP != nil {
-		lastLogin = NewLoginAudit(*snap.LastLoginAt, *snap.LastLoginIP)
+		lastLogin = NewLastLogin(*snap.LastLoginAt, *snap.LastLoginIP)
 	}
 
 	return Account{

@@ -15,8 +15,6 @@ type Reader struct {
 	db *gorm.DB
 }
 
-var _ account.ByUsernameFinder = (*Reader)(nil)
-
 // NewReader creates a new Reader backed by the given Gorm DB instance.
 // It panics if db is nil.
 func NewReader(db *gorm.DB) *Reader {

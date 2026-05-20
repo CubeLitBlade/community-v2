@@ -14,10 +14,12 @@ import (
 	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
 )
 
+// NewReader creates a postgres.Reader backed by the given GORM database connection.
 func NewReader(db *gorm.DB) *postgres.Reader {
 	return postgres.NewReader(db)
 }
 
+// NewWriter creates a postgres.Writer backed by the given GORM database connection.
 func NewWriter(db *gorm.DB) *postgres.Writer {
 	return postgres.NewWriter(db)
 }
@@ -37,6 +39,8 @@ func NewAuthenticator(reader *postgres.Reader, logger *slog.Logger) *account.Aut
 	return account.NewAuthenticator(reader, logger)
 }
 
+// NewLoginRecorder creates an account.LoginRecorder that uses the given writer
+// to persist login events and time.Now as the clock source.
 func NewLoginRecorder(writer *postgres.Writer, logger *slog.Logger) *account.LoginRecorder {
 	return account.NewLoginRecorder(time.Now, writer, logger)
 }

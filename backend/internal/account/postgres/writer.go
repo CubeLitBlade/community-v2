@@ -15,8 +15,6 @@ type Writer struct {
 	db *gorm.DB
 }
 
-var _ account.Creator = (*Writer)(nil)
-
 // NewWriter creates a new Writer backed by the given GORM database
 // connection.
 // Panics if db is nil.
@@ -48,6 +46,7 @@ func (w *Writer) Create(ctx context.Context, acc *account.Account) error {
 	return nil
 }
 
+// UpdateLastLogin persists the account's last login time and IP to the database.
 func (w *Writer) UpdateLastLogin(ctx context.Context, acc *account.Account) error {
 	if acc == nil {
 		panic("nil account")
