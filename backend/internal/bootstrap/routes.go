@@ -17,8 +17,8 @@ type HTTPMounter interface {
 type routeMountParams struct {
 	fx.In
 
-	cfg    Config
-	logger *slog.Logger
+	Config Config
+	Logger *slog.Logger
 
 	Router   *gin.Engine
 	Mounters []HTTPMounter `group:"mounter"`
@@ -26,7 +26,7 @@ type routeMountParams struct {
 
 func registerRoutes(p routeMountParams) {
 	api := p.Router.Group("/api")
-	api.Use(authn.ParseToken(p.cfg.JWTSecret, p.logger))
+	api.Use(authn.ParseToken(p.Config.JWTSecret, p.Logger))
 
 	for _, m := range p.Mounters {
 		m.RegisterRoutes(api)
