@@ -8,6 +8,25 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	titleBadRequest          = "Bad Request"
+	titleUnauthorized        = "Unauthorized"
+	titleInternalServerError = "Internal Server Error"
+)
+
+const (
+	codeBadRequest          = "BAD_REQUEST"
+	codeUnauthorized        = "UNAUTHORIZED"
+	codeInternalServerError = "INTERNAL_SERVER_ERROR"
+)
+
+// Default error detail messages for common HTTP problem responses.
+const (
+	DefaultBadRequestMessage          = "The request parameters are invalid, please check and try again."
+	DefaultUnauthorizedMessage        = "Please log in to access this resource."
+	DefaultInternalServerErrorMessage = "An unexpected error occurred. Please try again later."
+)
+
 // ProblemDetail represents an RFC 9457 Problem Details object for HTTP APIs.
 type ProblemDetail struct {
 	Type     string `json:"type,omitempty"`
@@ -33,31 +52,24 @@ func WriteProblem(c *gin.Context, status int, title, detail, code string) {
 	})
 }
 
-// WriteInvalidRequest writes a standard 400 Bad Request problem detail
+// WriteBadRequest writes a standard 400 Bad Request problem detail
 // response.
-func WriteInvalidRequest(c *gin.Context, detail string) {
-	WriteProblem(
-		c,
-		http.StatusBadRequest,
-		"Invalid request",
-		detail,
-		"INVALID_REQUEST",
-	)
+func WriteBadRequest(c *gin.Context, detail string) {
+	WriteProblem(c, http.StatusBadRequest, titleBadRequest, detail, codeBadRequest)
 }
 
 // WriteUnauthorized writes a standard 401 Unauthorized problem detail
 func WriteUnauthorized(c *gin.Context, detail string) {
-	WriteProblem(
-		c,
-		http.StatusUnauthorized,
-		"Unauthorized",
-		detail,
-		"UNAUTHORIZED",
-	)
+	WriteProblem(c, http.StatusUnauthorized, titleUnauthorized, detail, codeUnauthorized)
 }
 
-// ProblemSpec defines the specification for mapping an internal error to an
-// HTTP problem.
+// WriteInternalServerError writes a standard 500 Internal Server Error problem detail
+func WriteInternalServerError(c *gin.Context, detail string) {
+	WriteProblem(c, http.StatusInternalServerError, titleInternalServerError,
+		"", codeInternalServerError)
+}
+
+// ProblemSpec defines the specification for mapping an internal error to an HTTP problem.
 type ProblemSpec struct {
 	Title  string
 	Code   string
@@ -65,8 +77,7 @@ type ProblemSpec struct {
 	Status int
 }
 
-// WriteProblemSpec writes a problem detail response based on the provided
-// ProblemSpec.
+// WriteProblemSpec writes a problem detail response based on the provided ProblemSpec.
 func WriteProblemSpec(c *gin.Context, spec ProblemSpec) {
 	WriteProblem(c, spec.Status, spec.Title, spec.Detail, spec.Code)
 }
@@ -75,8 +86,7 @@ func WriteProblemSpec(c *gin.Context, spec ProblemSpec) {
 type ErrorMapper func(error) (ProblemSpec, bool)
 
 // WriteMappedError attempts to map an error using the provided mappers.
-// If no mapper matches the error, it writes a generic 500 Internal Server
-// Error.
+// If no mapper matches the error, it writes a generic 500 Internal Server Error.
 func WriteMappedError(c *gin.Context, err error, mappers ...ErrorMapper) {
 	for _, mapper := range mappers {
 		if spec, ok := mapper(err); ok {
@@ -86,11 +96,5 @@ func WriteMappedError(c *gin.Context, err error, mappers ...ErrorMapper) {
 		}
 	}
 
-	WriteProblem(
-		c,
-		http.StatusInternalServerError,
-		"Internal server error",
-		"An unexpected error occurred.",
-		"INTERNAL_ERROR",
-	)
+	WriteInternalServerError(c, DefaultInternalServerErrorMessage)
 }

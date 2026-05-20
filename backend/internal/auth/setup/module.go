@@ -5,8 +5,6 @@ package setup
 import (
 	"log/slog"
 
-	"github.com/gin-gonic/gin"
-
 	"github.com/CubeLitBlade/community-v2/backend/internal/auth"
 	"github.com/CubeLitBlade/community-v2/backend/internal/auth/transport"
 	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
@@ -19,15 +17,13 @@ func NewHandler(
 	jwtCfg *jwt.Config,
 	accAuth auth.AccountAuthenticator,
 	recorder auth.LoginRecorder,
-	authnMW func(*gin.Context),
 	logger *slog.Logger,
 ) *transport.Handler {
 	issuer := jwt.New(jwtCfg, ids)
 	login := auth.NewLogin(accAuth, issuer, recorder)
 
 	return transport.NewHandler(transport.Deps{
-		Login:   login,
-		Logger:  logger,
-		AuthnMW: authnMW,
+		Login:  login,
+		Logger: logger,
 	})
 }

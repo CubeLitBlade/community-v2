@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"time"
 
@@ -16,7 +15,6 @@ import (
 	accountSetup "github.com/CubeLitBlade/community-v2/backend/internal/account/setup"
 	"github.com/CubeLitBlade/community-v2/backend/internal/auth"
 	authSetup "github.com/CubeLitBlade/community-v2/backend/internal/auth/setup"
-	"github.com/CubeLitBlade/community-v2/backend/internal/authn"
 	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
 	"github.com/CubeLitBlade/community-v2/backend/internal/jwt"
 )
@@ -75,7 +73,6 @@ func provideSnowflake(cfg Config) (*idgen.Snowflake, error) {
 
 func moduleProviders() fx.Option {
 	return fx.Options(
-		fx.Provide(provideAuthnMiddleware),
 		fx.Provide(provideJWTConfig),
 		fx.Provide(accountSetup.NewReader),
 		fx.Provide(accountSetup.NewWriter),
@@ -107,10 +104,6 @@ func moduleProviders() fx.Option {
 		),
 		fx.Provide(provideHTTPServer),
 	)
-}
-
-func provideAuthnMiddleware(cfg Config, logger *slog.Logger) func(*gin.Context) {
-	return authn.Middleware(cfg.JWTSecret, logger)
 }
 
 func provideJWTConfig(cfg Config) *jwt.Config {

@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/CubeLitBlade/community-v2/backend/internal/auth"
+	"github.com/CubeLitBlade/community-v2/backend/internal/authn"
 	"github.com/CubeLitBlade/community-v2/backend/internal/httperr"
 )
 
@@ -23,16 +24,14 @@ const (
 
 // Handler handles HTTP requests for authentication.
 type Handler struct {
-	login   *auth.Login
-	logger  *slog.Logger
-	authnMW func(c *gin.Context)
+	login  *auth.Login
+	logger *slog.Logger
 }
 
 // Deps holds the dependencies required by the auth Handler.
 type Deps struct {
-	Login   *auth.Login
-	Logger  *slog.Logger
-	AuthnMW func(c *gin.Context)
+	Login  *auth.Login
+	Logger *slog.Logger
 }
 
 // NewHandler creates and returns a new AuthHandler.
@@ -46,9 +45,8 @@ func NewHandler(deps Deps) *Handler {
 	}
 
 	return &Handler{
-		login:   deps.Login,
-		logger:  deps.Logger,
-		authnMW: deps.AuthnMW,
+		login:  deps.Login,
+		logger: deps.Logger,
 	}
 }
 
@@ -57,7 +55,7 @@ func (h *Handler) RegisterRoutes(router gin.IRouter) {
 	g := router.Group("/auth")
 
 	g.POST("/", h.Login)
-	g.DELETE("/", h.authnMW, h.Logout)
+	g.DELETE("/", authn.MustAuthenticate(), h.Logout)
 }
 
 type loginRequest struct {
@@ -75,7 +73,7 @@ func (h *Handler) Login(c *gin.Context) {
 	var req loginRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		httperr.WriteInvalidRequest(
+		httperr.WriteBadRequest(
 			c,
 			"Request body must be valid JSON and include username "+
 				"and password.",
@@ -86,7 +84,7 @@ func (h *Handler) Login(c *gin.Context) {
 
 	ipaddr, err := netip.ParseAddr(c.ClientIP())
 	if err != nil {
-		httperr.WriteInvalidRequest(c, "Invalid IP address")
+		httperr.WriteBadRequest(c, "Invalid IP address")
 
 		return
 	}
@@ -115,7 +113,6 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 
 	http.SetCookie(c.Writer, cookie)
-
 	c.JSON(http.StatusOK, loginResponse{
 		ID:   credentials.ID,
 		Role: credentials.Role,

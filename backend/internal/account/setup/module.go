@@ -25,12 +25,16 @@ func NewWriter(db *gorm.DB) *postgres.Writer {
 }
 
 // NewHandler creates the account HTTP handler with all dependencies wired.
-func NewHandler(writer *postgres.Writer, ids idgen.Generator, logger *slog.Logger) *transport.Handler {
+func NewHandler(
+	reader *postgres.Reader, writer *postgres.Writer, ids idgen.Generator, logger *slog.Logger,
+) *transport.Handler {
 	registrar := account.NewRegistrar(ids, writer, logger)
+	finder := account.NewProfileFinder(reader, logger)
 
 	return transport.NewHandler(transport.Deps{
-		Registrar: registrar,
-		Logger:    logger,
+		Registrar:     registrar,
+		ProfileFinder: finder,
+		Logger:        logger,
 	})
 }
 

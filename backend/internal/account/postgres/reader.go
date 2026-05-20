@@ -41,10 +41,27 @@ func (r *Reader) FindByUsername(
 			return nil, account.ErrAccountNotFound
 		}
 
-		return nil, fmt.Errorf(
-			"find account by username: %w",
-			err,
-		)
+		return nil, fmt.Errorf("find account by username: %w", err)
+	}
+
+	acc := rowToAccount(&row)
+
+	return acc, nil
+}
+
+// FindByID retrieves the account that matches the given ID.
+// It returns account.ErrAccountNotFound if no matching record exists.
+func (r *Reader) FindByID(
+	ctx context.Context,
+	id int64,
+) (*account.Account, error) {
+	row, err := gorm.G[Row](r.db).Where(RowFields.ID.Eq(id)).Take(ctx)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, account.ErrAccountNotFound
+		}
+
+		return nil, fmt.Errorf("find account by id: %w", err)
 	}
 
 	acc := rowToAccount(&row)
