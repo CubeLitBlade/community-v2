@@ -7,23 +7,29 @@ import (
 	"log"
 	"net/netip"
 
-	"github.com/CubeLitBlade/community-v2/backend/internal/account"
 	"github.com/CubeLitBlade/community-v2/backend/internal/jwt"
 )
 
 // ErrInvalidCredentials is returned when login fails due to invalid credentials.
 var ErrInvalidCredentials = errors.New("invalid credentials")
 
+// AuthenticatedAccount carries the minimal account information needed after a
+// successful authentication.
+type AuthenticatedAccount struct {
+	ID   int64
+	Role string
+}
+
 // AccountAuthenticator authenticates a user by username and password.
 type AccountAuthenticator interface {
 	Authenticate(
 		ctx context.Context, username, password string,
-	) (*account.Account, error)
+	) (AuthenticatedAccount, error)
 }
 
 // LoginRecorder records a successful login event.
 type LoginRecorder interface {
-	Record(ctx context.Context, acc *account.Account, ip netip.Addr) error
+	Record(ctx context.Context, accountID int64, ip netip.Addr) error
 }
 
 // Login executes the login flow: authenticate credentials and issue a JWT.
@@ -57,25 +63,25 @@ func (l *Login) Execute(
 ) (Credentials, error) {
 	acc, err := l.auth.Authenticate(ctx, username, password)
 	if err != nil {
-		if errors.Is(err, account.ErrInvalidCredentials) {
+		if errors.Is(err, ErrInvalidCredentials) {
 			return Credentials{}, ErrInvalidCredentials
 		}
 
 		return Credentials{}, fmt.Errorf("authenticate: %w", err)
 	}
 
-	token, err := l.issuer.Issue(int64(acc.ID()), acc.Role().String())
+	token, err := l.issuer.Issue(acc.ID, acc.Role)
 	if err != nil {
 		return Credentials{}, fmt.Errorf("issue token: %w", err)
 	}
 
-	if err := l.recorder.Record(ctx, acc, ipaddr); err != nil {
+	if err := l.recorder.Record(ctx, acc.ID, ipaddr); err != nil {
 		log.Printf("failed to record access record: %v", err)
 	}
 
 	return Credentials{
 		Token: token,
-		ID:    int64(acc.ID()),
-		Role:  acc.Role().String(),
+		ID:    acc.ID,
+		Role:  acc.Role,
 	}, nil
 }

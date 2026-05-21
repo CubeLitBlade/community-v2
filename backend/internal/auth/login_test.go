@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CubeLitBlade/community-v2/backend/internal/account"
 	"github.com/CubeLitBlade/community-v2/backend/internal/auth"
 	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
 	"github.com/CubeLitBlade/community-v2/backend/internal/jwt"
@@ -32,15 +31,15 @@ func (g *stubIDGen) NextID() (int64, error) {
 var _ idgen.Generator = (*stubIDGen)(nil)
 
 type stubAuthenticator struct {
-	acc *account.Account
+	acc auth.AuthenticatedAccount
 	err error
 }
 
 func (a *stubAuthenticator) Authenticate(
 	_ context.Context, _, _ string,
-) (*account.Account, error) {
+) (auth.AuthenticatedAccount, error) {
 	if a.err != nil {
-		return nil, a.err
+		return auth.AuthenticatedAccount{ID: 0, Role: ""}, a.err
 	}
 
 	return a.acc, nil
@@ -49,30 +48,16 @@ func (a *stubAuthenticator) Authenticate(
 type stubLoginRecorder struct{}
 
 func (r *stubLoginRecorder) Record(
-	_ context.Context, _ *account.Account, _ netip.Addr,
+	_ context.Context, _ int64, _ netip.Addr,
 ) error {
 	return nil
 }
 
-// compile-time check
+// compile-time checks
 var (
 	_ auth.AccountAuthenticator = (*stubAuthenticator)(nil)
 	_ auth.LoginRecorder        = (*stubLoginRecorder)(nil)
 )
-
-func makeTestAccount(t *testing.T) *account.Account {
-	t.Helper()
-
-	acc, err := account.Register(
-		1, "testuser", "this-is-a-valid-password",
-		time.Date(2026, 5, 13, 0, 0, 0, 0, time.UTC),
-	)
-	if err != nil {
-		t.Fatalf("Register() failed: %v", err)
-	}
-
-	return &acc
-}
 
 func TestLogin_Execute_Success(t *testing.T) {
 	t.Parallel()
@@ -84,9 +69,11 @@ func TestLogin_Execute_Success(t *testing.T) {
 	}
 
 	issuer := jwt.New(cfg, &stubIDGen{id: 99, err: nil})
-	acc := makeTestAccount(t)
 	login := auth.NewLogin(
-		&stubAuthenticator{acc: acc, err: nil},
+		&stubAuthenticator{
+			acc: auth.AuthenticatedAccount{ID: 1, Role: "member"},
+			err: nil,
+		},
 		issuer,
 		&stubLoginRecorder{},
 	)
@@ -118,7 +105,10 @@ func TestLogin_Execute_InvalidCredentials(t *testing.T) {
 
 	issuer := jwt.New(cfg, &stubIDGen{id: 99, err: nil})
 	login := auth.NewLogin(
-		&stubAuthenticator{acc: nil, err: account.ErrInvalidCredentials},
+		&stubAuthenticator{
+			acc: auth.AuthenticatedAccount{ID: 0, Role: ""},
+			err: auth.ErrInvalidCredentials,
+		},
 		issuer,
 		&stubLoginRecorder{},
 	)
@@ -144,7 +134,10 @@ func TestLogin_Execute_UnexpectedError(t *testing.T) {
 
 	issuer := jwt.New(cfg, &stubIDGen{id: 99, err: nil})
 	login := auth.NewLogin(
-		&stubAuthenticator{acc: nil, err: errAuthTimeout},
+		&stubAuthenticator{
+			acc: auth.AuthenticatedAccount{ID: 0, Role: ""},
+			err: errAuthTimeout,
+		},
 		issuer,
 		&stubLoginRecorder{},
 	)
@@ -169,7 +162,10 @@ func TestNewLogin(t *testing.T) {
 
 	issuer := jwt.New(cfg, &stubIDGen{id: 1, err: nil})
 	login := auth.NewLogin(
-		&stubAuthenticator{acc: nil, err: nil},
+		&stubAuthenticator{
+			acc: auth.AuthenticatedAccount{ID: 0, Role: ""},
+			err: nil,
+		},
 		issuer,
 		&stubLoginRecorder{},
 	)

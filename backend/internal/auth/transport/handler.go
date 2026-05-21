@@ -14,24 +14,30 @@ import (
 )
 
 const (
-	cookieName     = "access_token"
 	cookiePath     = "/api/"
-	cookieMaxAge   = 15 * 60
 	cookieHTTPOnly = true
-	cookieSecure   = true
-	cookieSameSite = http.SameSiteLaxMode
 )
+
+// CookieConfig holds the configuration for the auth cookie.
+type CookieConfig struct {
+	Name     string
+	Secure   bool
+	SameSite http.SameSite
+	MaxAge   int
+}
 
 // Handler handles HTTP requests for authentication.
 type Handler struct {
-	login  *auth.Login
-	logger *slog.Logger
+	login     *auth.Login
+	cookieCfg CookieConfig
+	logger    *slog.Logger
 }
 
 // Deps holds the dependencies required by the auth Handler.
 type Deps struct {
-	Login  *auth.Login
-	Logger *slog.Logger
+	Login     *auth.Login
+	CookieCfg CookieConfig
+	Logger    *slog.Logger
 }
 
 // NewHandler creates and returns a new AuthHandler.
@@ -45,8 +51,9 @@ func NewHandler(deps Deps) *Handler {
 	}
 
 	return &Handler{
-		login:  deps.Login,
-		logger: deps.Logger,
+		login:     deps.Login,
+		cookieCfg: deps.CookieCfg,
+		logger:    deps.Logger,
 	}
 }
 
@@ -102,14 +109,15 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
+	//nolint:gosec // cookie attributes are config-driven; Secure is set
 	cookie := &http.Cookie{
-		Name:     cookieName,
+		Name:     h.cookieCfg.Name,
 		Value:    credentials.Token,
 		Path:     cookiePath,
-		MaxAge:   cookieMaxAge,
+		MaxAge:   h.cookieCfg.MaxAge,
 		HttpOnly: cookieHTTPOnly,
-		Secure:   cookieSecure,
-		SameSite: cookieSameSite,
+		Secure:   h.cookieCfg.Secure,
+		SameSite: h.cookieCfg.SameSite,
 	}
 
 	http.SetCookie(c.Writer, cookie)
@@ -121,14 +129,15 @@ func (h *Handler) Login(c *gin.Context) {
 
 // Logout handles DELETE /auth/ — erase access token cookie.
 func (h *Handler) Logout(c *gin.Context) {
+	//nolint:gosec // cookie attributes are config-driven; Secure is set
 	cookie := &http.Cookie{
-		Name:     cookieName,
+		Name:     h.cookieCfg.Name,
 		Value:    "",
 		Path:     cookiePath,
 		MaxAge:   -1, // delete cookie immediately
 		HttpOnly: cookieHTTPOnly,
-		Secure:   cookieSecure,
-		SameSite: cookieSameSite,
+		Secure:   h.cookieCfg.Secure,
+		SameSite: h.cookieCfg.SameSite,
 	}
 
 	http.SetCookie(c.Writer, cookie)

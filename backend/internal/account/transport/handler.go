@@ -122,7 +122,6 @@ func (h *Handler) getOwnProfile(c *gin.Context) {
 
 func (h *Handler) getProfile(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-
 	if err != nil {
 		httperr.WriteBadRequest(c, httperr.DefaultBadRequestMessage)
 

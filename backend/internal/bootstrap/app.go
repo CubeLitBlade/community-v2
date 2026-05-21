@@ -17,6 +17,7 @@ import (
 	authSetup "github.com/CubeLitBlade/community-v2/backend/internal/auth/setup"
 	"github.com/CubeLitBlade/community-v2/backend/internal/idgen"
 	"github.com/CubeLitBlade/community-v2/backend/internal/jwt"
+	authTransport "github.com/CubeLitBlade/community-v2/backend/internal/auth/transport"
 )
 
 const defaultJWTValidity = 24 * time.Hour
@@ -73,9 +74,12 @@ func provideSnowflake(cfg Config) (*idgen.Snowflake, error) {
 
 func moduleProviders() fx.Option {
 	return fx.Options(
+		// Infrastructure
 		fx.Provide(provideJWTConfig),
-		fx.Provide(accountSetup.NewReader),
-		fx.Provide(accountSetup.NewWriter),
+		fx.Provide(provideCookieConfig),
+
+		// Account module
+		accountSetup.Module(),
 		fx.Provide(
 			fx.Annotate(
 				accountSetup.NewHandler,
@@ -85,7 +89,7 @@ func moduleProviders() fx.Option {
 		),
 		fx.Provide(
 			fx.Annotate(
-				accountSetup.NewAuthenticator,
+				accountSetup.NewAuthenticatorAdapter,
 				fx.As(new(auth.AccountAuthenticator)),
 			),
 		),
@@ -95,6 +99,9 @@ func moduleProviders() fx.Option {
 				fx.As(new(auth.LoginRecorder)),
 			),
 		),
+
+		// Auth module
+		authSetup.Module(),
 		fx.Provide(
 			fx.Annotate(
 				authSetup.NewHandler,
@@ -102,6 +109,8 @@ func moduleProviders() fx.Option {
 				fx.ResultTags(`group:"mounter"`),
 			),
 		),
+
+		// Server
 		fx.Provide(provideHTTPServer),
 	)
 }
@@ -111,6 +120,15 @@ func provideJWTConfig(cfg Config) *jwt.Config {
 		Key:      cfg.JWTSecret,
 		Issuer:   "community-v2",
 		Validity: defaultJWTValidity,
+	}
+}
+
+func provideCookieConfig(cfg Config) authTransport.CookieConfig {
+	return authTransport.CookieConfig{
+		Name:     cfg.AccessTokenCookieName,
+		Secure:   cfg.CookieSecure,
+		SameSite: cfg.CookieSameSite,
+		MaxAge:   int(cfg.AccessTokenTTL.Seconds()),
 	}
 }
 

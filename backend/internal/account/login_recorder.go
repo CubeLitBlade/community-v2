@@ -8,41 +8,52 @@ import (
 	"time"
 )
 
+type accountFinder interface {
+	FindByID(ctx context.Context, id int64) (*Account, error)
+}
+
 type lastLoginUpdater interface {
 	UpdateLastLogin(ctx context.Context, acc *Account) error
 }
 
 // LoginRecorder records the last login details after a user logs in.
-// It uses an injected lastLoginUpdater to persist the updated account information.
+// It looks up the account by ID, updates its last login info,
+// then persists the change via the injected updater.
 type LoginRecorder struct {
 	now     func() time.Time
+	finder  accountFinder
 	updater lastLoginUpdater
 	logger  *slog.Logger
 }
 
 // NewLoginRecorder creates a new LoginRecorder.
-// now provides the current time;
+// now provides the current time; finder looks up accounts by ID;
 // updater persists the account's last login info;
 // logger logs operational events.
 func NewLoginRecorder(
-	now func() time.Time, updater lastLoginUpdater, logger *slog.Logger,
+	now func() time.Time, finder accountFinder, updater lastLoginUpdater, logger *slog.Logger,
 ) *LoginRecorder {
 	return &LoginRecorder{
 		now:     now,
+		finder:  finder,
 		updater: updater,
 		logger:  logger,
 	}
 }
 
-// Record records a login event.
-// It updates the account's last login time and IP,
-// then persists the change via the updater.
+// Record records a login event for the given account ID.
+// It looks up the account, updates its last login time and IP,
+// then persists the change.
 func (r *LoginRecorder) Record(
-	ctx context.Context, acc *Account, ip netip.Addr,
+	ctx context.Context, accountID int64, ipaddr netip.Addr,
 ) error {
-	acc.RecordLogin(r.now(), ip)
-	err := r.updater.UpdateLastLogin(ctx, acc)
+	acc, err := r.finder.FindByID(ctx, accountID)
 	if err != nil {
+		return fmt.Errorf("find by id: %w", err)
+	}
+
+	acc.RecordLogin(r.now(), ipaddr)
+	if err := r.updater.UpdateLastLogin(ctx, acc); err != nil {
 		return fmt.Errorf("update last login: %w", err)
 	}
 
