@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/CubeLitBlade/community-v2/backend/common/httperr"
+	"github.com/CubeLitBlade/community-v2/backend/pkg/common/httperr"
 )
 
 const httpReadHeaderTimeout = 5 * time.Second

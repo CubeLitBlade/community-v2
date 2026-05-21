@@ -7,10 +7,10 @@ import (
 
 	"go.uber.org/fx"
 
-	"github.com/CubeLitBlade/community-v2/backend/common/idgen"
-	"github.com/CubeLitBlade/community-v2/backend/common/jwt"
-	"github.com/CubeLitBlade/community-v2/backend/internal/auth"
-	"github.com/CubeLitBlade/community-v2/backend/internal/auth/transport"
+	"github.com/CubeLitBlade/community-v2/backend/pkg/common/idgen"
+	"github.com/CubeLitBlade/community-v2/backend/pkg/common/jwt"
+	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/auth"
+	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/auth/transport"
 )
 
 // Module returns the fx providers for the auth module.

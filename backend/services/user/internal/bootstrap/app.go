@@ -12,12 +12,12 @@ import (
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
-	"github.com/CubeLitBlade/community-v2/backend/common/idgen"
-	"github.com/CubeLitBlade/community-v2/backend/common/jwt"
-	accountSetup "github.com/CubeLitBlade/community-v2/backend/internal/account/setup"
-	"github.com/CubeLitBlade/community-v2/backend/internal/auth"
-	authSetup "github.com/CubeLitBlade/community-v2/backend/internal/auth/setup"
-	authTransport "github.com/CubeLitBlade/community-v2/backend/internal/auth/transport"
+	"github.com/CubeLitBlade/community-v2/backend/pkg/common/idgen"
+	"github.com/CubeLitBlade/community-v2/backend/pkg/common/jwt"
+	accountSetup "github.com/CubeLitBlade/community-v2/backend/services/user/internal/account/setup"
+	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/auth"
+	authSetup "github.com/CubeLitBlade/community-v2/backend/services/user/internal/auth/setup"
+	authTransport "github.com/CubeLitBlade/community-v2/backend/services/user/internal/auth/transport"
 )
 
 const defaultJWTValidity = 24 * time.Hour

@@ -6,7 +6,7 @@ import (
 
 	"gorm.io/cli/gorm/field"
 
-	"github.com/CubeLitBlade/community-v2/backend/services/account/internal/account"
+	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/account"
 )
 
 // Row represents a record in the "accounts" PostgreSQL table.

@@ -6,11 +6,10 @@ import (
 	"net/http"
 	"net/netip"
 
+	"github.com/CubeLitBlade/community-v2/backend/pkg/common/httperr"
+	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/auth"
+	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/authn"
 	"github.com/gin-gonic/gin"
-
-	"github.com/CubeLitBlade/community-v2/backend/common/httperr"
-	"github.com/CubeLitBlade/community-v2/backend/internal/auth"
-	"github.com/CubeLitBlade/community-v2/backend/internal/authn"
 )
 
 const (

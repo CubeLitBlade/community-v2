@@ -5,9 +5,16 @@ go 1.26.3
 require (
 	github.com/gin-gonic/gin v1.12.0
 	golang.org/x/crypto v0.51.0
+	gorm.io/cli/gorm v0.2.4
 )
 
 require (
+	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
+	golang.org/x/exp v0.0.0-20240112132812-db7319d0e0e3 // indirect
+)
+
+require (
+	github.com/CubeLitBlade/community-v2/backend/pkg/common v0.0.0
 	github.com/bytedance/gopkg v0.1.4 // indirect
 	github.com/bytedance/sonic v1.15.1 // indirect
 	github.com/bytedance/sonic/loader v0.5.1 // indirect
@@ -38,7 +45,7 @@ require (
 	github.com/ugorji/go/codec v1.3.1 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.6.0 // indirect
 	go.uber.org/dig v1.19.0 // indirect
-	go.uber.org/fx v1.24.0 // indirect
+	go.uber.org/fx v1.24.0
 	go.uber.org/multierr v1.10.0 // indirect
 	go.uber.org/zap v1.26.0 // indirect
 	golang.org/x/arch v0.27.0 // indirect
@@ -47,6 +54,8 @@ require (
 	golang.org/x/sys v0.44.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
-	gorm.io/driver/postgres v1.6.0 // indirect
-	gorm.io/gorm v1.31.1 // indirect
+	gorm.io/driver/postgres v1.6.0
+	gorm.io/gorm v1.31.1
 )
+
+replace github.com/CubeLitBlade/community-v2/backend/pkg/common => ../../pkg/common
