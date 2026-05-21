@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -58,10 +59,11 @@ func NewHandler(deps Deps) *Handler {
 
 // RegisterRoutes registers the account routes on the given router.
 func (h *Handler) RegisterRoutes(router gin.IRouter) {
-	g := router.Group("/account")
+	g := router.Group("/accounts")
 
 	g.POST("/", h.createAccount)
-	g.GET("/", authn.MustAuthenticate(), h.getMyProfile)
+	g.GET("/", authn.MustAuthenticate(), h.getOwnProfile)
+	g.GET("/:id", h.getProfile)
 }
 
 type createAccountRequest struct {
@@ -94,17 +96,50 @@ func (h *Handler) createAccount(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
-func (h *Handler) getMyProfile(c *gin.Context) {
+func (h *Handler) getOwnProfile(c *gin.Context) {
 	principal, ok := authn.GetPrincipal(c)
 	if !ok {
 		httperr.WriteInternalServerError(c, httperr.DefaultInternalServerErrorMessage)
+
+		return
 	}
 
 	profile, err := h.profileFinder.Find(c.Request.Context(), principal.ID)
 	if err != nil {
 		if errors.Is(err, account.ErrAccountNotFound) {
 			httperr.WriteMappedError(c, err, accountProblem)
+
+			return
 		}
+
+		httperr.WriteInternalServerError(c, httperr.DefaultInternalServerErrorMessage)
+
+		return
+	}
+
+	c.JSON(http.StatusOK, profile)
+}
+
+func (h *Handler) getProfile(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+
+	if err != nil {
+		httperr.WriteBadRequest(c, httperr.DefaultBadRequestMessage)
+
+		return
+	}
+
+	profile, err := h.profileFinder.Find(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, account.ErrAccountNotFound) {
+			httperr.WriteMappedError(c, err, accountProblem)
+
+			return
+		}
+
+		httperr.WriteInternalServerError(c, httperr.DefaultInternalServerErrorMessage)
+
+		return
 	}
 
 	c.JSON(http.StatusOK, profile)
