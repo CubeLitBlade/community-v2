@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CubeLitBlade/community-v2/backend/services/account/internal/account"
+	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/account"
 	"golang.org/x/crypto/bcrypt"
 
 )

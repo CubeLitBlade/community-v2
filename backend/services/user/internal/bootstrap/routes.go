@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 
-	"github.com/CubeLitBlade/community-v2/backend/internal/authn"
+	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/authn"
 )
 
 // HTTPMounter is implemented by HTTP handlers that register routes on a Gin router.

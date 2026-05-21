@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/netip"
 
-	"github.com/CubeLitBlade/community-v2/backend/common/jwt"
+	"github.com/CubeLitBlade/community-v2/backend/pkg/common/jwt"
 )
 
 // ErrInvalidCredentials is returned when login fails due to invalid credentials.

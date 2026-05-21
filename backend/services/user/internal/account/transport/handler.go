@@ -10,8 +10,8 @@ import (
 	"strconv"
 
 	"github.com/CubeLitBlade/community-v2/backend/pkg/common/httperr"
-	"github.com/CubeLitBlade/community-v2/backend/services/account/internal/account"
-	"github.com/CubeLitBlade/community-v2/backend/services/account/internal/authn"
+	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/account"
+	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/authn"
 	"github.com/gin-gonic/gin"
 )
 

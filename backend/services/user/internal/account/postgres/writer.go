@@ -7,7 +7,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/CubeLitBlade/community-v2/backend/services/account/internal/account"
+	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/account"
 )
 
 // Writer implements account persistence using PostgreSQL via GORM.

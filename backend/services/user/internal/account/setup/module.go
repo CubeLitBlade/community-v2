@@ -12,9 +12,10 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/CubeLitBlade/community-v2/backend/pkg/common/idgen"
-	"github.com/CubeLitBlade/community-v2/backend/services/account/internal/account"
-	"github.com/CubeLitBlade/community-v2/backend/services/account/internal/account/postgres"
-	"github.com/CubeLitBlade/community-v2/backend/services/account/internal/auth"
+	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/account"
+	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/account/postgres"
+	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/account/transport"
+	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/auth"
 )
 
 // Module returns the fx providers for the account module.

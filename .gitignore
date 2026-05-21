@@ -6,3 +6,7 @@ node_modules/
 backend/bin/
 .vscode/
 .idea/
+
+# Go work
+go.work
+go.work.sum

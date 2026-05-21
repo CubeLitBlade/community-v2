@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CubeLitBlade/community-v2/backend/internal/account"
+	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/account"
 )
 
 const (
