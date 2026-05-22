@@ -9,11 +9,10 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/cubelitblade/community-v2/backend/pkg/common/httperr"
 	"github.com/cubelitblade/community-v2/backend/services/user/internal/account"
 	"github.com/cubelitblade/community-v2/backend/services/user/internal/authn"
 	"github.com/gin-gonic/gin"
-
-	"github.com/cubelitblade/community-v2/backend/pkg/common/httperr"
 )
 
 // Registrar defines the interface for account-related operations.

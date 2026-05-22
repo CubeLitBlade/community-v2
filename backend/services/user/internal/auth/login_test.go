@@ -7,10 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cubelitblade/community-v2/backend/services/user/internal/auth"
-
 	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
 	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
+	"github.com/cubelitblade/community-v2/backend/services/user/internal/auth"
 )
 
 const (

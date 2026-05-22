@@ -5,12 +5,11 @@ package setup
 import (
 	"log/slog"
 
+	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
+	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
 	"github.com/cubelitblade/community-v2/backend/services/user/internal/auth"
 	"github.com/cubelitblade/community-v2/backend/services/user/internal/auth/transport"
 	"go.uber.org/fx"
-
-	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
-	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
 )
 
 // Module returns the fx providers for the auth module.

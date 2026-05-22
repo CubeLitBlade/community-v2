@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
+	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
 	accountSetup "github.com/cubelitblade/community-v2/backend/services/user/internal/account/setup"
 	"github.com/cubelitblade/community-v2/backend/services/user/internal/auth"
 	authSetup "github.com/cubelitblade/community-v2/backend/services/user/internal/auth/setup"
@@ -15,9 +17,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
-
-	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
-	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
 )
 
 const defaultJWTValidity = 24 * time.Hour

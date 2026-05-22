@@ -7,10 +7,9 @@ import (
 	"log/slog"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
-
 	"github.com/cubelitblade/community-v2/backend/pkg/common/httperr"
 	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
+	"github.com/gin-gonic/gin"
 )
 
 const keyPrincipal = "principal"
