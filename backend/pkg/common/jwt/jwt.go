@@ -19,7 +19,7 @@ var (
 	ErrTokenExpired = errors.New("token is expired")
 )
 
-// Claims represents the JWT claims for an authenticated user.
+// Claims represents the JWT claims for an authenticated account.
 type Claims struct {
 	gojwt.RegisteredClaims
 
@@ -58,7 +58,7 @@ func New(
 	}
 }
 
-// Issue creates a signed JWT for the given user ID and role.
+// Issue creates a signed JWT for the given account ID and role.
 func (j *JWT) Issue(uid int64, role string) (string, error) {
 	id, err := j.ids.NextID()
 	if err != nil {
