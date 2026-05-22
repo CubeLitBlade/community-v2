@@ -88,7 +88,7 @@ linters:
             - "$all"
           allow:
             - "$gostd"
-            - "github.com/CubeLitBlade/community-v2/backend"
+            - "github.com/cubelitblade/community-v2/backend"
             - "github.com/gin-gonic/gin"
             - "github.com/gorilla/csrf"
             - "golang.org/x/crypto/bcrypt"
@@ -135,7 +135,8 @@ linters:
     
     exhaustruct:
       include:
-        - 'github.com/CubeLitBlade/community-v2/backend/internal/.*'
+        - 'github.com/cubelitblade/community-v2/backend/pkg/.*'
+        - 'github.com/cubelitblade/community-v2/backend/services/.*'
       exclude:
         - 'gorm.io/gorm.Config'
         - 'net/http.Client'

@@ -4,7 +4,7 @@ package main
 import (
 	"log"
 
-	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/bootstrap"
+	"github.com/cubelitblade/community-v2/backend/services/user/internal/bootstrap"
 )
 
 func main() {

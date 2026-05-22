@@ -8,14 +8,14 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/cubelitblade/community-v2/backend/services/user/internal/account"
+	"github.com/cubelitblade/community-v2/backend/services/user/internal/account/postgres"
+	"github.com/cubelitblade/community-v2/backend/services/user/internal/account/transport"
+	"github.com/cubelitblade/community-v2/backend/services/user/internal/auth"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
-	"github.com/CubeLitBlade/community-v2/backend/pkg/common/idgen"
-	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/account"
-	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/account/postgres"
-	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/account/transport"
-	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/auth"
+	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
 )
 
 // Module returns the fx providers for the account module.
