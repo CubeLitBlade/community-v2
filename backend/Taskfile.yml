@@ -1,0 +1,193 @@
+version: "3"
+
+vars:
+  MODULES:
+    map:
+      account:
+        path: ./services/account
+        cmd: ./cmd/account
+      common:
+        path: ./pkg/common
+
+tasks:
+  work:setup:
+    desc: "Initialize or update go.work file"
+    cmds:
+      - test -f go.work || go work init
+      - |
+        {{- range $alias, $p := .MODULES }}
+        go work use {{ $p.path }}
+        {{- end }}
+      - go work sync
+
+  lint:
+    desc: "Run golangci-lint. Usage: task lint [-- <alias>]"
+    silent: true
+    cmds:
+      - |
+        {{- if .CLI_ARGS }}
+        ALIAS="{{ .CLI_ARGS }}"
+        TARGET_PATH=""
+        {{- range $a, $p := .MODULES }}
+        if [ "$ALIAS" = "{{ $a }}" ]; then TARGET_PATH="{{ $p.path }}"; fi
+        {{- end }}
+        
+        if [ -z "$TARGET_PATH" ]; then
+          echo "❌ Error: Unknown alias '$ALIAS'"
+          echo "Available aliases: {{ range $a, $p := .MODULES }}{{ $a }} {{ end }}"
+          exit 1
+        fi
+        
+        echo "🔍 Linting module '$ALIAS' at $TARGET_PATH/..."
+        golangci-lint run $TARGET_PATH/...
+        {{- else }}
+        LINT_PATHS=""
+        {{- range $alias, $p := .MODULES }}
+        LINT_PATHS="$LINT_PATHS {{ $p.path }}/..."
+        {{- end }}
+        echo "🔍 Linting all modules: $LINT_PATHS"
+        golangci-lint run $LINT_PATHS
+        {{- end }}
+
+  fmt:
+    desc: "Run gofmt. Usage: task fmt [-- <alias>]"
+    silent: true
+    cmds:
+      - |
+        {{- if .CLI_ARGS }}
+        ALIAS="{{ .CLI_ARGS }}"
+        TARGET_PATH=""
+        {{- range $a, $p := .MODULES }}
+        if [ "$ALIAS" = "{{ $a }}" ]; then TARGET_PATH="{{ $p.path }}"; fi
+        {{- end }}
+        
+        if [ -z "$TARGET_PATH" ]; then
+          echo "❌ Error: Unknown alias '$ALIAS'"
+          exit 1
+        fi
+        
+        echo "🎨 Formatting module '$ALIAS' at $TARGET_PATH..."
+        gofmt -w $TARGET_PATH
+        {{- else }}
+        echo "🎨 Formatting all modules..."
+        {{- range $alias, $p := .MODULES }}
+        gofmt -w {{ $p.path }}
+        {{- end }}
+        {{- end }}
+
+  run:
+    desc: "Run a specific service. Usage: task run -- <alias>"
+    silent: true
+    cmds:
+      - |
+        ALIAS="{{ .CLI_ARGS }}"
+        TARGET_PATH=""
+        TARGET_CMD=""
+        {{- range $a,$p := .MODULES }}
+        if [ "$ALIAS" = "{{$a }}" ]; then 
+          TARGET_PATH="{{ $p.path }}"
+          TARGET_CMD="{{ $p.cmd }}"
+        fi
+        {{- end }}
+        
+        if [ -z "$TARGET_CMD" ]; then
+          echo "❌ Error: Alias is required for run, and must have a cmd path."
+          echo "Available aliases: {{ range $a,$p := .MODULES }}{{ if $p.cmd }}{{$a }} {{ end }}{{ end }}"
+          exit 1
+        fi
+        
+        echo "🚀 Running service '$ALIAS'..."
+        go -C $TARGET_PATH run $TARGET_CMD || true
+
+  air:
+    desc: "Start dev server with air. Usage: task air -- <alias>"
+    silent: true
+    cmds:
+      - |
+        ALIAS="{{ .CLI_ARGS }}"
+        TARGET_PATH=""
+        TARGET_CMD=""
+        {{- range $a, $p := .MODULES }}
+        if [ "$ALIAS" = "{{ $a }}" ]; then 
+          TARGET_PATH="{{ $p.path }}"
+          TARGET_CMD="{{ $p.cmd }}"
+        fi
+        {{- end }}
+        
+        if [ -z "$TARGET_CMD" ]; then
+          echo "❌ Error: Alias is required for air, and must have a cmd path."
+          echo "Available aliases: {{ range $a, $p := .MODULES }}{{ if $p.cmd }}{{ $a }} {{ end }}{{ end }}"
+          exit 1
+        fi
+        
+        echo "🚀 Starting air for '$ALIAS' at $TARGET_PATH..."
+        cd $TARGET_PATH && air
+
+  test:
+    desc: "Run tests. Usage: task test [-- <alias> [go_test_flags]] (e.g., task test -- account -race)"
+    silent: true
+    cmds:
+      - |
+        ARGS="{{ .CLI_ARGS }}"
+        ALIAS=""
+        EXTRA_FLAGS=""
+        
+        for arg in $ARGS; do
+          if [[ "$arg" == -* ]] || [ -n "$ALIAS" ]; then
+            EXTRA_FLAGS="$EXTRA_FLAGS $arg"
+          else
+            ALIAS="$arg"
+          fi
+        done
+        
+        BASE_FLAGS="-cover"
+        ALL_FLAGS="$BASE_FLAGS $EXTRA_FLAGS"
+
+        if [ -n "$ALIAS" ]; then
+          TARGET_PATH=""
+          {{- range $a, $p := .MODULES }}
+          if [ "$ALIAS" = "{{ $a }}" ]; then TARGET_PATH="{{ $p.path }}"; fi
+          {{- end }}
+          
+          if [ -z "$TARGET_PATH" ]; then
+            echo "❌ Error: Unknown alias '$ALIAS'"
+            echo "Available aliases: {{ range $a, $p := .MODULES }}{{ $a }} {{ end }}"
+            exit 1
+          fi
+          
+          echo "🧪 Testing module '$ALIAS' with flags:$ALL_FLAGS"
+          go -C $TARGET_PATH test $ALL_FLAGS ./...
+        else
+          echo "🧪 Testing all modules with flags:$ALL_FLAGS"
+          {{- range $alias, $p := .MODULES }}
+          echo "--- Testing {{ $alias }} ---"
+          go -C {{ $p.path }} test $ALL_FLAGS ./...
+          {{- end }}
+        fi
+
+  tidy:
+    desc: "Run go mod tidy. Usage: task tidy [-- <alias>]"
+    silent: true
+    cmds:
+      - |
+        ALIAS="{{ .CLI_ARGS }}"
+        TARGET_PATH=""
+        TARGET_CMD=""
+        {{- range $a,$p := .MODULES }}
+        if [ "$ALIAS" = "{{$a }}" ]; then 
+          TARGET_PATH="{{ $p.path }}"
+          TARGET_CMD="{{ $p.cmd }}"
+        fi
+        {{- end }}
+        
+        if [ -z "$TARGET_CMD" ]; then
+          echo "❌ Error: Alias is required for run, and must have a cmd path."
+          echo "Available aliases: {{ range $a,$p := .MODULES }}{{ if $p.cmd }}{{$a }} {{ end }}{{ end }}"
+          exit 1
+        fi
+        
+        echo "🧹 Tidying module '$ALIAS' at$TARGET_PATH/..."
+        go -C $TARGET_PATH mod tidy
+
+  
+  
