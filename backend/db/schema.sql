@@ -1,6 +1,8 @@
-drop table if exists accounts cascade;
+create schema if not exists account_service;
 
-create table accounts
+drop table if exists account_service.accounts CASCADE;
+
+create table account_service.accounts
 (
     id bigint not null
         constraint pk_accounts
@@ -32,8 +34,6 @@ create table accounts
 
     last_login_ip inet
 );
-create index idx_accounts_status
-    on accounts (status);
 
-create index idx_accounts_role
-    on accounts (role);
+create index idx_accounts_status on account_service.accounts (status);
+create index idx_accounts_role on account_service.accounts (role);

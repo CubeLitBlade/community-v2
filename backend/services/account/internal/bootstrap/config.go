@@ -68,7 +68,7 @@ func LoadConfig() (*Config, error) {
 	defaultCookieSecure := false
 
 	if env == EnvDevelopment {
-		defaultDBURL = "postgres://localhost:5432/app_dev?sslmode=disable"
+		defaultDBURL = "postgres://community:community_dev_password@localhost:5432/community?sslmode=disable&search_path=account_service"
 		defaultJWTSecret = "development-insecure-jwt-secret-key!!"
 	}
 
@@ -134,6 +134,8 @@ func (c *Config) validate() error {
 func envString(key, fallback string) string {
 	value := os.Getenv(key)
 	if value == "" {
+		log.Printf("%s is empty, using default value: %s\n",
+			key, fallback)
 		return fallback
 	}
 

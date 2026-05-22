@@ -6,6 +6,9 @@ vars:
       account:
         path: ./services/account
         cmd: ./cmd/account
+      post:
+        path: ./services/post
+        cmd: ./cmd/post
       common:
         path: ./pkg/common
 
