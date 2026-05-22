@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/account"
+	"github.com/cubelitblade/community-v2/backend/services/user/internal/account"
 )
 
 var errFinder = errors.New("finder error")

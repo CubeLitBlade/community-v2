@@ -1,3 +1,4 @@
+// Package jwt provides JWT token creation, signing, and parsing.
 package jwt
 
 import (
@@ -6,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/CubeLitBlade/community-v2/backend/pkg/common/idgen"
+	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
 	gojwt "github.com/golang-jwt/jwt/v5"
 )
 

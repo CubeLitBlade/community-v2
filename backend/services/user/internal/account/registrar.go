@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/CubeLitBlade/community-v2/backend/pkg/common/idgen"
+	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
 )
 
 type creator interface {

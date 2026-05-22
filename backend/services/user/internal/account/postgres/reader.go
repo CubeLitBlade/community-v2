@@ -5,9 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/cubelitblade/community-v2/backend/services/user/internal/account"
 	"gorm.io/gorm"
-
-	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/account"
 )
 
 // Reader implements account.Reader by querying a PostgreSQL database via Gorm.

@@ -1,4 +1,4 @@
-module github.com/CubeLitBlade/community-v2/backend/pkg/common
+module github.com/cubelitblade/community-v2/backend/pkg/common
 
 go 1.26.3
 

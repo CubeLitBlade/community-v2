@@ -4,8 +4,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/CubeLitBlade/community-v2/backend/pkg/common/httperr"
-	"github.com/CubeLitBlade/community-v2/backend/services/user/internal/auth"
+	"github.com/cubelitblade/community-v2/backend/services/user/internal/auth"
+
+	"github.com/cubelitblade/community-v2/backend/pkg/common/httperr"
 )
 
 //nolint:gochecknoglobals // read-only static mapping used for error translation
