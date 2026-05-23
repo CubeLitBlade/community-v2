@@ -11,6 +11,8 @@ vars:
         cmd: ./cmd/post
       common:
         path: ./pkg/common
+      platform:
+        path: ./pkg/platform
 
 tasks:
   work:setup:
@@ -100,7 +102,7 @@ tasks:
         fi
         
         echo "🚀 Running service '$ALIAS'..."
-        go -C $TARGET_PATH run $TARGET_CMD || true
+        cd $TARGET_PATH && direnv exec . go run $TARGET_CMD || true
 
   air:
     desc: "Start dev server with air. Usage: task air -- <alias>"
@@ -124,7 +126,7 @@ tasks:
         fi
         
         echo "🚀 Starting air for '$ALIAS' at $TARGET_PATH..."
-        cd $TARGET_PATH && air
+        cd $TARGET_PATH && direnv exec . air
 
   test:
     desc: "Run tests. Usage: task test [-- <alias> [go_test_flags]] (e.g., task test -- account -race)"
@@ -159,12 +161,12 @@ tasks:
           fi
           
           echo "🧪 Testing module '$ALIAS' with flags:$ALL_FLAGS"
-          go -C $TARGET_PATH test $ALL_FLAGS ./...
+          cd $TARGET_PATH && direnv exec . go test $ALL_FLAGS ./...
         else
           echo "🧪 Testing all modules with flags:$ALL_FLAGS"
           {{- range $alias, $p := .MODULES }}
           echo "--- Testing {{ $alias }} ---"
-          go -C {{ $p.path }} test $ALL_FLAGS ./...
+          cd {{ $p.path }} && direnv exec . go test $ALL_FLAGS ./...
           {{- end }}
         fi
 

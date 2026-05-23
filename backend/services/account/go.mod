@@ -3,12 +3,13 @@ module github.com/cubelitblade/community-v2/backend/services/account
 go 1.26.3
 
 require (
+	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/cubelitblade/community-v2/backend/pkg/common v0.1.0
+	github.com/cubelitblade/community-v2/backend/pkg/platform v0.1.0
 	github.com/gin-gonic/gin v1.12.0
 	go.uber.org/fx v1.24.0
 	golang.org/x/crypto v0.52.0
 	gorm.io/cli/gorm v0.2.4
-	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
 )
 
@@ -53,4 +54,5 @@ require (
 	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
+	gorm.io/driver/postgres v1.6.0 // indirect
 )

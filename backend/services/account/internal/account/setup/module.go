@@ -9,35 +9,28 @@ import (
 	"time"
 
 	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
+	"github.com/cubelitblade/community-v2/backend/pkg/platform"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/account"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/account/postgres"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/account/transport"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/auth"
 	"go.uber.org/fx"
-	"gorm.io/gorm"
 )
 
 // Module returns the fx providers for the account module.
-// Handler annotations (HTTPMounter) and cross-module interface bindings
+// Cross-module interface bindings (AccountAuthenticator, LoginRecorder)
 // are handled by the composition root in bootstrap.
 func Module() fx.Option {
 	return fx.Options(
-		fx.Provide(NewReader),
-		fx.Provide(NewWriter),
+		fx.Provide(postgres.NewReader),
+		fx.Provide(postgres.NewWriter),
 		fx.Provide(NewAuthenticator),
 		fx.Provide(NewAuthenticatorAdapter),
 		fx.Provide(NewLoginRecorder),
+		fx.Provide(
+			fx.Annotate(NewHandler, fx.As(new(platform.HTTPMounter)), fx.ResultTags(`group:"mounter"`)),
+		),
 	)
-}
-
-// NewReader creates a postgres.Reader backed by the given GORM database connection.
-func NewReader(db *gorm.DB) *postgres.Reader {
-	return postgres.NewReader(db)
-}
-
-// NewWriter creates a postgres.Writer backed by the given GORM database connection.
-func NewWriter(db *gorm.DB) *postgres.Writer {
-	return postgres.NewWriter(db)
 }
 
 // NewHandler creates the account HTTP handler with all dependencies wired.

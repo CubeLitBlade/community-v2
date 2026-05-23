@@ -28,14 +28,14 @@ type CookieConfig struct {
 // Handler handles HTTP requests for authentication.
 type Handler struct {
 	login     *auth.Login
-	cookieCfg CookieConfig
+	cookieCfg *CookieConfig
 	logger    *slog.Logger
 }
 
 // Deps holds the dependencies required by the auth Handler.
 type Deps struct {
 	Login     *auth.Login
-	CookieCfg CookieConfig
+	CookieCfg *CookieConfig
 	Logger    *slog.Logger
 }
 

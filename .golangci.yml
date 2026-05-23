@@ -89,6 +89,7 @@ linters:
           allow:
             - "$gostd"
             - "github.com/cubelitblade/community-v2/backend"
+            - "github.com/caarlos0/env"
             - "github.com/gin-gonic/gin"
             - "github.com/gorilla/csrf"
             - "golang.org/x/crypto/bcrypt"
@@ -203,6 +204,9 @@ linters:
     
     exhaustive:
       default-signifies-exhaustive: true
+
+    gomoddirectives:
+      replace-local: true
 
     goconst:
       min-occurrences: 4

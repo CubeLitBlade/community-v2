@@ -3,202 +3,254 @@ package bootstrap
 import (
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
-	"os"
-	"strconv"
 	"strings"
 	"time"
+
+	"github.com/caarlos0/env"
+	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
+	"github.com/cubelitblade/community-v2/backend/pkg/platform"
+	authTransport "github.com/cubelitblade/community-v2/backend/services/account/internal/auth/transport"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/fx"
+	"gorm.io/gorm/logger"
 )
 
-// Environment represents the deployment environment of the application.
-type Environment string
-
-// ErrInvalidConfig indicates that the application configuration is invalid.
-var ErrInvalidConfig = errors.New("invalid configuration")
+// AppEnv represents the application deployment environment.
+type AppEnv string
 
 const (
-	// EnvDevelopment represents the development environment.
-	EnvDevelopment Environment = "dev"
-
-	// EnvProduction represents the production environment.
-	EnvProduction Environment = "prod"
+	envDevelopment AppEnv = "dev"
+	envProduction  AppEnv = "prod"
 )
 
-// Config holds the application configuration settings.
+const defaultSlowThreshold = 200 * time.Millisecond
+
+// Sentinel errors for config validation.
+var (
+	ErrAccessTTLNotPositive      = errors.New("jwt access token ttl must be positive")
+	ErrJWTSecretTooShort         = errors.New("jwt secret must be at least 32 bytes")
+	ErrAccessCookieNameEmpty     = errors.New("access token cookie name must not be empty")
+	ErrProductionCookieNotSecure = errors.New("cookie secure must be true in production")
+)
+
+// Config holds all application configuration grouped by concern.
 type Config struct {
-	// Env specifies the current deployment environment.
-	Env Environment
-
-	// HTTPAddr specifies the HTTP server listen address.
-	HTTPAddr string
-
-	// DatabaseURL specifies the connection string for the database.
-	DatabaseURL string
-
-	// AccessTokenCookieName specifies the name of the cookie used to store the access token.
-	AccessTokenCookieName string
-
-	// JWTSecret specifies the secret key used to sign JWT tokens.
-	JWTSecret string
-
-	// SnowflakeID specifies the machine or node ID for Snowflake ID generation.
-	SnowflakeID int64
-
-	// AccessTokenTTL specifies the time-to-live duration for access tokens.
-	AccessTokenTTL time.Duration
-
-	// CookieSameSite specifies the SameSite attribute for cookies.
-	CookieSameSite http.SameSite
-
-	// CookieSecure specifies whether cookies should be restricted to HTTPS.
-	CookieSecure bool
+	Slog       *platform.SlogConfig
+	GormLogger *platform.GormLoggerConfig
+	DB         *platform.DBConfig
+	Gin        *platform.GinConfig
+	Server     *platform.ServerConfig
+	Snowflake  *platform.SnowflakeConfig
+	JWT        *jwt.Config
+	AuthCookie *authTransport.CookieConfig
 }
 
-// LoadConfig reads configuration from environment variables, applies defaults based on the environment,
-// and validates the result. It returns a pointer to the configured Config or an error if validation fails.
+// ConfigOut provides all config sub-structs as separate fx dependencies.
+type ConfigOut struct {
+	fx.Out
+
+	Slog       *platform.SlogConfig
+	GormLogger *platform.GormLoggerConfig
+	DB         *platform.DBConfig
+	Gin        *platform.GinConfig
+	Server     *platform.ServerConfig
+	Snowflake  *platform.SnowflakeConfig
+	JWT        *jwt.Config
+	AuthCookie *authTransport.CookieConfig
+}
+
+// RawConfig is the flat env-var representation parsed by caarlos0/env.
+type RawConfig struct {
+	AppEnv                AppEnv        `env:"APP_ENV" envDefault:"dev"`
+	HTTPAddr              string        `env:"HTTP_ADDR" envDefault:":8080"`
+	DSN                   string        `env:"DATABASE_URL" required:"true"`
+	AccessTokenCookieName string        `env:"ACCESS_TOKEN_COOKIE_NAME" envDefault:"access_token"`
+	JWTSecret             string        `env:"JWT_SECRET" required:"true"`
+	SnowflakeID           int64         `env:"SNOWFLAKE_ID" required:"true"`
+	AccessTokenTTL        time.Duration `env:"ACCESS_TOKEN_TTL" envDefault:"2h"`
+	CookieSameSite        string        `env:"COOKIE_SAME_SITE" envDefault:"lax"`
+	CookieSecure          bool          `env:"COOKIE_SECURE" envDefault:"false"`
+}
+
+// LoadConfig reads environment variables and returns a validated Config.
 func LoadConfig() (*Config, error) {
-	env := Environment(envString("APP_ENV", string(EnvDevelopment)))
-
-	var cfg Config
-	cfg.Env = env
-
-	var defaultDBURL string
-	var defaultJWTSecret string
-	defaultCookieSecure := false
-
-	if env == EnvDevelopment {
-		defaultDBURL = "postgres://community:community_dev_password@localhost:5432/community?sslmode=disable&search_path=account_service"
-		defaultJWTSecret = "development-insecure-jwt-secret-key!!"
-	}
-
-	if env == EnvProduction {
-		defaultCookieSecure = true
-	}
-
-	cfg.DatabaseURL = envString("DATABASE_URL", defaultDBURL)
-	cfg.JWTSecret = envString("JWT_SECRET", defaultJWTSecret)
-	cfg.HTTPAddr = envString("HTTP_ADDR", ":8080")
-	cfg.AccessTokenCookieName = envString("ACCESS_TOKEN_COOKIE_NAME", "ACCESS_TOKEN")
-
-	var err error
-	if cfg.AccessTokenTTL, err = envDuration("JWT_ACCESS_TOKEN_TTL", 2*time.Hour); err != nil {
-		return nil, err
-	}
-	if cfg.SnowflakeID, err = envInt64("SNOWFLAKE_ID", 1); err != nil {
-		return nil, err
-	}
-	if cfg.CookieSecure, err = envBool("COOKIE_SECURE", defaultCookieSecure); err != nil {
-		return nil, err
-	}
-	if cfg.CookieSameSite, err = envSameSite("COOKIE_SAME_SITE", http.SameSiteLaxMode); err != nil {
-		return nil, err
-	}
-
-	if err := cfg.validate(); err != nil {
-		return nil, err
-	}
-
-	if env == EnvDevelopment && cfg.JWTSecret == defaultJWTSecret {
-		log.Println("WARNING: Using insecure default JWT_SECRET in development mode.")
-	}
-
-	return &cfg, nil
-}
-
-func (c *Config) validate() error {
-	if c.AccessTokenTTL <= 0 {
-		return fmt.Errorf("JWT_ACCESS_TOKEN_TTL must be positive: %w", ErrInvalidConfig)
-	}
-	if c.AccessTokenCookieName == "" {
-		return fmt.Errorf("ACCESS_TOKEN_COOKIE_NAME must not be empty: %w", ErrInvalidConfig)
-	}
-
-	if c.Env == EnvProduction {
-		if c.DatabaseURL == "" {
-			return fmt.Errorf("DATABASE_URL is required in production: %w", ErrInvalidConfig)
-		}
-
-		//nolint:mnd // 32 is the standard minimum key length for HMAC-SHA256 (HS256) in JWT, context is clear in the error message
-		if len(c.JWTSecret) < 32 {
-			return fmt.Errorf("JWT_SECRET must be at least 32 bytes in production: %w", ErrInvalidConfig)
-		}
-		if !c.CookieSecure {
-			return fmt.Errorf("COOKIE_SECURE must be true in production: %w", ErrInvalidConfig)
-		}
-	}
-
-	return nil
-}
-
-func envString(key, fallback string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		log.Printf("%s is empty, using default value: %s\n",
-			key, fallback)
-		return fallback
-	}
-
-	return value
-}
-
-func envBool(key string, fallback bool) (bool, error) {
-	value := os.Getenv(key)
-	if value == "" {
-		return fallback, nil
-	}
-
-	parsed, err := strconv.ParseBool(value)
+	var raw RawConfig
+	err := env.Parse(&raw)
 	if err != nil {
-		return false, fmt.Errorf("parse bool %s: %w", key, err)
+		return nil, fmt.Errorf("failed to parse config: %w", err)
 	}
 
-	return parsed, nil
-}
-
-func envInt64(key string, fallback int64) (int64, error) {
-	value := os.Getenv(key)
-	if value == "" {
-		return fallback, nil
-	}
-
-	parsed, err := strconv.ParseInt(value, 10, 64)
+	jwtCfg, err := raw.newJWTConfig()
 	if err != nil {
-		return 0, fmt.Errorf("parse int %s: %w", key, err)
+		return nil, fmt.Errorf("failed to create JWT config: %w", err)
 	}
 
-	return parsed, nil
-}
-
-func envDuration(key string, fallback time.Duration) (time.Duration, error) {
-	value := os.Getenv(key)
-	if value == "" {
-		return fallback, nil
-	}
-
-	parsed, err := time.ParseDuration(value)
+	cookieCfg, err := raw.newAuthCookieConfig()
 	if err != nil {
-		return 0, fmt.Errorf("parse duration %s: %w", key, err)
+		return nil, fmt.Errorf("failed to create auth cookie config: %w", err)
 	}
 
-	return parsed, nil
+	return &Config{
+		Slog:       raw.newSlogConfig(),
+		GormLogger: raw.newGormLoggerConfig(),
+		DB:         raw.newDBConfig(),
+		Gin:        raw.newGinConfig(),
+		Server:     raw.newServerConfig(),
+		Snowflake:  raw.newSnowflakeConfig(),
+		JWT:        jwtCfg,
+		AuthCookie: cookieCfg,
+	}, nil
 }
 
-func envSameSite(key string, fallback http.SameSite) (http.SameSite, error) {
-	value := os.Getenv(key)
-	if value == "" {
-		return fallback, nil
+// ProvideConfig loads configuration from the environment and exposes each
+// config struct as a separate fx dependency via ConfigOut.
+func ProvideConfig() (ConfigOut, error) {
+	cfg, err := LoadConfig()
+	if err != nil {
+		return ConfigOut{}, fmt.Errorf("failed to load config: %w", err)
 	}
 
-	switch strings.ToLower(value) {
-	case "none":
-		return http.SameSiteNoneMode, nil
-	case "lax":
-		return http.SameSiteLaxMode, nil
-	case "strict":
-		return http.SameSiteStrictMode, nil
+	return ConfigOut{
+		Out:        fx.Out{},
+		Slog:       cfg.Slog,
+		GormLogger: cfg.GormLogger,
+		DB:         cfg.DB,
+		Gin:        cfg.Gin,
+		Server:     cfg.Server,
+		Snowflake:  cfg.Snowflake,
+		JWT:        cfg.JWT,
+		AuthCookie: cfg.AuthCookie,
+	}, nil
+}
+
+func (r *RawConfig) newSlogConfig() *platform.SlogConfig {
+	switch r.AppEnv {
+	case envDevelopment:
+		return &platform.SlogConfig{
+			LogLevel:  slog.LevelDebug,
+			LogFormat: platform.LogFormatText,
+		}
+	case envProduction:
+		return &platform.SlogConfig{
+			LogLevel:  slog.LevelInfo,
+			LogFormat: platform.LogFormatJSON,
+		}
 	default:
-		return 0, fmt.Errorf("invalid value %q for %s (must be strict, lax, or none): %w",
-			value, key, ErrInvalidConfig)
+		return &platform.SlogConfig{
+			LogLevel:  slog.LevelDebug,
+			LogFormat: platform.LogFormatText,
+		}
 	}
+}
+
+func (r *RawConfig) newGormLoggerConfig() *platform.GormLoggerConfig {
+	switch r.AppEnv {
+	case envDevelopment:
+		return &platform.GormLoggerConfig{
+			GormLogLevel:  logger.Warn,
+			SlowThreshold: defaultSlowThreshold,
+			Colorful:      true,
+		}
+	case envProduction:
+		return &platform.GormLoggerConfig{
+			GormLogLevel:  logger.Info,
+			SlowThreshold: defaultSlowThreshold,
+			Colorful:      true,
+		}
+	default:
+		return &platform.GormLoggerConfig{
+			GormLogLevel:  logger.Warn,
+			SlowThreshold: defaultSlowThreshold,
+			Colorful:      true,
+		}
+	}
+}
+
+func (r *RawConfig) newDBConfig() *platform.DBConfig {
+	return &platform.DBConfig{
+		DSN: r.DSN,
+	}
+}
+
+func (r *RawConfig) newGinConfig() *platform.GinConfig {
+	switch r.AppEnv {
+	case envDevelopment:
+		return &platform.GinConfig{
+			GinMode:        gin.DebugMode,
+			TrustedProxies: nil,
+		}
+	case envProduction:
+		return &platform.GinConfig{
+			GinMode:        gin.ReleaseMode,
+			TrustedProxies: nil,
+		}
+	default:
+		return &platform.GinConfig{
+			GinMode:        gin.DebugMode,
+			TrustedProxies: nil,
+		}
+	}
+}
+
+func (r *RawConfig) newServerConfig() *platform.ServerConfig {
+	return &platform.ServerConfig{
+		HTTPAddr:          r.HTTPAddr,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       5 * time.Second,
+		WriteTimeout:      5 * time.Second,
+	}
+}
+
+func (r *RawConfig) newSnowflakeConfig() *platform.SnowflakeConfig {
+	return &platform.SnowflakeConfig{
+		NodeID: r.SnowflakeID,
+	}
+}
+
+func (r *RawConfig) newJWTConfig() (*jwt.Config, error) {
+	if r.AccessTokenTTL <= 0 {
+		return nil, ErrAccessTTLNotPositive
+	}
+
+	//nolint:mnd // 32 bytes is the minimum key length for HMAC-SHA256 (HS256)
+	if len(r.JWTSecret) < 32 {
+		return nil, ErrJWTSecretTooShort
+	}
+
+	return &jwt.Config{
+		Key:      r.JWTSecret,
+		Issuer:   "community-v2",
+		Validity: r.AccessTokenTTL,
+	}, nil
+}
+
+func (r *RawConfig) newAuthCookieConfig() (*authTransport.CookieConfig, error) {
+	if r.AccessTokenCookieName == "" {
+		return nil, ErrAccessCookieNameEmpty
+	}
+
+	if r.AppEnv == envProduction && !r.CookieSecure {
+		return nil, ErrProductionCookieNotSecure
+	}
+
+	var sameSite http.SameSite
+
+	switch strings.ToLower(r.CookieSameSite) {
+	case "lax":
+		sameSite = http.SameSiteLaxMode
+	case "none":
+		sameSite = http.SameSiteNoneMode
+	case "strict":
+		sameSite = http.SameSiteStrictMode
+
+	}
+
+	return &authTransport.CookieConfig{
+		Name:     r.AccessTokenCookieName,
+		Secure:   r.CookieSecure,
+		SameSite: sameSite,
+		MaxAge:   int(r.AccessTokenTTL.Seconds()),
+	}, nil
 }

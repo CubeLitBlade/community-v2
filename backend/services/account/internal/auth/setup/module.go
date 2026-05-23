@@ -7,22 +7,26 @@ import (
 
 	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
 	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
+	"github.com/cubelitblade/community-v2/backend/pkg/platform"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/auth"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/auth/transport"
 	"go.uber.org/fx"
 )
 
 // Module returns the fx providers for the auth module.
-// Handler annotations (HTTPMounter) are handled by the composition root in bootstrap.
 func Module() fx.Option {
-	return fx.Options()
+	return fx.Options(
+		fx.Provide(
+			fx.Annotate(NewHandler, fx.As(new(platform.HTTPMounter)), fx.ResultTags(`group:"mounter"`)),
+		),
+	)
 }
 
 // NewHandler creates the auth HTTP handler with all dependencies wired.
 func NewHandler(
 	ids idgen.Generator,
 	jwtCfg *jwt.Config,
-	cookieCfg transport.CookieConfig,
+	cookieCfg *transport.CookieConfig,
 	accAuth auth.AccountAuthenticator,
 	recorder auth.LoginRecorder,
 	logger *slog.Logger,
