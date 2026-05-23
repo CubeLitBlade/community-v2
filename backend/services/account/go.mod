@@ -5,7 +5,7 @@ go 1.26.3
 require (
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/cubelitblade/community-v2/backend/pkg/common v0.1.0
-	github.com/cubelitblade/community-v2/backend/pkg/platform v0.1.0
+	github.com/cubelitblade/community-v2/backend/pkg/platform v0.1.1
 	github.com/gin-gonic/gin v1.12.0
 	go.uber.org/fx v1.24.0
 	golang.org/x/crypto v0.52.0
