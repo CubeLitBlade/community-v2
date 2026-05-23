@@ -10,7 +10,7 @@ import (
 
 	"github.com/caarlos0/env"
 	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
-	"github.com/cubelitblade/community-v2/backend/pkg/platform"
+	platformconfig "github.com/cubelitblade/community-v2/backend/pkg/platform/config"
 	authTransport "github.com/cubelitblade/community-v2/backend/services/account/internal/auth/transport"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
@@ -37,12 +37,12 @@ var (
 
 // Config holds all application configuration grouped by concern.
 type Config struct {
-	Slog       *platform.SlogConfig
-	GormLogger *platform.GormLoggerConfig
-	DB         *platform.DBConfig
-	Gin        *platform.GinConfig
-	Server     *platform.ServerConfig
-	Snowflake  *platform.SnowflakeConfig
+	Slog       *platformconfig.SlogConfig
+	GormLogger *platformconfig.GormLoggerConfig
+	DB         *platformconfig.DBConfig
+	Gin        *platformconfig.GinConfig
+	Server     *platformconfig.ServerConfig
+	Snowflake  *platformconfig.SnowflakeConfig
 	JWT        *jwt.Config
 	AuthCookie *authTransport.CookieConfig
 }
@@ -51,12 +51,12 @@ type Config struct {
 type ConfigOut struct {
 	fx.Out
 
-	Slog       *platform.SlogConfig
-	GormLogger *platform.GormLoggerConfig
-	DB         *platform.DBConfig
-	Gin        *platform.GinConfig
-	Server     *platform.ServerConfig
-	Snowflake  *platform.SnowflakeConfig
+	Slog       *platformconfig.SlogConfig
+	GormLogger *platformconfig.GormLoggerConfig
+	DB         *platformconfig.DBConfig
+	Gin        *platformconfig.GinConfig
+	Server     *platformconfig.ServerConfig
+	Snowflake  *platformconfig.SnowflakeConfig
 	JWT        *jwt.Config
 	AuthCookie *authTransport.CookieConfig
 }
@@ -125,42 +125,42 @@ func ProvideConfig() (ConfigOut, error) {
 	}, nil
 }
 
-func (r *RawConfig) newSlogConfig() *platform.SlogConfig {
+func (r *RawConfig) newSlogConfig() *platformconfig.SlogConfig {
 	switch r.AppEnv {
 	case envDevelopment:
-		return &platform.SlogConfig{
+		return &platformconfig.SlogConfig{
 			LogLevel:  slog.LevelDebug,
-			LogFormat: platform.LogFormatText,
+			LogFormat: platformconfig.LogFormatText,
 		}
 	case envProduction:
-		return &platform.SlogConfig{
+		return &platformconfig.SlogConfig{
 			LogLevel:  slog.LevelInfo,
-			LogFormat: platform.LogFormatJSON,
+			LogFormat: platformconfig.LogFormatJSON,
 		}
 	default:
-		return &platform.SlogConfig{
+		return &platformconfig.SlogConfig{
 			LogLevel:  slog.LevelDebug,
-			LogFormat: platform.LogFormatText,
+			LogFormat: platformconfig.LogFormatText,
 		}
 	}
 }
 
-func (r *RawConfig) newGormLoggerConfig() *platform.GormLoggerConfig {
+func (r *RawConfig) newGormLoggerConfig() *platformconfig.GormLoggerConfig {
 	switch r.AppEnv {
 	case envDevelopment:
-		return &platform.GormLoggerConfig{
+		return &platformconfig.GormLoggerConfig{
 			GormLogLevel:  logger.Warn,
 			SlowThreshold: defaultSlowThreshold,
 			Colorful:      true,
 		}
 	case envProduction:
-		return &platform.GormLoggerConfig{
+		return &platformconfig.GormLoggerConfig{
 			GormLogLevel:  logger.Info,
 			SlowThreshold: defaultSlowThreshold,
 			Colorful:      true,
 		}
 	default:
-		return &platform.GormLoggerConfig{
+		return &platformconfig.GormLoggerConfig{
 			GormLogLevel:  logger.Warn,
 			SlowThreshold: defaultSlowThreshold,
 			Colorful:      true,
@@ -168,34 +168,34 @@ func (r *RawConfig) newGormLoggerConfig() *platform.GormLoggerConfig {
 	}
 }
 
-func (r *RawConfig) newDBConfig() *platform.DBConfig {
-	return &platform.DBConfig{
+func (r *RawConfig) newDBConfig() *platformconfig.DBConfig {
+	return &platformconfig.DBConfig{
 		DSN: r.DSN,
 	}
 }
 
-func (r *RawConfig) newGinConfig() *platform.GinConfig {
+func (r *RawConfig) newGinConfig() *platformconfig.GinConfig {
 	switch r.AppEnv {
 	case envDevelopment:
-		return &platform.GinConfig{
+		return &platformconfig.GinConfig{
 			GinMode:        gin.DebugMode,
 			TrustedProxies: nil,
 		}
 	case envProduction:
-		return &platform.GinConfig{
+		return &platformconfig.GinConfig{
 			GinMode:        gin.ReleaseMode,
 			TrustedProxies: nil,
 		}
 	default:
-		return &platform.GinConfig{
+		return &platformconfig.GinConfig{
 			GinMode:        gin.DebugMode,
 			TrustedProxies: nil,
 		}
 	}
 }
 
-func (r *RawConfig) newServerConfig() *platform.ServerConfig {
-	return &platform.ServerConfig{
+func (r *RawConfig) newServerConfig() *platformconfig.ServerConfig {
+	return &platformconfig.ServerConfig{
 		HTTPAddr:          r.HTTPAddr,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       5 * time.Second,
@@ -203,8 +203,8 @@ func (r *RawConfig) newServerConfig() *platform.ServerConfig {
 	}
 }
 
-func (r *RawConfig) newSnowflakeConfig() *platform.SnowflakeConfig {
-	return &platform.SnowflakeConfig{
+func (r *RawConfig) newSnowflakeConfig() *platformconfig.SnowflakeConfig {
+	return &platformconfig.SnowflakeConfig{
 		NodeID: r.SnowflakeID,
 	}
 }

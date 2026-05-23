@@ -1,4 +1,4 @@
-package platform
+package server
 
 import (
 	"context"
@@ -6,24 +6,16 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/cubelitblade/community-v2/backend/pkg/common/httperr"
+	"github.com/cubelitblade/community-v2/backend/pkg/platform/config"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 )
 
-// ServerConfig holds the HTTP server settings.
-type ServerConfig struct {
-	HTTPAddr          string
-	ReadHeaderTimeout time.Duration
-	ReadTimeout       time.Duration
-	WriteTimeout      time.Duration
-}
-
 // ProvideHTTPServer creates an *http.Server, registers lifecycle hooks to
 // start listening on app start and gracefully shut down on app stop.
-func ProvideHTTPServer(lifecycle fx.Lifecycle, cfg *ServerConfig, router *gin.Engine) *http.Server {
+func ProvideHTTPServer(lifecycle fx.Lifecycle, cfg *config.ServerConfig, router *gin.Engine) *http.Server {
 	protection := http.NewCrossOriginProtection()
 	protection.SetDenyHandler(http.HandlerFunc(writeCrossOriginError))
 	finalHandler := protection.Handler(router)

@@ -1,4 +1,6 @@
-package platform
+// Package server provides Gin engine setup, HTTP server lifecycle management,
+// and request-level middleware.
+package server
 
 import (
 	"fmt"
@@ -6,17 +8,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cubelitblade/community-v2/backend/pkg/platform/config"
 	"github.com/gin-gonic/gin"
 )
 
-// GinConfig provides settings for the Gin engine.
-type GinConfig struct {
-	GinMode        string
-	TrustedProxies []string
-}
-
 // NewGinEngine creates a gin.Engine with common middleware applied.
-func NewGinEngine(cfg *GinConfig, logger *slog.Logger) *gin.Engine {
+func NewGinEngine(cfg *config.GinConfig, logger *slog.Logger) *gin.Engine {
 	gin.SetMode(cfg.GinMode)
 
 	router := gin.New()
@@ -43,8 +40,6 @@ func NewGinEngine(cfg *GinConfig, logger *slog.Logger) *gin.Engine {
 // requestIDMiddleware assigns a unique request ID to each request.
 func requestIDMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// In a real implementation, generate or read a request ID header.
-		// For simplicity, we use a header "X-Request-ID" or set a generated one.
 		if c.GetHeader("X-Request-ID") == "" {
 			c.Request.Header.Set("X-Request-ID", strconv.FormatInt(time.Now().UnixNano(), 10))
 		}

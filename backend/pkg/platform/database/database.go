@@ -1,6 +1,5 @@
-// Package platform provides shared infrastructure (DB, HTTP, logging, Gin,
-// Snowflake, JWT) wired as fx constructors for use by service modules.
-package platform
+// Package database provides a GORM-based PostgreSQL connection with fx lifecycle hooks.
+package database
 
 import (
 	"context"
@@ -9,22 +8,18 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cubelitblade/community-v2/backend/pkg/platform/config"
 	"go.uber.org/fx"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
-const databasePingTimeout = 5 * time.Second
+const pingTimeout = 5 * time.Second
 
-// DBConfig provides the Data Source Name for the database connection.
-type DBConfig struct {
-	DSN string
-}
-
-// OpenDatabase connects to a PostgreSQL database, pings to verify connectivity,
+// Open connects to a PostgreSQL database, pings to verify connectivity,
 // and returns both the GORM instance and the underlying *sql.DB.
-func OpenDatabase(dsn string, gormLogger logger.Interface) (gormDB *gorm.DB, sqlDB *sql.DB, err error) {
+func Open(dsn string, gormLogger logger.Interface) (gormDB *gorm.DB, sqlDB *sql.DB, err error) {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger:         gormLogger,
 		TranslateError: true,
@@ -38,7 +33,7 @@ func OpenDatabase(dsn string, gormLogger logger.Interface) (gormDB *gorm.DB, sql
 		return nil, nil, fmt.Errorf("get database handle: %w", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), databasePingTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), pingTimeout)
 	defer cancel()
 
 	if err := handle.PingContext(ctx); err != nil {
@@ -52,10 +47,10 @@ func OpenDatabase(dsn string, gormLogger logger.Interface) (gormDB *gorm.DB, sql
 	return db, handle, nil
 }
 
-// ProvideDatabase creates a *gorm.DB, registers a close hook for the
+// Provide creates a *gorm.DB, registers a close hook for the
 // connection pool, and returns only the *gorm.DB.
-func ProvideDatabase(lifecycle fx.Lifecycle, cfg *DBConfig, gormLogger logger.Interface) (*gorm.DB, error) {
-	db, sqlDB, err := OpenDatabase(cfg.DSN, gormLogger)
+func Provide(lifecycle fx.Lifecycle, cfg *config.DBConfig, gormLogger logger.Interface) (*gorm.DB, error) {
+	db, sqlDB, err := Open(cfg.DSN, gormLogger)
 	if err != nil {
 		return nil, err
 	}
