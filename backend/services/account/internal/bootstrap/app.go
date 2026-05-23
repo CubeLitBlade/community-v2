@@ -7,6 +7,7 @@ import (
 	accountSetup "github.com/cubelitblade/community-v2/backend/services/account/internal/account/setup"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/auth"
 	authSetup "github.com/cubelitblade/community-v2/backend/services/account/internal/auth/setup"
+	healthSetup "github.com/cubelitblade/community-v2/backend/services/account/internal/health/setup"
 	"go.uber.org/fx"
 )
 
@@ -18,6 +19,7 @@ func NewApp() *fx.App {
 
 		accountSetup.Module(),
 		authSetup.Module(),
+		healthSetup.Module(),
 
 		fx.Provide(
 			fx.Annotate(accountSetup.NewAuthenticatorAdapter, fx.As(new(auth.AccountAuthenticator))),
@@ -26,6 +28,7 @@ func NewApp() *fx.App {
 			fx.Annotate(accountSetup.NewLoginRecorder, fx.As(new(auth.LoginRecorder))),
 		),
 		fx.Invoke(registerAPIRoutes),
+		fx.Invoke(registerHealthRoutes),
 		fx.Invoke(func(*http.Server) {}),
 	)
 }

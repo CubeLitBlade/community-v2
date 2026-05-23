@@ -7,6 +7,7 @@ import (
 	"github.com/cubelitblade/community-v2/backend/pkg/platform"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/auth/transport"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/authn"
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/health"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 )
@@ -25,4 +26,15 @@ func registerAPIRoutes(p registerParams) {
 	api := p.Router.Group("/api")
 	api.Use(authn.ParseToken(p.JWTConfig.Key, p.AuthCookieConfig.Name, p.Logger))
 	platform.RegisterRouters(api, p.Mounters)
+}
+
+type healthRouteParams struct {
+	fx.In
+
+	Router        *gin.Engine
+	HealthHandler *health.Handler
+}
+
+func registerHealthRoutes(p healthRouteParams) {
+	p.HealthHandler.RegisterRoutes(p.Router)
 }
