@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: docker.io/library/postgres:18-alpine
@@ -11,6 +9,12 @@ services:
       - POSTGRES_DB=community
     volumes:
       - pgdata:/var/lib/postgresql
+      - ./backend/infra/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U community" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   rabbitmq:
     image: docker.io/library/rabbitmq:4.3-management
@@ -21,6 +25,47 @@ services:
       - RABBITMQ_DEFAULT_PASS=community_dev_password
     volumes:
       - mqdata:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  openfga-migrate:
+    image: docker.io/openfga/openfga:latest
+    container_name: community-openfga-migrate
+    environment:
+      - OPENFGA_DATASTORE_ENGINE=postgres
+      - OPENFGA_DATASTORE_URI=postgres://openfga:openfga_dev_password@db:5432/community?sslmode=disable
+    command: migrate
+    depends_on:
+      db:
+        condition: service_healthy
+
+  openfga:
+    depends_on:
+      openfga-migrate:
+        condition: service_completed_successfully
+    image: docker.io/openfga/openfga:latest
+    container_name: community-openfga
+    command: run
+    environment:
+      - OPENFGA_DATASTORE_ENGINE=postgres
+      - OPENFGA_DATASTORE_URI=postgres://openfga:openfga_dev_password@db:5432/community?sslmode=disable
+      - OPENFGA_DATASTORE_MAX_OPEN_CONNS=20
+      - OPENFGA_PLAYGROUND_ENABLED=false
+    networks:
+      - default
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/local/bin/grpc_health_probe",
+          "-addr=openfga:8081"
+        ]
+      interval: 5s
+      timeout: 30s
+      retries: 3
 
 volumes:
   pgdata:
