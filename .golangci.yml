@@ -98,30 +98,9 @@ linters:
             - "gorm.io/driver/postgres"
             - "go.uber.org/fx"
             - "gorm.io/cli/gorm/field"
+            - "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
+            - "github.com/Azure/go-amqp"
 
-    ignoreSigs:
-      - .Errorf(
-      - errors.New(
-      - .Wrap(
-      - .Wrapf(
-      - fmt.Errorf(
-      - gorm.io/gorm.DB.Error
-      - gorm.io/gorm.DB.Find(
-      - gorm.io/gorm.DB.Create(
-      - gorm.io/gorm.DB.Update(
-      - gorm.io/gorm.DB.Delete(
-      - gorm.io/gorm.DB.Exec(
-      - .Close()
-      - .Decode(
-      - .Unmarshal(
-      
-    ignorePackageGlobs:
-      - gorm.io/gorm
-      - gorm.io/driver/*
-      - github.com/gin-gonic/gin.*
-      - encoding/*
-      - crypto/*
-    
     errcheck:
       check-type-assertions: true
       check-blank: true
