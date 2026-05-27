@@ -39,13 +39,17 @@ func makeAccount(t *testing.T, password string) *account.Account {
 	return &acc
 }
 
+func stubNow() time.Time {
+	return testNow
+}
+
 func TestAuthenticator_Success(t *testing.T) {
 	t.Parallel()
 
 	pwd := validPwd
 	acc := makeAccount(t, pwd)
 	finder := &stubFinder{acc: acc, err: nil}
-	auth := account.NewAuthenticator(finder, nil)
+	auth := account.NewAuthenticator(finder, stubNow, nil)
 
 	got, err := auth.Authenticate(
 		context.Background(), "testuser", pwd,
@@ -63,7 +67,7 @@ func TestAuthenticator_AccountNotFound(t *testing.T) {
 	t.Parallel()
 
 	finder := &stubFinder{acc: nil, err: account.ErrAccountNotFound}
-	auth := account.NewAuthenticator(finder, nil)
+	auth := account.NewAuthenticator(finder, stubNow, nil)
 
 	_, err := auth.Authenticate(
 		context.Background(), "missing", validPwd,
@@ -79,7 +83,7 @@ func TestAuthenticator_WrongPassword(t *testing.T) {
 
 	acc := makeAccount(t, validPwd)
 	finder := &stubFinder{acc: acc, err: nil}
-	auth := account.NewAuthenticator(finder, nil)
+	auth := account.NewAuthenticator(finder, stubNow, nil)
 
 	_, err := auth.Authenticate(
 		context.Background(), "testuser", "wrong-password!!!",
@@ -94,7 +98,7 @@ func TestAuthenticator_NilAccount(t *testing.T) {
 	t.Parallel()
 
 	finder := &stubFinder{acc: nil, err: nil}
-	auth := account.NewAuthenticator(finder, nil)
+	auth := account.NewAuthenticator(finder, stubNow, nil)
 
 	_, err := auth.Authenticate(
 		context.Background(), "ghost", validPwd,
@@ -109,7 +113,7 @@ func TestAuthenticator_FinderError(t *testing.T) {
 	t.Parallel()
 
 	finder := &stubFinder{acc: nil, err: errFinder}
-	auth := account.NewAuthenticator(finder, nil)
+	auth := account.NewAuthenticator(finder, stubNow, nil)
 
 	_, err := auth.Authenticate(
 		context.Background(), "any", validPwd,

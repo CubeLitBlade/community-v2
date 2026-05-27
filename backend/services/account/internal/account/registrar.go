@@ -9,32 +9,27 @@ import (
 	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
 )
 
-type creator interface {
+// Creator persists a new account.
+type Creator interface {
 	Create(ctx context.Context, acc *Account) error
 }
 
 // Registrar orchestrates the account registration process.
 type Registrar struct {
 	ids     idgen.Generator
-	creator creator
+	creator Creator
 	now     func() time.Time
 	logger  *slog.Logger
 }
 
 // NewRegistrar creates and returns a new Registrar.
 func NewRegistrar(
-	ids idgen.Generator,
-	creator creator,
-	logger *slog.Logger,
+	ids idgen.Generator, creator Creator, now func() time.Time, logger *slog.Logger,
 ) *Registrar {
-	if logger == nil {
-		panic("nil logger")
-	}
-
 	return &Registrar{
 		ids:     ids,
 		creator: creator,
-		now:     time.Now,
+		now:     now,
 		logger:  logger,
 	}
 }

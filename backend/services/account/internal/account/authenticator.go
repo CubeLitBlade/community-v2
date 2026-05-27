@@ -11,24 +11,25 @@ import (
 // ErrInvalidCredentials is returned when authentication fails due to mismatched credentials.
 var ErrInvalidCredentials = errors.New("invalid credentials")
 
-type byUsernameFinder interface {
+// ByUsernameFinder finds an account by username.
+type ByUsernameFinder interface {
 	FindByUsername(ctx context.Context, username string) (*Account, error)
 }
 
 // Authenticator verifies username/password credentials against stored accounts.
 type Authenticator struct {
-	finder byUsernameFinder
+	finder ByUsernameFinder
 	now    func() time.Time
 	logger *slog.Logger
 }
 
 // NewAuthenticator creates a new Authenticator.
 func NewAuthenticator(
-	finder byUsernameFinder, logger *slog.Logger,
+	finder ByUsernameFinder, now func() time.Time, logger *slog.Logger,
 ) *Authenticator {
 	return &Authenticator{
 		finder: finder,
-		now:    time.Now,
+		now:    now,
 		logger: logger,
 	}
 }

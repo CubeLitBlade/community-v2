@@ -18,13 +18,7 @@ type Writer struct {
 // connection.
 // Panics if db is nil.
 func NewWriter(db *gorm.DB) *Writer {
-	if db == nil {
-		panic("nil db")
-	}
-
-	return &Writer{
-		db: db,
-	}
+	return &Writer{db: db}
 }
 
 // Create persists a new Account to the database.

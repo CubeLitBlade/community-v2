@@ -8,11 +8,8 @@ import (
 	"time"
 )
 
-type accountFinder interface {
-	FindByID(ctx context.Context, id int64) (*Account, error)
-}
-
-type lastLoginUpdater interface {
+// LastLoginUpdater records the last login timestamp for an account.
+type LastLoginUpdater interface {
 	UpdateLastLogin(ctx context.Context, acc *Account) error
 }
 
@@ -21,8 +18,8 @@ type lastLoginUpdater interface {
 // then persists the change via the injected updater.
 type LoginRecorder struct {
 	now     func() time.Time
-	finder  accountFinder
-	updater lastLoginUpdater
+	finder  ByIDFinder
+	updater LastLoginUpdater
 	logger  *slog.Logger
 }
 
@@ -31,7 +28,7 @@ type LoginRecorder struct {
 // updater persists the account's last login info;
 // logger logs operational events.
 func NewLoginRecorder(
-	now func() time.Time, finder accountFinder, updater lastLoginUpdater, logger *slog.Logger,
+	now func() time.Time, finder ByIDFinder, updater LastLoginUpdater, logger *slog.Logger,
 ) *LoginRecorder {
 	return &LoginRecorder{
 		now:     now,

@@ -5,10 +5,7 @@ package setup
 import (
 	"context"
 	"fmt"
-	"log/slog"
-	"time"
 
-	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
 	"github.com/cubelitblade/community-v2/backend/pkg/platform"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/account"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/account/postgres"
@@ -22,34 +19,27 @@ import (
 // are handled by the composition root in bootstrap.
 func Module() fx.Option {
 	return fx.Options(
-		fx.Provide(postgres.NewReader),
-		fx.Provide(postgres.NewWriter),
-		fx.Provide(NewAuthenticator),
-		fx.Provide(NewAuthenticatorAdapter),
-		fx.Provide(NewLoginRecorder),
 		fx.Provide(
-			fx.Annotate(NewHandler, fx.As(new(platform.HTTPMounter)), fx.ResultTags(`group:"mounter"`)),
+			fx.Annotate(postgres.NewWriter, fx.As(new(account.Creator))),
+			fx.Annotate(postgres.NewWriter, fx.As(new(account.LastLoginUpdater))),
+		),
+		fx.Provide(
+			fx.Annotate(postgres.NewReader, fx.As(new(account.ByIDFinder))),
+			fx.Annotate(postgres.NewReader, fx.As(new(account.ByUsernameFinder))),
+		),
+		fx.Provide(
+			fx.Annotate(account.NewRegistrar, fx.As(new(transport.Registrar))),
+		),
+		fx.Provide(account.NewAuthenticator),
+		fx.Provide(
+			fx.Annotate(account.NewProfileFinder, fx.As(new(transport.ProfileFinder))),
+		),
+		fx.Provide(NewAuthenticatorAdapter),
+		fx.Provide(account.NewLoginRecorder),
+		fx.Provide(
+			fx.Annotate(transport.NewHandler, fx.As(new(platform.HTTPMounter)), fx.ResultTags(`group:"mounter"`)),
 		),
 	)
-}
-
-// NewHandler creates the account HTTP handler with all dependencies wired.
-func NewHandler(
-	reader *postgres.Reader, writer *postgres.Writer, ids idgen.Generator, logger *slog.Logger,
-) *transport.Handler {
-	registrar := account.NewRegistrar(ids, writer, logger)
-	finder := account.NewProfileFinder(reader, logger)
-
-	return transport.NewHandler(transport.Deps{
-		Registrar:     registrar,
-		ProfileFinder: finder,
-		Logger:        logger,
-	})
-}
-
-// NewAuthenticator creates the account authenticator for cross-module injection.
-func NewAuthenticator(reader *postgres.Reader, logger *slog.Logger) *account.Authenticator {
-	return account.NewAuthenticator(reader, logger)
 }
 
 // AuthenticatorAdapter adapts account.Authenticator to satisfy auth.AccountAuthenticator.
@@ -76,13 +66,4 @@ func (a *AuthenticatorAdapter) Authenticate(
 		ID:   int64(acc.ID()),
 		Role: acc.Role().String(),
 	}, nil
-}
-
-// NewLoginRecorder creates an account.LoginRecorder that uses the given reader
-// to look up accounts, the writer to persist login events,
-// and time.Now as the clock source.
-func NewLoginRecorder(
-	reader *postgres.Reader, writer *postgres.Writer, logger *slog.Logger,
-) *account.LoginRecorder {
-	return account.NewLoginRecorder(time.Now, reader, writer, logger)
 }

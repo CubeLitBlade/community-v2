@@ -17,13 +17,7 @@ type Reader struct {
 // NewReader creates a new Reader backed by the given Gorm DB instance.
 // It panics if db is nil.
 func NewReader(db *gorm.DB) *Reader {
-	if db == nil {
-		panic("nil db")
-	}
-
-	return &Reader{
-		db: db,
-	}
+	return &Reader{db: db}
 }
 
 // FindByUsername retrieves the account that matches the given username.

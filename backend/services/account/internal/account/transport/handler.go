@@ -25,13 +25,6 @@ type ProfileFinder interface {
 	Find(ctx context.Context, ID int64) (*account.Profile, error)
 }
 
-// Deps holds the dependencies required for the account Handler.
-type Deps struct {
-	Registrar     Registrar
-	ProfileFinder ProfileFinder
-	Logger        *slog.Logger
-}
-
 // Handler handles HTTP requests for account resources.
 type Handler struct {
 	registrar     Registrar
@@ -40,19 +33,20 @@ type Handler struct {
 }
 
 // NewHandler creates and returns a new Handler.
-func NewHandler(deps Deps) *Handler {
-	if deps.Registrar == nil {
-		panic("nil registrar")
-	}
-
-	if deps.Logger == nil {
-		panic("nil logger")
+func NewHandler(
+	registrar Registrar,
+	finder ProfileFinder,
+	logger *slog.Logger,
+) *Handler {
+	if logger == nil {
+		logger = slog.Default()
+		logger.Warn("No logger provided, using default logger")
 	}
 
 	return &Handler{
-		registrar:     deps.Registrar,
-		profileFinder: deps.ProfileFinder,
-		logger:        deps.Logger,
+		registrar:     registrar,
+		profileFinder: finder,
+		logger:        logger,
 	}
 }
 
