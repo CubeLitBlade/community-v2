@@ -3,11 +3,13 @@ package events
 import (
 	"errors"
 	"time"
+
+	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
 )
 
 const (
-	defaultCloseTimeout   = 30 * time.Second
-	defaultInitialCredits = 10
+	DefaultCloseTimeout   = 30 * time.Second
+	DefaultInitialCredits = 10
 )
 
 var (
@@ -26,3 +28,18 @@ var (
 	// ErrPublisherClosed indicates that a publish operation was attempted while the publisher is closed.
 	ErrPublisherClosed = errors.New("publisher is closed")
 )
+
+func CheckOutcome(outcome rmq.DeliveryState) error {
+	switch outcome.(type) {
+	case *rmq.StateAccepted:
+		return nil
+	case *rmq.StateRejected:
+		return ErrMessageStateRejected
+	case *rmq.StateReleased:
+		return ErrMessageStateReleased
+	case *rmq.StateModified:
+		return ErrMessageStateModified
+	default:
+		return ErrMessageStateUnknown
+	}
+}

@@ -7,20 +7,21 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cubelitblade/community-v2/backend/pkg/events/internal/amqp"
 	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
 )
 
-// ExchangePublisherConfig holds the configuration options for initializing an ExchangePublisher.
-type ExchangePublisherConfig struct {
+// PublisherConfig holds the configuration options for initializing a Publisher.
+type PublisherConfig struct {
 	BrokerURL    string
 	Logger       *slog.Logger
 	ExchangeName string
 	CloseTimeout time.Duration
 }
 
-// ExchangePublisher manages the publishing of messages to a specific RabbitMQ exchange.
-type ExchangePublisher struct {
-	cfg    *ExchangePublisherConfig
+// Publisher manages the publishing of messages to a specific RabbitMQ exchange.
+type Publisher struct {
+	cfg    *PublisherConfig
 	logger *slog.Logger
 
 	conn      *rmq.AmqpConnection
@@ -32,17 +33,17 @@ type ExchangePublisher struct {
 	wg        sync.WaitGroup
 }
 
-// NewExchangePublisher creates and returns a new instance of ExchangePublisher.
-func NewExchangePublisher(cfg *ExchangePublisherConfig) *ExchangePublisher {
+// NewPublisher creates and returns a new instance of Publisher.
+func NewPublisher(cfg *PublisherConfig) *Publisher {
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
 	}
 
 	if cfg.CloseTimeout == 0 {
-		cfg.CloseTimeout = defaultCloseTimeout
+		cfg.CloseTimeout = DefaultCloseTimeout
 	}
 
-	return &ExchangePublisher{
+	return &Publisher{
 		cfg:       cfg,
 		logger:    cfg.Logger,
 		conn:      nil,
@@ -54,25 +55,21 @@ func NewExchangePublisher(cfg *ExchangePublisherConfig) *ExchangePublisher {
 	}
 }
 
-// Init establishes the connection to the broker, declares the exchange, and sets up the publisher.
-func (p *ExchangePublisher) Init(ctx context.Context) error {
-	conn, err := p.env.NewConnection(ctx)
+// Start establishes the connection to the broker, declares the exchange, and sets up the publisher.
+func (p *Publisher) Start(ctx context.Context) error {
+	conn, err := amqp.Connect(ctx, p.env)
 	if err != nil {
 		if err := p.env.CloseConnections(ctx); err != nil {
 			p.logger.Error("Failed to close connections", "error", err)
 		}
-		p.logger.Error("Failed to connect to RabbitMQ", "error", err)
-		return fmt.Errorf("unable to connect to broker: %w", err)
+		p.logger.Error("Failed to connect to RabbitMQ.")
+		return fmt.Errorf("connect AMQP connection: %w", err)
 	}
-	p.conn = conn
 
-	_, err = conn.Management().DeclareExchange(ctx, &rmq.DirectExchangeSpecification{
-		Name: p.cfg.ExchangeName,
-	})
-	if err != nil {
+	if err := amqp.DeclareTopicExchange(ctx, conn, p.cfg.ExchangeName); err != nil {
 		p.closeConn(ctx)
-		p.logger.Error("Failed to declare exchange", "error", err)
-		return fmt.Errorf("unable to declare exchange: %w", err)
+		p.logger.Error("Failed to declare topic exchange.")
+		return fmt.Errorf("declare topic exchange: %w", err)
 	}
 
 	publisher, err := conn.NewPublisher(ctx, nil, nil)
@@ -91,7 +88,7 @@ func (p *ExchangePublisher) Init(ctx context.Context) error {
 }
 
 // Publish sends a message with the given content to the configured exchange using the specified routing key.
-func (p *ExchangePublisher) Publish(ctx context.Context, data []byte, key string) error {
+func (p *Publisher) Publish(ctx context.Context, data []byte, key string) error {
 	p.mu.RLock()
 	if !p.available {
 		p.mu.RUnlock()
@@ -117,21 +114,9 @@ func (p *ExchangePublisher) Publish(ctx context.Context, data []byte, key string
 		return fmt.Errorf("unable to publish message: %w", err)
 	}
 
-	switch res.Outcome.(type) {
-	case *rmq.StateAccepted:
-		p.logger.Debug("Published state accepted", "outcome", res.Outcome)
-	case *rmq.StateRejected:
-		p.logger.Debug("Published state rejected", "outcome", res.Outcome)
-		return ErrMessageStateRejected
-	case *rmq.StateReleased:
-		p.logger.Debug("Published state released", "outcome", res.Outcome)
-		return ErrMessageStateReleased
-	case *rmq.StateModified:
-		p.logger.Debug("Published state modified", "outcome", res.Outcome)
-		return ErrMessageStateModified
-	default:
-		p.logger.Error("Published state unknown", "outcome", res.Outcome)
-		return ErrMessageStateUnknown
+	if err := CheckOutcome(res.Outcome); err != nil {
+		p.logger.Error("Unexpected outcome", "error", err)
+		return fmt.Errorf("unexpected outcome: %w", err)
 	}
 
 	p.logger.Debug("[x] Message sent", "content", data)
@@ -139,7 +124,7 @@ func (p *ExchangePublisher) Publish(ctx context.Context, data []byte, key string
 }
 
 // Close gracefully shuts down the publisher, waits for in-flight messages to complete, and closes the connections.
-func (p *ExchangePublisher) Close() error {
+func (p *Publisher) Close() error {
 	p.mu.Lock()
 	p.available = false
 	p.mu.Unlock()
@@ -166,7 +151,7 @@ func (p *ExchangePublisher) Close() error {
 	return nil
 }
 
-func (p *ExchangePublisher) closeConn(ctx context.Context) {
+func (p *Publisher) closeConn(ctx context.Context) {
 	if err := p.env.CloseConnections(ctx); err != nil {
 		p.logger.Error("Failed to close connections", "error", err)
 	}
