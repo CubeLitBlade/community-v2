@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -11,21 +12,17 @@ import (
 	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
 )
 
-// PublisherConfig holds the configuration options for initializing a Publisher.
-type PublisherConfig struct {
-	BrokerURL    string
-	Logger       *slog.Logger
-	ExchangeName string
-	CloseTimeout time.Duration
-}
+type PublisherOption func(*Publisher)
 
 // Publisher manages the publishing of messages to a specific RabbitMQ exchange.
 type Publisher struct {
-	cfg    *PublisherConfig
-	logger *slog.Logger
+	env          *rmq.Environment
+	exchangeName string
+
+	closeTimeout time.Duration
+	logger       *slog.Logger
 
 	conn      *rmq.AmqpConnection
-	env       *rmq.Environment
 	publisher *rmq.Publisher
 
 	mu        sync.RWMutex
@@ -34,30 +31,31 @@ type Publisher struct {
 }
 
 // NewPublisher creates and returns a new instance of Publisher.
-func NewPublisher(cfg *PublisherConfig) *Publisher {
-	if cfg.Logger == nil {
-		cfg.Logger = slog.Default()
+func NewPublisher(
+	env *rmq.Environment, exchangeName string, opts ...PublisherOption,
+) *Publisher {
+	publisher := &Publisher{
+		env:          env,
+		exchangeName: exchangeName,
+		closeTimeout: DefaultCloseTimeout,
+		logger:       slog.Default(),
+		conn:         nil,
+		publisher:    nil,
+		mu:           sync.RWMutex{},
+		available:    false,
+		wg:           sync.WaitGroup{},
 	}
 
-	if cfg.CloseTimeout == 0 {
-		cfg.CloseTimeout = DefaultCloseTimeout
+	for _, opt := range opts {
+		opt(publisher)
 	}
 
-	return &Publisher{
-		cfg:       cfg,
-		logger:    cfg.Logger,
-		conn:      nil,
-		env:       rmq.NewEnvironment(cfg.BrokerURL, nil),
-		publisher: nil,
-		mu:        sync.RWMutex{},
-		available: false,
-		wg:        sync.WaitGroup{},
-	}
+	return publisher
 }
 
 // Start establishes the connection to the broker, declares the exchange, and sets up the publisher.
 func (p *Publisher) Start(ctx context.Context) error {
-	conn, err := amqp.ConnectWithTopicExchange(ctx, p.env, p.cfg.ExchangeName)
+	conn, err := amqp.ConnectWithTopicExchange(ctx, p.env, p.exchangeName)
 	if err != nil {
 		p.logger.Error("Failed to connect to topic exchange.", "err", err)
 		return fmt.Errorf("connect to topic exchange: %w", err)
@@ -65,9 +63,13 @@ func (p *Publisher) Start(ctx context.Context) error {
 
 	publisher, err := conn.NewPublisher(ctx, nil, nil)
 	if err != nil {
-		p.closeConn(ctx)
-		p.logger.Error("Failed to create publisher", "error", err)
-		return fmt.Errorf("create publisher: %w", err)
+		p.logger.Error("Failed to create publisher.", "err", err)
+		err = fmt.Errorf("create publisher: %w", err)
+
+		if closeErr := conn.Close(ctx); closeErr != nil {
+			return errors.Join(err, fmt.Errorf("close AMQP connection: %w", closeErr))
+		}
+		return err
 	}
 	p.publisher = publisher
 
@@ -91,7 +93,7 @@ func (p *Publisher) Publish(ctx context.Context, data []byte, key string) error 
 	defer p.wg.Done()
 
 	msg, err := rmq.NewMessageWithAddress(data, &rmq.ExchangeAddress{
-		Exchange: p.cfg.ExchangeName,
+		Exchange: p.exchangeName,
 		Key:      key,
 	})
 	if err != nil {
@@ -123,7 +125,7 @@ func (p *Publisher) Close() error {
 	p.wg.Wait()
 	p.logger.Debug("All in-flight publishes completed, proceeding to close.")
 
-	ctx, cancel := context.WithTimeout(context.Background(), p.cfg.CloseTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), p.closeTimeout)
 	defer cancel()
 
 	if p.publisher != nil {
@@ -142,8 +144,14 @@ func (p *Publisher) Close() error {
 	return nil
 }
 
-func (p *Publisher) closeConn(ctx context.Context) {
-	if err := p.env.CloseConnections(ctx); err != nil {
-		p.logger.Error("Failed to close connections", "error", err)
+func WithPublisherLogger(logger *slog.Logger) PublisherOption {
+	return func(p *Publisher) {
+		p.logger = logger
+	}
+}
+
+func WithPublisherCloseTimeout(timeout time.Duration) PublisherOption {
+	return func(p *Publisher) {
+		p.closeTimeout = timeout
 	}
 }
