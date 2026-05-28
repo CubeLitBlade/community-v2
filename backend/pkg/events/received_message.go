@@ -7,8 +7,8 @@ import "github.com/Azure/go-amqp"
 // ReceivedMessage represents a message consumed from a RabbitMQ queue,
 // providing methods to acknowledge, requeue, or discard it.
 type ReceivedMessage struct {
-	// Content holds the string payload of the received message.
-	Content string
+	// Data holds the byte payload of the received message.
+	Data []byte
 
 	acceptFunc  func() error
 	requeueFunc func() error

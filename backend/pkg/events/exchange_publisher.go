@@ -2,32 +2,12 @@ package events
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"sync"
 	"time"
 
 	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
-)
-
-const defaultPublisherCloseTimeout = 30 * time.Second
-
-var (
-	// ErrMessageStateRejected indicates that the published message was rejected by the broker.
-	ErrMessageStateRejected = errors.New("message was rejected")
-
-	// ErrMessageStateReleased indicates that the published message was released by the broker.
-	ErrMessageStateReleased = errors.New("message was released")
-
-	// ErrMessageStateModified indicates that the published message was modified by the broker.
-	ErrMessageStateModified = errors.New("message was modified")
-
-	// ErrMessageStateUnknown indicates that the broker returned an unknown message outcome state.
-	ErrMessageStateUnknown = errors.New("message state unknown")
-
-	// ErrPublisherClosed indicates that a publish operation was attempted while the publisher is closed.
-	ErrPublisherClosed = errors.New("publisher is closed")
 )
 
 // ExchangePublisherConfig holds the configuration options for initializing an ExchangePublisher.
@@ -59,7 +39,7 @@ func NewExchangePublisher(cfg *ExchangePublisherConfig) *ExchangePublisher {
 	}
 
 	if cfg.CloseTimeout == 0 {
-		cfg.CloseTimeout = defaultPublisherCloseTimeout
+		cfg.CloseTimeout = defaultCloseTimeout
 	}
 
 	return &ExchangePublisher{
@@ -111,7 +91,7 @@ func (p *ExchangePublisher) Init(ctx context.Context) error {
 }
 
 // Publish sends a message with the given content to the configured exchange using the specified routing key.
-func (p *ExchangePublisher) Publish(ctx context.Context, content string, key string) error {
+func (p *ExchangePublisher) Publish(ctx context.Context, data []byte, key string) error {
 	p.mu.RLock()
 	if !p.available {
 		p.mu.RUnlock()
@@ -122,7 +102,7 @@ func (p *ExchangePublisher) Publish(ctx context.Context, content string, key str
 	p.mu.RUnlock()
 	defer p.wg.Done()
 
-	msg, err := rmq.NewMessageWithAddress([]byte(content), &rmq.ExchangeAddress{
+	msg, err := rmq.NewMessageWithAddress(data, &rmq.ExchangeAddress{
 		Exchange: p.cfg.ExchangeName,
 		Key:      key,
 	})
@@ -154,7 +134,7 @@ func (p *ExchangePublisher) Publish(ctx context.Context, content string, key str
 		return ErrMessageStateUnknown
 	}
 
-	p.logger.Debug("[x] Message sent", "content", content)
+	p.logger.Debug("[x] Message sent", "content", data)
 	return nil
 }
 

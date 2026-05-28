@@ -12,8 +12,6 @@ import (
 	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
 )
 
-const defaultConsumerCloseTimeout = 30 * time.Second
-
 // ExchangeConsumerConfig holds the configuration options for initializing an ExchangeConsumer.
 type ExchangeConsumerConfig struct {
 	BrokerURL      string
@@ -48,10 +46,10 @@ func NewExchangeConsumer(cfg *ExchangeConsumerConfig) *ExchangeConsumer {
 		cfg.Logger = slog.Default()
 	}
 	if cfg.CloseTimeout == 0 {
-		cfg.CloseTimeout = defaultConsumerCloseTimeout
+		cfg.CloseTimeout = defaultCloseTimeout
 	}
 	if cfg.InitialCredits == 0 {
-		cfg.InitialCredits = 10
+		cfg.InitialCredits = defaultInitialCredits
 	}
 
 	return &ExchangeConsumer{
@@ -189,13 +187,13 @@ func (c *ExchangeConsumer) consumeLoop(ctx context.Context) {
 		}
 
 		msg := delivery.Message()
-		var content string
+		var data []byte
 		if len(msg.Data) > 0 {
-			content = string(msg.Data[0])
+			data = msg.Data[0]
 		}
 
 		received := &ReceivedMessage{
-			Content:     content,
+			Data:        data,
 			acceptFunc:  func() error { return delivery.Accept(ctx) },
 			requeueFunc: func() error { return delivery.Requeue(ctx) },
 			discardFunc: func(e *amqp.Error) error { return delivery.Discard(ctx, e) },
