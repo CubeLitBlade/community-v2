@@ -70,26 +70,21 @@ func NewTransientSubscriber(cfg *TransientSubscriberConfig) *TransientSubscriber
 // Start establishes the connection to the broker, declares the exchange and an exclusive queue,
 // binds the specified routing keys, and starts the consume loop.
 func (c *TransientSubscriber) Start(ctx context.Context) error {
-	conn, err := amqp.Connect(ctx, c.env)
+	conn, err := amqp.ConnectWithTopicExchange(ctx, c.env, c.cfg.ExchangeName)
 	if err != nil {
-		if err := c.env.CloseConnections(ctx); err != nil {
-			c.logger.Error("Failed to close connections", "error", err)
+		c.logger.Error("Failed to connect to topic exchange.", "err", err)
+		return fmt.Errorf("connect to topic exchange: %w", err)
+	}
+
+	qInfo, declareErr := amqp.DeclareExclusiveQueue(ctx, conn)
+	if declareErr != nil {
+		declareErr = fmt.Errorf("declare exclusive queue: %w", declareErr)
+
+		if closeErr := conn.Close(ctx); closeErr != nil {
+			return errors.Join(declareErr, fmt.Errorf("close AMQP connection: %w", closeErr))
 		}
-		c.logger.Error("Failed to connect to RabbitMQ.")
-		return fmt.Errorf("connect AMQP connection: %w", err)
-	}
 
-	if err := amqp.DeclareTopicExchange(ctx, conn, c.cfg.ExchangeName); err != nil {
-		c.closeConn(ctx)
-		c.logger.Error("Failed to declare topic exchange.")
-		return fmt.Errorf("declare topic exchange: %w", err)
-	}
-
-	qInfo, err := amqp.DeclareExclusiveQueue(ctx, conn)
-	if err != nil {
-		c.closeConn(ctx)
-		c.logger.Error("Failed to declare queue.")
-		return fmt.Errorf("declare queue: %w", err)
+		return declareErr
 	}
 
 	if err := amqp.BindExchangeToQueue(ctx, conn, c.cfg.ExchangeName, qInfo.Name(), c.cfg.Keys); err != nil {
@@ -104,7 +99,7 @@ func (c *TransientSubscriber) Start(ctx context.Context) error {
 	if err != nil {
 		c.closeConn(ctx)
 		c.cfg.Logger.Error("Failed to create consumer", "error", err)
-		return fmt.Errorf("unable to create consumer: %w", err)
+		return fmt.Errorf("create consumer: %w", err)
 	}
 	c.consumer = consumer
 

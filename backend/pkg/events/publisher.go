@@ -57,26 +57,17 @@ func NewPublisher(cfg *PublisherConfig) *Publisher {
 
 // Start establishes the connection to the broker, declares the exchange, and sets up the publisher.
 func (p *Publisher) Start(ctx context.Context) error {
-	conn, err := amqp.Connect(ctx, p.env)
+	conn, err := amqp.ConnectWithTopicExchange(ctx, p.env, p.cfg.ExchangeName)
 	if err != nil {
-		if err := p.env.CloseConnections(ctx); err != nil {
-			p.logger.Error("Failed to close connections", "error", err)
-		}
-		p.logger.Error("Failed to connect to RabbitMQ.")
-		return fmt.Errorf("connect AMQP connection: %w", err)
-	}
-
-	if err := amqp.DeclareTopicExchange(ctx, conn, p.cfg.ExchangeName); err != nil {
-		p.closeConn(ctx)
-		p.logger.Error("Failed to declare topic exchange.")
-		return fmt.Errorf("declare topic exchange: %w", err)
+		p.logger.Error("Failed to connect to topic exchange.", "err", err)
+		return fmt.Errorf("connect to topic exchange: %w", err)
 	}
 
 	publisher, err := conn.NewPublisher(ctx, nil, nil)
 	if err != nil {
 		p.closeConn(ctx)
 		p.logger.Error("Failed to create publisher", "error", err)
-		return fmt.Errorf("unable to create publisher: %w", err)
+		return fmt.Errorf("create publisher: %w", err)
 	}
 	p.publisher = publisher
 
