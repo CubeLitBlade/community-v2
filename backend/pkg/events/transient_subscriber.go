@@ -13,6 +13,7 @@ import (
 	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
 )
 
+// TransientSubscriberOption configures a TransientSubscriber.
 type TransientSubscriberOption func(*TransientSubscriber)
 
 // TransientSubscriber consumes messages from a RabbitMQ exchange and delivers them via the Deliveries channel.
@@ -201,24 +202,28 @@ func (c *TransientSubscriber) consumeLoop(ctx context.Context) {
 	}
 }
 
+// WithTransientSubscriberKeys sets the routing keys for the subscriber to bind to.
 func WithTransientSubscriberKeys(keys []string) TransientSubscriberOption {
 	return func(s *TransientSubscriber) {
 		s.keys = keys
 	}
 }
 
+// WithTransientSubscriberInitialCredits sets the initial credit (prefetch) count for the consumer.
 func WithTransientSubscriberInitialCredits(initialCredits int32) TransientSubscriberOption {
 	return func(s *TransientSubscriber) {
 		s.initialCredits = initialCredits
 	}
 }
 
+// WithTransientSubscriberLogger sets the logger for the TransientSubscriber.
 func WithTransientSubscriberLogger(logger *slog.Logger) TransientSubscriberOption {
 	return func(s *TransientSubscriber) {
 		s.logger = logger
 	}
 }
 
+// WithTransientSubscriberCloseTimeout sets the close timeout duration for the TransientSubscriber.
 func WithTransientSubscriberCloseTimeout(timeout time.Duration) TransientSubscriberOption {
 	return func(s *TransientSubscriber) {
 		s.closeTimeout = timeout

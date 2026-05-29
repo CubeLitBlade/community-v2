@@ -7,6 +7,7 @@ import (
 	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
 )
 
+// Default configuration values for publishers and subscribers.
 const (
 	DefaultCloseTimeout   = 30 * time.Second
 	DefaultInitialCredits = 10
@@ -29,6 +30,7 @@ var (
 	ErrPublisherClosed = errors.New("publisher is closed")
 )
 
+// CheckOutcome evaluates an AMQP delivery state and returns an error if the outcome is not Accepted.
 func CheckOutcome(outcome rmq.DeliveryState) error {
 	switch outcome.(type) {
 	case *rmq.StateAccepted:

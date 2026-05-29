@@ -12,6 +12,7 @@ import (
 	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
 )
 
+// PublisherOption configures a Publisher.
 type PublisherOption func(*Publisher)
 
 // Publisher manages the publishing of messages to a specific RabbitMQ exchange.
@@ -144,12 +145,14 @@ func (p *Publisher) Close() error {
 	return nil
 }
 
+// WithPublisherLogger sets the logger for the Publisher.
 func WithPublisherLogger(logger *slog.Logger) PublisherOption {
 	return func(p *Publisher) {
 		p.logger = logger
 	}
 }
 
+// WithPublisherCloseTimeout sets the close timeout duration for the Publisher.
 func WithPublisherCloseTimeout(timeout time.Duration) PublisherOption {
 	return func(p *Publisher) {
 		p.closeTimeout = timeout

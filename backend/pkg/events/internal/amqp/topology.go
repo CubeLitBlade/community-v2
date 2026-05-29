@@ -1,3 +1,4 @@
+// Package amqp provides internal helpers for managing AMQP topologies and connections.
 package amqp
 
 import (
@@ -8,6 +9,8 @@ import (
 	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
 )
 
+// ConnectWithTopicExchange establishes an AMQP connection and declares a topic exchange on it.
+// If declaring the exchange fails, the connection is automatically closed to prevent leaks before returning the error.
 func ConnectWithTopicExchange(
 	ctx context.Context, env *rmq.Environment, exchangeName string,
 ) (*rmq.AmqpConnection, error) {
