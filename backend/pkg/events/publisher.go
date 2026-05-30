@@ -59,6 +59,7 @@ func (p *Publisher) Start(ctx context.Context) error {
 	conn, err := amqp.ConnectWithTopicExchange(ctx, p.env, p.exchangeName)
 	if err != nil {
 		p.logger.Error("Failed to connect to topic exchange.", "err", err)
+
 		return fmt.Errorf("connect to topic exchange: %w", err)
 	}
 
@@ -70,6 +71,7 @@ func (p *Publisher) Start(ctx context.Context) error {
 		if closeErr := conn.Close(ctx); closeErr != nil {
 			return errors.Join(err, fmt.Errorf("close AMQP connection: %w", closeErr))
 		}
+
 		return err
 	}
 	p.publisher = publisher
@@ -87,6 +89,7 @@ func (p *Publisher) Publish(ctx context.Context, data []byte, key string) error 
 	if !p.available {
 		p.mu.RUnlock()
 		p.logger.Error("Publisher is not available")
+
 		return ErrPublisherClosed
 	}
 	p.wg.Add(1)
@@ -99,26 +102,30 @@ func (p *Publisher) Publish(ctx context.Context, data []byte, key string) error 
 	})
 	if err != nil {
 		p.logger.Error("Failed to publish message", "error", err)
+
 		return fmt.Errorf("unable to publish message: %w", err)
 	}
 
 	res, err := p.publisher.Publish(ctx, msg)
 	if err != nil {
 		p.logger.Error("Failed to publish message", "error", err)
+
 		return fmt.Errorf("unable to publish message: %w", err)
 	}
 
 	if err := CheckOutcome(res.Outcome); err != nil {
 		p.logger.Error("Unexpected outcome", "error", err)
+
 		return fmt.Errorf("unexpected outcome: %w", err)
 	}
 
 	p.logger.Debug("[x] Message sent", "content", data)
+
 	return nil
 }
 
 // Close gracefully shuts down the publisher, waits for in-flight messages to complete, and closes the connections.
-func (p *Publisher) Close() error {
+func (p *Publisher) Close(ctx context.Context) error {
 	p.mu.Lock()
 	p.available = false
 	p.mu.Unlock()
@@ -126,19 +133,21 @@ func (p *Publisher) Close() error {
 	p.wg.Wait()
 	p.logger.Debug("All in-flight publishes completed, proceeding to close.")
 
-	ctx, cancel := context.WithTimeout(context.Background(), p.closeTimeout)
+	ctx, cancel := context.WithTimeout(ctx, p.closeTimeout)
 	defer cancel()
 
 	if p.publisher != nil {
 		err := p.publisher.Close(ctx)
 		if err != nil {
 			p.logger.Error("Failed to close publisher", "error", err)
+
 			return fmt.Errorf("unable to close publisher: %w", err)
 		}
 	}
 
 	if err := p.env.CloseConnections(ctx); err != nil {
 		p.logger.Error("Failed to close connections", "error", err)
+
 		return fmt.Errorf("unable to close connections: %w", err)
 	}
 
