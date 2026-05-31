@@ -1,4 +1,4 @@
-package events
+package rabbitmq
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"time"
 
 	goamqp "github.com/Azure/go-amqp"
-	"github.com/cubelitblade/community-v2/backend/pkg/events/internal/amqp"
+	"github.com/cubelitblade/community-v2/backend/pkg/events/rabbitmq/amqp"
 	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
 )
 
@@ -109,12 +109,14 @@ func (c *TransientSubscriber) Start(ctx context.Context) error {
 
 		return err
 	}
+
 	c.consumer = consumer
 
 	consumeCtx, consumeCancel := context.WithCancel(ctx)
 	c.consumeCancel = consumeCancel
 
 	c.Deliveries = make(chan *ReceivedMessage, c.initialCredits)
+
 	c.wg.Add(1)
 	go c.consumeLoop(consumeCtx)
 
@@ -159,6 +161,7 @@ func (c *TransientSubscriber) Close() error {
 	if len(errs) > 0 {
 		return errors.Join(errs...)
 	}
+
 	return nil
 }
 
@@ -175,10 +178,12 @@ func (c *TransientSubscriber) consumeLoop(ctx context.Context) {
 			}
 
 			c.logger.Error("Failed to receive message, consumer exiting.", "error", err)
+
 			return
 		}
 
 		msg := delivery.Message()
+
 		var data []byte
 		if len(msg.Data) > 0 {
 			data = msg.Data[0]
@@ -197,6 +202,7 @@ func (c *TransientSubscriber) consumeLoop(ctx context.Context) {
 			if err := received.Requeue(); err != nil {
 				c.logger.Error("Failed to nack message", "error", err)
 			}
+
 			return
 		}
 	}

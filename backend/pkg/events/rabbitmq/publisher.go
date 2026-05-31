@@ -1,4 +1,4 @@
-package events
+package rabbitmq
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cubelitblade/community-v2/backend/pkg/events/internal/amqp"
+	"github.com/cubelitblade/community-v2/backend/pkg/events/rabbitmq/amqp"
 	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
 )
 
@@ -74,6 +74,7 @@ func (p *Publisher) Start(ctx context.Context) error {
 
 		return err
 	}
+
 	p.publisher = publisher
 
 	p.mu.Lock()
@@ -86,13 +87,16 @@ func (p *Publisher) Start(ctx context.Context) error {
 // Publish sends a message with the given content to the configured exchange using the specified routing key.
 func (p *Publisher) Publish(ctx context.Context, data []byte, key string) error {
 	p.mu.RLock()
+
 	if !p.available {
 		p.mu.RUnlock()
 		p.logger.Error("Publisher is not available")
 
 		return ErrPublisherClosed
 	}
+
 	p.wg.Add(1)
+
 	p.mu.RUnlock()
 	defer p.wg.Done()
 

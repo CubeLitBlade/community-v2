@@ -161,6 +161,7 @@ func TestNewLogin(t *testing.T) {
 	}
 
 	issuer := jwt.New(cfg, &stubIDGen{id: 1, err: nil})
+
 	login := auth.NewLogin(
 		&stubAuthenticator{
 			acc: auth.AuthenticatedAccount{ID: 0, Role: ""},

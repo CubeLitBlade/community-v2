@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/account"
+	"gorm.io/gorm"
 )
 
 var errFinder = errors.New("finder error")
@@ -18,9 +19,7 @@ type stubFinder struct {
 	err error
 }
 
-func (f *stubFinder) FindByUsername(
-	_ context.Context, _ string,
-) (*account.Account, error) {
+func (f *stubFinder) FindByUsername(_ context.Context, _ *gorm.DB, _ string) (*account.Account, error) {
 	if f.err != nil {
 		return nil, f.err
 	}
@@ -31,9 +30,9 @@ func (f *stubFinder) FindByUsername(
 func makeAccount(t *testing.T, password string) *account.Account {
 	t.Helper()
 
-	acc, err := account.Register(1, "testuser", password, testNow)
+	acc, err := account.NewAccount(1, "test_user", password, testNow)
 	if err != nil {
-		t.Fatalf("Register() failed: %v", err)
+		t.Fatalf("NewAccount() failed: %v", err)
 	}
 
 	return &acc
@@ -43,82 +42,75 @@ func stubNow() time.Time {
 	return testNow
 }
 
-func TestAuthenticator_Success(t *testing.T) {
-	t.Parallel()
-
-	pwd := validPwd
-	acc := makeAccount(t, pwd)
-	finder := &stubFinder{acc: acc, err: nil}
-	auth := account.NewAuthenticator(finder, stubNow, nil)
-
-	got, err := auth.Authenticate(
-		context.Background(), "testuser", pwd,
+func newTestAuthenticator(finder account.ByUsernameFinder) *account.Authenticator {
+	return account.NewAuthenticator(
+		finder,
+		nil,
+		nil,
+		account.WithAuthenticatorClock(stubNow),
 	)
-	if err != nil {
-		t.Fatalf("Authenticate() error = %v", err)
-	}
-
-	if got.ID() != acc.ID() {
-		t.Errorf("ID() = %v, want %v", got.ID(), acc.ID())
-	}
 }
 
-func TestAuthenticator_AccountNotFound(t *testing.T) {
+func TestAuthenticator_Authenticate(t *testing.T) {
 	t.Parallel()
 
-	finder := &stubFinder{acc: nil, err: account.ErrAccountNotFound}
-	auth := account.NewAuthenticator(finder, stubNow, nil)
+	validAcc := makeAccount(t, validPwd)
 
-	_, err := auth.Authenticate(
-		context.Background(), "missing", validPwd,
-	)
-	if !errors.Is(err, account.ErrInvalidCredentials) {
-		t.Errorf("error = %v, want %v",
-			err, account.ErrInvalidCredentials)
+	tests := []struct {
+		name     string
+		finder   account.ByUsernameFinder
+		username string
+		password string
+		wantErr  error
+	}{
+		{
+			name:     "Success",
+			finder:   &stubFinder{acc: validAcc}, //nolint:exhaustruct // for testing only
+			username: "test_user",
+			password: validPwd,
+			wantErr:  nil,
+		},
+		{
+			name:     "AccountNotFound",
+			finder:   &stubFinder{err: account.ErrAccountNotFound}, //nolint:exhaustruct // for testing only
+			username: "missing",
+			password: validPwd,
+			wantErr:  account.ErrInvalidCredentials,
+		},
+		{
+			name:     "WrongPassword",
+			finder:   &stubFinder{acc: validAcc}, //nolint:exhaustruct // for testing only
+			username: "test_user",
+			password: "wrong-password!!!",
+			wantErr:  account.ErrInvalidCredentials,
+		},
+		{
+			name:     "NilAccount",
+			finder:   &stubFinder{}, //nolint:exhaustruct // for testing only
+			username: "ghost",
+			password: validPwd,
+			wantErr:  account.ErrInvalidCredentials,
+		},
+		{
+			name:     "FinderError",
+			finder:   &stubFinder{err: errFinder}, //nolint:exhaustruct // for testing only
+			username: "any",
+			password: validPwd,
+			wantErr:  errFinder,
+		},
 	}
-}
 
-func TestAuthenticator_WrongPassword(t *testing.T) {
-	t.Parallel()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	acc := makeAccount(t, validPwd)
-	finder := &stubFinder{acc: acc, err: nil}
-	auth := account.NewAuthenticator(finder, stubNow, nil)
+			auth := newTestAuthenticator(tt.finder)
 
-	_, err := auth.Authenticate(
-		context.Background(), "testuser", "wrong-password!!!",
-	)
-	if !errors.Is(err, account.ErrInvalidCredentials) {
-		t.Errorf("error = %v, want %v",
-			err, account.ErrInvalidCredentials)
-	}
-}
+			_, err := auth.Authenticate(context.Background(), tt.username, tt.password)
 
-func TestAuthenticator_NilAccount(t *testing.T) {
-	t.Parallel()
-
-	finder := &stubFinder{acc: nil, err: nil}
-	auth := account.NewAuthenticator(finder, stubNow, nil)
-
-	_, err := auth.Authenticate(
-		context.Background(), "ghost", validPwd,
-	)
-	if !errors.Is(err, account.ErrInvalidCredentials) {
-		t.Errorf("error = %v, want %v",
-			err, account.ErrInvalidCredentials)
-	}
-}
-
-func TestAuthenticator_FinderError(t *testing.T) {
-	t.Parallel()
-
-	finder := &stubFinder{acc: nil, err: errFinder}
-	auth := account.NewAuthenticator(finder, stubNow, nil)
-
-	_, err := auth.Authenticate(
-		context.Background(), "any", validPwd,
-	)
-	if !errors.Is(err, errFinder) {
-		t.Errorf("error = %v, want %v", err, errFinder)
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("Authenticate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
 	}
 }

@@ -1,14 +1,10 @@
 package account
 
 import (
-	"errors"
 	"fmt"
 	"net/netip"
 	"time"
 )
-
-// ErrInvalidAccountID is returned when the account ID is invalid.
-var ErrInvalidAccountID = errors.New("invalid account id")
 
 // ID represents the unique identifier of an Account.
 type ID int64
@@ -26,12 +22,8 @@ type Account struct {
 	passwordChangeRequired bool
 }
 
-// Register creates a new Account with the given ID, username, and password.
-func Register(
-	id int64,
-	username, password string,
-	now time.Time,
-) (Account, error) {
+// NewAccount creates a new Account with the given ID, username, and password.
+func NewAccount(id int64, username, password string, now time.Time) (Account, error) {
 	accountID, err := newID(id)
 	if err != nil {
 		return Account{}, err
@@ -71,19 +63,15 @@ func (a *Account) RecordLogin(at time.Time, addr netip.Addr) {
 
 func newID(value int64) (ID, error) {
 	if value <= 0 {
-		return 0, fmt.Errorf(
-			"%w: invalid account id '%d'",
-			ErrInvalidAccountID,
-			value,
-		)
+		return 0, fmt.Errorf("%w: invalid value: %d", ErrInvalidAccountID, value)
 	}
 
 	return ID(value), nil
 }
 
 // ID returns the ID of the account.
-func (a *Account) ID() ID {
-	return a.id
+func (a *Account) ID() int64 {
+	return int64(a.id)
 }
 
 // Username returns the username of the account.

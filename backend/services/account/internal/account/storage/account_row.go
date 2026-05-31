@@ -1,4 +1,4 @@
-package postgres
+package storage
 
 import (
 	"net/netip"
@@ -8,9 +8,9 @@ import (
 	"gorm.io/cli/gorm/field"
 )
 
-// Row represents a record in the "accounts" PostgreSQL table.
+// AccountRow represents a record in the "accounts" PostgreSQL table.
 // Pointer fields are used to represent nullable database columns
-type Row struct {
+type AccountRow struct {
 	CreatedAt              time.Time  `gorm:"column:created_at"`
 	UpdatedAt              time.Time  `gorm:"column:updated_at"`
 	LastLoginAt            *time.Time `gorm:"column:last_login_at"`
@@ -25,12 +25,12 @@ type Row struct {
 }
 
 // TableName overrides the default Gorm table name to "accounts".
-func (Row) TableName() string {
+func (AccountRow) TableName() string {
 	return "accounts"
 }
 
-// RowFields provides strongly-typed Gorm field references for the accounts table columns.
-var RowFields = struct {
+// AccountRowFields provides strongly-typed Gorm field references for the accounts table columns.
+var AccountRowFields = struct {
 	CreatedAt              field.Time
 	UpdatedAt              field.Time
 	LastLoginAt            field.Time
@@ -56,8 +56,8 @@ var RowFields = struct {
 	PasswordChangeRequired: field.Bool{}.WithColumn("password_change_required"),
 }
 
-// accountToRow converts a domain Account into a database Row for persistence.
-func accountToRow(acc *account.Account) *Row {
+// accountToRow converts a domain Account into a database AccountRow for persistence.
+func accountToRow(acc *account.Account) *AccountRow {
 	snapshot := acc.Snapshot()
 
 	var lastLoginIP *string
@@ -66,7 +66,7 @@ func accountToRow(acc *account.Account) *Row {
 		lastLoginIP = new(snapshot.LastLoginIP.String())
 	}
 
-	return &Row{
+	return &AccountRow{
 		ID:                     snapshot.ID,
 		Username:               snapshot.Username,
 		PasswordHash:           snapshot.PasswordHash,
@@ -81,10 +81,10 @@ func accountToRow(acc *account.Account) *Row {
 	}
 }
 
-// rowToAccount converts a database Row into a domain Account.
+// rowToAccount converts a database AccountRow into a domain Account.
 // If the row's LastLoginIP is non-nil and parseable, it is converted to a
 // netip.Addr; otherwise LastLoginIP on the resulting account is left nil.
-func rowToAccount(row *Row) *account.Account {
+func rowToAccount(row *AccountRow) *account.Account {
 	var lastLoginIP *netip.Addr
 
 	if row.LastLoginIP != nil {

@@ -44,6 +44,7 @@ func ParseToken(jwtKey string, cookieName string, logger *slog.Logger) gin.Handl
 			default:
 				log.Debug("token parse error", "error", err)
 			}
+
 			c.Next()
 
 			return

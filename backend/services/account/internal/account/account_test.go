@@ -22,7 +22,7 @@ func TestRegister(t *testing.T) {
 
 	now := mustRegistrationTime()
 
-	acc, err := Register(validAccountID, usernameAlice, validPassword, now)
+	acc, err := NewAccount(validAccountID, usernameAlice, validPassword, now)
 	if err != nil {
 		t.Fatalf("Register() error = %v", err)
 	}
@@ -42,7 +42,7 @@ func TestRegisterRejectsInvalidInput(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := Register(
+			_, err := NewAccount(
 				testCase.id,
 				testCase.username,
 				testCase.password,

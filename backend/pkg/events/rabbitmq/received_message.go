@@ -1,6 +1,5 @@
-// Package events provides abstractions for publishing and consuming messages
-// via RabbitMQ using the AMQP protocol.
-package events
+// Package rabbitmq provides abstractions for publishing and consuming messages via RabbitMQ using the AMQP protocol.
+package rabbitmq
 
 import "github.com/Azure/go-amqp"
 
@@ -21,6 +20,7 @@ func (m *ReceivedMessage) Accept() error {
 	if m.acceptFunc != nil {
 		return m.acceptFunc()
 	}
+
 	return nil
 }
 
@@ -30,6 +30,7 @@ func (m *ReceivedMessage) Requeue() error {
 	if m.requeueFunc != nil {
 		return m.requeueFunc()
 	}
+
 	return nil
 }
 
@@ -40,5 +41,6 @@ func (m *ReceivedMessage) Discard(e *amqp.Error) error {
 	if m.discardFunc != nil {
 		return m.discardFunc(e)
 	}
+
 	return nil
 }

@@ -1,5 +1,5 @@
 -- +goose Up
-create table if not exists account_service.accounts
+create table if not exists accounts
 (
     id                       bigint                                                       not null
         constraint pk_accounts
@@ -25,10 +25,10 @@ create table if not exists account_service.accounts
 );
 
 create index if not exists idx_accounts_status
-    on account_service.accounts (status);
+    on accounts (status);
 
 create index if not exists idx_accounts_role
-    on account_service.accounts (role);
+    on accounts (role);
 
 -- +goose Down
-drop table if exists account_service.accounts cascade;
+drop table if exists accounts cascade;

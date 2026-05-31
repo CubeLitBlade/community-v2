@@ -1,38 +1,10 @@
 package account
 
 import (
-	"errors"
 	"fmt"
 	"unicode/utf8"
 
 	"golang.org/x/crypto/bcrypt"
-)
-
-var (
-	// ErrPasswordEmpty indicates that the password string is empty.
-	ErrPasswordEmpty = errors.New("password cannot be empty")
-
-	// ErrPasswordTooShort indicates that the password is shorter than
-	// MinPasswordLength.
-	ErrPasswordTooShort = errors.New("password too short")
-
-	// ErrPasswordTooLong indicates that the password exceeds MaxPasswordBytes.
-	ErrPasswordTooLong = errors.New("password too long")
-
-	// ErrPasswordHashEmpty indicates that a stored password hash is empty.
-	ErrPasswordHashEmpty = errors.New("password hash cannot be empty")
-)
-
-const (
-	// MinPasswordLength is the minimal number of characters a password should
-	// have.
-	MinPasswordLength = 15
-
-	// MaxPasswordBytes is the maximum length in bytes for bcrypt passwords.
-	MaxPasswordBytes = 72
-
-	passwordCost = bcrypt.DefaultCost
-	emptyString  = ""
 )
 
 // PasswordHash holds a bcrypt-hashed password.
@@ -59,7 +31,7 @@ func HashPassword(raw string) (PasswordHash, error) {
 // matches returns true if the plaintext password matches the hashed
 // password.
 func (p PasswordHash) matches(raw string) bool {
-	if raw == emptyString || len([]byte(raw)) > MaxPasswordBytes {
+	if raw == "" || len([]byte(raw)) > MaxPasswordBytes {
 		return false
 	}
 
@@ -68,7 +40,7 @@ func (p PasswordHash) matches(raw string) bool {
 
 // ValidatePassword checks if a password meets security requirements.
 func ValidatePassword(raw string) error {
-	if raw == emptyString {
+	if raw == "" {
 		return fmt.Errorf(
 			"%w: password cannot be empty",
 			ErrPasswordEmpty,
@@ -97,7 +69,7 @@ func ValidatePassword(raw string) error {
 
 // PasswordHashFromStorage constructs a PasswordHash from a stored hash string.
 func PasswordHashFromStorage(hash string) (PasswordHash, error) {
-	if hash == emptyString {
+	if hash == "" {
 		return PasswordHash{}, fmt.Errorf(
 			"%w: stored password hash is required",
 			ErrPasswordHashEmpty,

@@ -74,6 +74,10 @@ linters:
     - grouper
     - goconst
     - mnd
+    - importas
+    - whitespace
+    - wastedassign
+    - wsl_v5
   
   exclusions:
     generated: strict
@@ -100,6 +104,7 @@ linters:
             - "gorm.io/cli/gorm/field"
             - "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
             - "github.com/Azure/go-amqp"
+            - "github.com/cloudevents/sdk-go/v2"
 
     errcheck:
       check-type-assertions: true
@@ -203,8 +208,6 @@ linters:
       ignore-names:
         - tt
         - tc
-        - ok
-        - err
         - id
       ignore-decls:
         - c echo.Context
@@ -222,6 +225,9 @@ linters:
         - tx *gorm.DB
         - tt *testing.T
         - tc TestCase
+        - lc fx.Lifecycle
+        - err error
+        - ok bool
 
 formatters:
   enable:

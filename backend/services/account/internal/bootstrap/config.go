@@ -35,6 +35,12 @@ var (
 	ErrProductionCookieNotSecure = errors.New("cookie secure must be true in production")
 )
 
+// RabbitMQConfig holds the configuration for connecting to RabbitMQ and publishing events.
+type RabbitMQConfig struct {
+	BrokerURL    string
+	ExchangeName string
+}
+
 // Config holds all application configuration grouped by concern.
 type Config struct {
 	Slog       *platformconfig.SlogConfig
@@ -45,6 +51,7 @@ type Config struct {
 	Snowflake  *platformconfig.SnowflakeConfig
 	JWT        *jwt.Config
 	AuthCookie *authTransport.CookieConfig
+	Publisher  *RabbitMQConfig
 }
 
 // ConfigOut provides all config sub-structs as separate fx dependencies.
@@ -59,6 +66,7 @@ type ConfigOut struct {
 	Snowflake  *platformconfig.SnowflakeConfig
 	JWT        *jwt.Config
 	AuthCookie *authTransport.CookieConfig
+	Publisher  *RabbitMQConfig
 }
 
 // RawConfig is the flat env-var representation parsed by caarlos0/env.
@@ -72,11 +80,14 @@ type RawConfig struct {
 	AccessTokenTTL        time.Duration `env:"ACCESS_TOKEN_TTL" envDefault:"2h"`
 	CookieSameSite        string        `env:"COOKIE_SAME_SITE" envDefault:"lax"`
 	CookieSecure          bool          `env:"COOKIE_SECURE" envDefault:"false"`
+	RabbitMQURL           string        `env:"RMQ_URL" required:"true"`
+	RabbitMQExchangeName  string        `env:"RMQ_SYSTEM_EXCHANGE_NAME" required:"true"`
 }
 
 // LoadConfig reads environment variables and returns a validated Config.
 func LoadConfig() (*Config, error) {
 	var raw RawConfig
+
 	err := env.Parse(&raw)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config: %w", err)
@@ -101,6 +112,7 @@ func LoadConfig() (*Config, error) {
 		Snowflake:  raw.newSnowflakeConfig(),
 		JWT:        jwtCfg,
 		AuthCookie: cookieCfg,
+		Publisher:  raw.newPublisherConfig(),
 	}, nil
 }
 
@@ -122,6 +134,7 @@ func ProvideConfig() (ConfigOut, error) {
 		Snowflake:  cfg.Snowflake,
 		JWT:        cfg.JWT,
 		AuthCookie: cfg.AuthCookie,
+		Publisher:  cfg.Publisher,
 	}, nil
 }
 
@@ -244,7 +257,6 @@ func (r *RawConfig) newAuthCookieConfig() (*authTransport.CookieConfig, error) {
 		sameSite = http.SameSiteNoneMode
 	case "strict":
 		sameSite = http.SameSiteStrictMode
-
 	}
 
 	return &authTransport.CookieConfig{
@@ -253,4 +265,11 @@ func (r *RawConfig) newAuthCookieConfig() (*authTransport.CookieConfig, error) {
 		SameSite: sameSite,
 		MaxAge:   int(r.AccessTokenTTL.Seconds()),
 	}, nil
+}
+
+func (r *RawConfig) newPublisherConfig() *RabbitMQConfig {
+	return &RabbitMQConfig{
+		BrokerURL:    r.RabbitMQURL,
+		ExchangeName: r.RabbitMQExchangeName,
+	}
 }
