@@ -122,6 +122,7 @@ func (r *Relay) scanLoop(ctx context.Context, count int) {
 
 		select {
 		case <-ctx.Done():
+			r.logger.DebugContext(ctx, "Scan loop shutting down due to context cancellation.")
 			return
 		case <-timer.C:
 			entries, err := r.scanner.Scan(ctx, r.db, count)
@@ -158,6 +159,7 @@ func (r *Relay) workLoop(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
+			r.logger.DebugContext(ctx, "Work loop shutting down due to context cancellation.")
 			return
 
 		case entry := <-r.channel:
