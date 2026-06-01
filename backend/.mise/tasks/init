@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+//MISE Initialize Go workspace.
+
+source "${BASH_SOURCE[0]%/*}/lib/modules.sh"
+
+test -f go.work || go work init
+
+for path in "${MODULES_PATH[@]}"; do
+    go work use "$path"
+done
+
+go work sync

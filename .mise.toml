@@ -1,0 +1,18 @@
+[tools]
+go = '1.26.3'
+
+[env]
+_.file = ".env"
+
+[tasks.compose]
+description = "Run compose."
+run = '''
+if [ `command -v podman` ]; then
+  podman compose up -d
+elif [ `command -v docker` ]; then
+  docker compose up -d
+else
+  echo "Error: Neither docker nor podman was installed."
+  exit 1
+fi
+'''

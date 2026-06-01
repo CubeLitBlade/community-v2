@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+//MISE description="Run 'golangci-linr fmt' on a microservice."
+
+source "${BASH_SOURCE[0]%/*}/lib/modules.sh"
+
+ALIAS=$1
+
+if [[ -n "$ALIAS" && -z "${MODULES_PATH[$ALIAS]}" ]]; then
+    echo "Error: Unknown alias '$ALIAS'"
+    echo "Available: ${MODULES_ALIASES[*]}"
+    exit 1
+fi
+
+if [[ -n "$ALIAS" ]]; then
+    TARGET_PATH="${MODULES_PATH[$ALIAS]}"
+    echo "Formatting module '$ALIAS' at $TARGET_PATH/..."
+    golangci-lint run "$TARGET_PATH/..."
+    exit $?
+fi
+
+LINT_PATHS=()
+for path in "${MODULES_PATH[@]}"; do
+    LINT_PATHS+=("$path/...")
+done
+
+echo "Formatting all modules: ${LINT_PATHS[*]}"
+golangci-lint fmt "${LINT_PATHS[@]}"
