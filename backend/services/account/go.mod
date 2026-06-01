@@ -5,7 +5,7 @@ go 1.26.3
 require (
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/cubelitblade/community-v2/backend/pkg/common v0.1.0
-	github.com/cubelitblade/community-v2/backend/pkg/events v0.4.0
+	github.com/cubelitblade/community-v2/backend/pkg/events v0.4.1
 	github.com/cubelitblade/community-v2/backend/pkg/platform v0.1.1
 	github.com/gin-gonic/gin v1.12.0
 	github.com/rabbitmq/rabbitmq-amqp-go-client v1.1.0

@@ -89,7 +89,9 @@ func provideOutboxRelay(
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			relay.Start(ctx)
+			go func() {
+				relay.Start(context.Background())
+			}()
 
 			return nil
 		},

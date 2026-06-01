@@ -18,8 +18,8 @@ github.com/cloudwego/base64x v0.1.7 h1:NppS+Fgzg5ovhn4NkUXaDT3x9jldgH5ToMCqzBSi2
 github.com/cloudwego/base64x v0.1.7/go.mod h1:Cu1PV9zfrSf7ET2tIbWbbEy7jO7HHJ13q4X2SQ8aWYg=
 github.com/cubelitblade/community-v2/backend/pkg/common v0.1.0 h1:owA/JirHF/pSUJznlvZPZjFIOr+6PEmcco9/ZgVZZbA=
 github.com/cubelitblade/community-v2/backend/pkg/common v0.1.0/go.mod h1:XEP8VnFdPodnOXIZ0knKIpHUEVmVog9pr2HZBo6X3oM=
-github.com/cubelitblade/community-v2/backend/pkg/events v0.4.0 h1:Lp5hJmbNzfieqcaNedaaBzhn0iLsOa5GOTeODLT4apM=
-github.com/cubelitblade/community-v2/backend/pkg/events v0.4.0/go.mod h1:GFzWZFYok6hLoSaoAP04DpiXhjvPPf25Bf6x3zFQdFU=
+github.com/cubelitblade/community-v2/backend/pkg/events v0.4.1 h1:tBfO3w9NhYk08sBFF3O6zEHYKnSSw5lnizKHp/VTCQQ=
+github.com/cubelitblade/community-v2/backend/pkg/events v0.4.1/go.mod h1:YmvbzY7noNm0ZjWvNn+Mm0ugAD9OhFDKDrmE338TNqE=
 github.com/cubelitblade/community-v2/backend/pkg/platform v0.1.1 h1:1m27cPztCYfHmEjDk2caXO4Z1rXfYGTB1z90Wj0rqSc=
 github.com/cubelitblade/community-v2/backend/pkg/platform v0.1.1/go.mod h1:+0KjGEAxAF44A097Uul7odJ0OCTrOGdhJT38hsAEsF8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
