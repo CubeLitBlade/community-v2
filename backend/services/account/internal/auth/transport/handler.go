@@ -32,27 +32,12 @@ type Handler struct {
 	logger    *slog.Logger
 }
 
-// Deps holds the dependencies required by the auth Handler.
-type Deps struct {
-	Login     *auth.Login
-	CookieCfg *CookieConfig
-	Logger    *slog.Logger
-}
-
 // NewHandler creates and returns a new AuthHandler.
-func NewHandler(deps Deps) *Handler {
-	if deps.Logger == nil {
-		panic("nil logger")
-	}
-
-	if deps.Login == nil {
-		panic("nil login")
-	}
-
+func NewHandler(login *auth.Login, cookieCfg *CookieConfig, logger *slog.Logger) *Handler {
 	return &Handler{
-		login:     deps.Login,
-		cookieCfg: deps.CookieCfg,
-		logger:    deps.Logger,
+		login:     login,
+		cookieCfg: cookieCfg,
+		logger:    logger,
 	}
 }
 

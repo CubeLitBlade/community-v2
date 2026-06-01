@@ -14,7 +14,7 @@ fi
 if [[ -n "$ALIAS" ]]; then
     TARGET_PATH="${MODULES_PATH[$ALIAS]}"
     echo "Formatting module '$ALIAS' at $TARGET_PATH/..."
-    golangci-lint run "$TARGET_PATH/..."
+    golangci-lint fmt "$TARGET_PATH/..."
     exit $?
 fi
 

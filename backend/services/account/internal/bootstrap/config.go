@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/caarlos0/env"
-	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
 	platformconfig "github.com/cubelitblade/community-v2/backend/pkg/platform/config"
 	authTransport "github.com/cubelitblade/community-v2/backend/services/account/internal/auth/transport"
 	"github.com/gin-gonic/gin"
@@ -41,6 +40,13 @@ type RabbitMQConfig struct {
 	ExchangeName string
 }
 
+// JWTConfig holds the configuration for JWT signing and parsing.
+type JWTConfig struct {
+	Key      string
+	Issuer   string
+	Validity time.Duration
+}
+
 // Config holds all application configuration grouped by concern.
 type Config struct {
 	Slog       *platformconfig.SlogConfig
@@ -49,7 +55,7 @@ type Config struct {
 	Gin        *platformconfig.GinConfig
 	Server     *platformconfig.ServerConfig
 	Snowflake  *platformconfig.SnowflakeConfig
-	JWT        *jwt.Config
+	JWT        *JWTConfig
 	AuthCookie *authTransport.CookieConfig
 	Publisher  *RabbitMQConfig
 }
@@ -64,7 +70,7 @@ type ConfigOut struct {
 	Gin        *platformconfig.GinConfig
 	Server     *platformconfig.ServerConfig
 	Snowflake  *platformconfig.SnowflakeConfig
-	JWT        *jwt.Config
+	JWT        *JWTConfig
 	AuthCookie *authTransport.CookieConfig
 	Publisher  *RabbitMQConfig
 }
@@ -222,7 +228,7 @@ func (r *RawConfig) newSnowflakeConfig() *platformconfig.SnowflakeConfig {
 	}
 }
 
-func (r *RawConfig) newJWTConfig() (*jwt.Config, error) {
+func (r *RawConfig) newJWTConfig() (*JWTConfig, error) {
 	if r.AccessTokenTTL <= 0 {
 		return nil, ErrAccessTTLNotPositive
 	}
@@ -232,7 +238,7 @@ func (r *RawConfig) newJWTConfig() (*jwt.Config, error) {
 		return nil, ErrJWTSecretTooShort
 	}
 
-	return &jwt.Config{
+	return &JWTConfig{
 		Key:      r.JWTSecret,
 		Issuer:   "community-v2",
 		Validity: r.AccessTokenTTL,

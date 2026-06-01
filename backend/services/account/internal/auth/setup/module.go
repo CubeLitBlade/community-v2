@@ -3,10 +3,6 @@
 package setup
 
 import (
-	"log/slog"
-
-	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
-	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
 	"github.com/cubelitblade/community-v2/backend/pkg/platform"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/auth"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/auth/transport"
@@ -16,27 +12,9 @@ import (
 // Module returns the fx providers for the auth module.
 func Module() fx.Option {
 	return fx.Options(
+		fx.Provide(auth.NewLogin),
 		fx.Provide(
-			fx.Annotate(NewHandler, fx.As(new(platform.HTTPMounter)), fx.ResultTags(`group:"mounter"`)),
+			fx.Annotate(transport.NewHandler, fx.As(new(platform.HTTPMounter)), fx.ResultTags(`group:"mounter"`)),
 		),
 	)
-}
-
-// NewHandler creates the auth HTTP handler with all dependencies wired.
-func NewHandler(
-	ids idgen.Generator,
-	jwtCfg *jwt.Config,
-	cookieCfg *transport.CookieConfig,
-	accAuth auth.AccountAuthenticator,
-	recorder auth.LoginRecorder,
-	logger *slog.Logger,
-) *transport.Handler {
-	issuer := jwt.New(jwtCfg, ids)
-	login := auth.NewLogin(accAuth, issuer, recorder)
-
-	return transport.NewHandler(transport.Deps{
-		Login:     login,
-		CookieCfg: cookieCfg,
-		Logger:    logger,
-	})
 }

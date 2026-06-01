@@ -17,14 +17,14 @@ type registerParams struct {
 
 	Router           *gin.Engine
 	Mounters         []platform.HTTPMounter `group:"mounter"`
-	JWTConfig        *jwt.Config
+	Parser           *jwt.Parser
 	AuthCookieConfig *transport.CookieConfig
 	Logger           *slog.Logger
 }
 
 func registerAPIRoutes(p registerParams) {
 	api := p.Router.Group("/api")
-	api.Use(authn.ParseToken(p.JWTConfig.Key, p.AuthCookieConfig.Name, p.Logger))
+	api.Use(authn.ParseToken(p.Parser, p.AuthCookieConfig.Name, p.Logger))
 	platform.RegisterRouters(api, p.Mounters)
 }
 

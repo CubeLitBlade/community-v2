@@ -22,7 +22,7 @@ type Principal struct {
 
 // ParseToken is a Gin middleware that extracts a JWT from the access_token
 // cookie, validates it, and sets the Principal in the Gin context.
-func ParseToken(jwtKey string, cookieName string, logger *slog.Logger) gin.HandlerFunc {
+func ParseToken(parser *jwt.Parser, cookieName string, logger *slog.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		log := logger.With("cookie", cookieName)
 
@@ -34,7 +34,7 @@ func ParseToken(jwtKey string, cookieName string, logger *slog.Logger) gin.Handl
 			return
 		}
 
-		claims, err := jwt.Parse(token, jwtKey)
+		claims, err := parser.Parse(token)
 		if err != nil {
 			switch {
 			case errors.Is(err, jwt.ErrInvalidToken):

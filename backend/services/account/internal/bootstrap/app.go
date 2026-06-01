@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
+	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
 	"github.com/cubelitblade/community-v2/backend/pkg/events/outbox"
 	"github.com/cubelitblade/community-v2/backend/pkg/events/rabbitmq"
 	"github.com/cubelitblade/community-v2/backend/pkg/platform"
@@ -21,6 +23,8 @@ import (
 func NewApp() *fx.App {
 	return fx.New(
 		fx.Provide(ProvideConfig),
+		fx.Provide(provideJWTSigner),
+		fx.Provide(provideJWTParser),
 		platform.StandardModules(),
 
 		accountSetup.Module(),
@@ -69,4 +73,12 @@ func provideEventsPublisher(
 	})
 
 	return pub
+}
+
+func provideJWTSigner(cfg *JWTConfig, ids idgen.Generator) *jwt.Signer {
+	return jwt.NewSigner(cfg.Key, cfg.Validity, ids, jwt.WithSignerIssuer(cfg.Issuer))
+}
+
+func provideJWTParser(cfg *JWTConfig) *jwt.Parser {
+	return jwt.NewParser(cfg.Key, jwt.WithParserIssuer(cfg.Issuer))
 }
