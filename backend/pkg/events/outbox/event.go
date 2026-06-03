@@ -11,7 +11,7 @@ import (
 
 // NewEvent creates a new CloudEvent with the given parameters and marshals it into JSON bytes.
 func NewEvent(
-	source string, eventType string, payload map[string]any, id int64, now time.Time,
+	source string, eventType string, payload any, id int64, now time.Time,
 ) ([]byte, error) {
 	event := ce.NewEvent()
 	event.SetID(strconv.FormatInt(id, 10))

@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/contracts"
 	"gorm.io/gorm"
 )
 
@@ -30,10 +31,10 @@ type Authenticator struct {
 func NewAuthenticator(finder ByUsernameFinder, db *gorm.DB,
 	logger *slog.Logger, opts ...AuthenticatorOption,
 ) *Authenticator {
-	if logger == nil {
-		logger = slog.Default()
-		logger.Warn("No logger provided while creating authenticator, using default logger.")
-	}
+	logger = logger.With(
+		slog.String("service", "account"),
+		slog.String("component", "account/authenticator"),
+	)
 
 	authenticator := &Authenticator{
 		finder: finder,
@@ -50,11 +51,15 @@ func NewAuthenticator(finder ByUsernameFinder, db *gorm.DB,
 }
 
 // Authenticate verifies the given username and password and returns the matching account.
-func (a *Authenticator) Authenticate(ctx context.Context, username, password string) (*Account, error) {
+func (a *Authenticator) Authenticate(
+	ctx context.Context, username, password string,
+) (*contracts.AuthenticatedAccount, error) {
 	acc, err := a.finder.FindByUsername(ctx, a.db, username)
 	if err != nil {
 		if errors.Is(err, ErrAccountNotFound) {
-			a.logger.Warn("Authentication failed: account not found.", "username", username)
+			a.logger.WarnContext(ctx, "authentication failed: account not found.",
+				slog.String("username", username),
+			)
 
 			return nil, ErrInvalidCredentials // hide details
 		}
@@ -67,12 +72,17 @@ func (a *Authenticator) Authenticate(ctx context.Context, username, password str
 	}
 
 	if !acc.VerifyPassword(password) {
-		a.logger.Warn("Authentication failed: username or password is incorrect.", "username", username)
+		a.logger.WarnContext(ctx, "authentication failed: username or password is incorrect",
+			slog.String("username", username),
+		)
 
 		return nil, ErrInvalidCredentials
 	}
 
-	return acc, nil
+	return &contracts.AuthenticatedAccount{
+		ID:   acc.ID(),
+		Role: acc.Role().String(),
+	}, nil
 }
 
 // WithAuthenticatorClock sets the clock function for the Authenticator.

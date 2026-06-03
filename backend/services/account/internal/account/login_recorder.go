@@ -32,10 +32,10 @@ type LoginRecorder struct {
 func NewLoginRecorder(finder ByIDFinder, updater LastLoginUpdater,
 	db *gorm.DB, logger *slog.Logger, opts ...LoginRecorderOption,
 ) *LoginRecorder {
-	if logger == nil {
-		logger = slog.Default()
-		logger.Warn("No logger provided while creating login recorder, using default logger.")
-	}
+	logger = logger.With(
+		slog.String("service", "account"),
+		slog.String("component", "account/login_recorder"),
+	)
 
 	loginRecorder := &LoginRecorder{
 		finder:  finder,

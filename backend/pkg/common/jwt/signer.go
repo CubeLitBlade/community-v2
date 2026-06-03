@@ -13,30 +13,21 @@ import (
 // SignerOption configures a Signer instance.
 type SignerOption func(*Signer)
 
-// Claims represents the Signer claims for an authenticated account.
-type Claims struct {
-	jwt.RegisteredClaims
-
-	Role string `json:"role"`
-}
-
 // Signer create signed JWT access tokens.
 type Signer struct {
-	key      []byte
-	issuer   string
-	clock    func() time.Time
-	validity time.Duration
-	ids      idgen.Generator
+	key    []byte
+	issuer string
+	clock  func() time.Time
+	ids    idgen.Generator
 }
 
 // NewSigner creates a new Signer instance with the given configuration and ID generator.
-func NewSigner(key string, validity time.Duration, ids idgen.Generator, opts ...SignerOption) *Signer {
+func NewSigner(key []byte, ids idgen.Generator, opts ...SignerOption) *Signer {
 	signer := &Signer{
-		key:      []byte(key),
-		issuer:   "",
-		clock:    time.Now,
-		validity: validity,
-		ids:      ids,
+		key:    key,
+		issuer: "",
+		clock:  time.Now,
+		ids:    ids,
 	}
 
 	for _, opt := range opts {
@@ -60,24 +51,26 @@ func WithSignerIssuer(issuer string) SignerOption {
 	}
 }
 
-// Sign creates a signed JWT for the given account ID and role.
-func (s *Signer) Sign(uid int64, role string) (string, error) {
+// NewClaims creates a new JWT RegisteredClaims with the given subject and TTL.
+func (s *Signer) NewClaims(subject string, ttl time.Duration) (jwt.RegisteredClaims, error) {
 	id, err := s.ids.NextID()
 	if err != nil {
-		return "", fmt.Errorf("generate token ID: %w", err)
+		return jwt.RegisteredClaims{}, fmt.Errorf("generate token ID: %w", err)
 	}
 
-	claims := Claims{
-		Role: role,
-		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    s.issuer,
-			Subject:   strconv.FormatInt(uid, 10),
-			ExpiresAt: jwt.NewNumericDate(s.clock().Add(s.validity)),
-			IssuedAt:  jwt.NewNumericDate(s.clock()),
-			ID:        strconv.FormatInt(id, 10),
-		},
-	}
+	now := s.clock()
 
+	return jwt.RegisteredClaims{
+		Issuer:    s.issuer,
+		Subject:   subject,
+		ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
+		IssuedAt:  jwt.NewNumericDate(now),
+		ID:        strconv.FormatInt(id, 10),
+	}, nil
+}
+
+// Sign creates a signed JWT for the given claims.
+func (s *Signer) Sign(claims jwt.Claims) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	signed, err := token.SignedString(s.key)
@@ -87,4 +80,3 @@ func (s *Signer) Sign(uid int64, role string) (string, error) {
 
 	return signed, nil
 }
-

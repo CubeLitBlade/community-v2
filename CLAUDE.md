@@ -19,36 +19,63 @@ Monorepo with a Go workspace at `backend/`. The repo root holds non-Go config.
     ├── infra/db/init.sql      ← PostgreSQL init: users, schemas, grants
     ├── pkg/
     │   ├── common/            ← shared primitives (httperr, idgen, jwt)
-    │   ├── events/            ← RabbitMQ pub/sub (Consumer, Publisher)
-    │   └── platform/          ← fx wiring, config, DB, server, logger
+    │   ├── events/            ← outbox pattern, RabbitMQ pub/sub
+    │   └── platform/          ← DB, Gin engine, HTTP mounter, middleware
     └── services/
         ├── account/           ← user registration, auth, login
-        ├── authz/             ← OpenFGA authorization + event-driven tuple writer
+        ├── authz/             ← (skeleton, not yet rebuilt)
         └── post/              ← (skeleton, not yet implemented)
 ```
 
-### Workspace modules (6)
+### Workspace modules (5)
 
 | Module | Path | Purpose |
 |---|---|---|
 | `pkg/common` | `backend/pkg/common/` | httperr, idgen, jwt |
-| `pkg/events` | `backend/pkg/events/` | RabbitMQ Consumer + Publisher |
-| `pkg/platform` | `backend/pkg/platform/` | fx, config, DB, server, logger |
+| `pkg/events` | `backend/pkg/events/` | Outbox relay, RabbitMQ Consumer + Publisher |
+| `pkg/platform` | `backend/pkg/platform/` | DB, Gin engine, HTTP mounter, middleware |
 | `services/account` | `backend/services/account/` | Account service |
-| `services/authz` | `backend/services/authz/` | Authz service |
 | `services/post` | `backend/services/post/` | Post service (stub) |
+
+### pkg/platform layout
+
+The `platform` package was flattened from sub-packages into top-level files:
+
+```
+pkg/platform/
+├── database.go          ← GORM PostgreSQL connection (was database/database.go)
+├── gin.go               ← Gin engine setup + RequestIDMiddleware (was server/gin.go)
+└── router.go            ← HTTPMounter interface + RegisterRouters helper
+```
 
 ### Service internal layout
 
-Each service follows the same pattern:
+The account service follows this structure:
 
 ```
-services/<name>/
-├── cmd/<name>/main.go           ← entrypoint
+services/account/
+├── cmd/account/main.go           ← entrypoint
 ├── .env                         ← service-specific env vars
 ├── .envrc                       ← direnv: source_up + dotenv_if_exists .env
+├── api/                         ← cross-service contract types
+│   ├── events/v1/               ← Event payloads + topic constants
+│   └── types/v1/                ← Request/response DTOs
 └── internal/
-    ├── bootstrap/               ← fx app, config, routes
+    ├── bootstrap/               ← fx app, config loading, module wiring
+    │   ├── app.go               ← fx app construction
+    │   ├── config.go            ← top-level Config aggregator
+    │   ├── cookie.go            ← cookie security policy (derived from APP_ENV)
+    │   ├── database.go          ← GORM DB provider
+    │   ├── gin.go               ← Gin engine provider
+    │   ├── jwt.go               ← JWT signer + parser providers
+    │   ├── logger.go            ← slog.Logger provider
+    │   ├── rabbitmq.go          ← RabbitMQ connection + publisher providers
+    │   ├── routes.go            ← route registration (API + health)
+    │   ├── runtime.go           ← AppEnv + AppRuntime interface
+    │   ├── server.go            ← HTTP server provider
+    │   ├── snowflake.go         ← Snowflake ID generator provider
+    │   └── token.go             ← Token issuer + TTL provider
+    ├── contracts/               ← shared types and interfaces (AccessTokenClaims, TTLProvider)
     ├── health/                  ← liveness + readiness handlers
     │   └── setup/module.go
     └── <domain>/
@@ -58,36 +85,38 @@ services/<name>/
         └── transport/           ← Gin HTTP handlers + error→HTTP mapping
 ```
 
+The authz and post services are skeletons — they have go.mod files but minimal or no Go source.
+
 ## Commands
 
 All `go` commands run from `backend/` (the workspace root). For service-specific operations, `cd` into the service directory.
 
 ```bash
-# Build a specific service
-cd backend/services/authz && go build ./cmd/authz/
+# Build the account service
+cd backend/services/account && go build ./cmd/account/
 
 # Run all tests across the workspace
 cd backend && go test ./...
 
 # Run a single package's tests
-cd backend/services/authz && go test ./internal/authz/...
+cd backend/services/account && go test ./internal/account/...
 
 # Lint a specific service or package
-cd backend && golangci-lint run ./services/authz/...
+cd backend && golangci-lint run ./services/account/...
 
 # Lint everything
 cd backend && golangci-lint run ./...
 
 # Format (gofumpt + gci)
-cd backend/services/authz && gofumpt -l -w . && gci write .
+cd backend/services/account && gofumpt -l -w . && gci write .
 ```
 
 ### Unpublished pkg modules — `replace` workaround
 
-When a `pkg/` module hasn't been tagged and pushed yet, services that depend on it need a `replace` directive to resolve it locally. For example, authz depends on `pkg/events`:
+When a `pkg/` module hasn't been tagged and pushed yet, services that depend on it need a `replace` directive to resolve it locally. For example, account depends on `pkg/events`:
 
 ```bash
-cd backend/services/authz
+cd backend/services/account
 go mod edit -replace=github.com/cubelitblade/community-v2/backend/pkg/events=../../pkg/events
 go mod tidy
 ```
@@ -98,11 +127,12 @@ go mod tidy
 
 - **HTTP**: Gin (`gin-gonic/gin`) — `gin.New()` with custom middleware
 - **DI**: `go.uber.org/fx` — all services use fx for lifecycle and dependency wiring
-- **ORM**: GORM v2 with PostgreSQL driver — `TranslateError: true`
+- **ORM**: GORM v2 with PostgreSQL driver — `TranslateError: true`, generic `gorm.G[T]` API
 - **Auth**: JWT HS256 via `golang-jwt/jwt/v5`, access token in cookie
 - **IDs**: Custom Snowflake generator (`pkg/common/idgen/`)
 - **Authorization**: OpenFGA via `openfga/go-sdk` (client on port 9090)
-- **Messaging**: RabbitMQ via `rabbitmq/amqp091-go` (port 5672), topic exchange `domain.events`
+- **Messaging**: RabbitMQ via `rabbitmq/rabbitmq-amqp-go-client` (port 5672), topic exchange `domain.events`
+- **Events**: CloudEvents spec via `cloudevents/sdk-go/v2`
 
 ## Infrastructure (Docker Compose)
 
@@ -121,38 +151,35 @@ All config via **environment variables**. Use `direnv allow` to auto-load `.env`
 | Variable | Notes |
 |---|---|
 | `APP_ENV` | `dev` or `prod` |
-| `RABBITMQ_URL` | AMQP DSN |
 | `JWT_SECRET` | Min 32 bytes |
-
-### Authz service vars
-
-| Variable | Default | Notes |
-|---|---|---|
-| `HTTP_ADDR` | `:8081` | Listen address |
-| `FGA_API_URL` | (required) | OpenFGA HTTP API |
-| `FGA_STORE_ID` | (required) | OpenFGA store ID |
-| `FGA_MODEL_ID` | — | Auth model ID (optional) |
 
 ### Account service vars
 
 | Variable | Default | Notes |
 |---|---|---|
+| `APP_ENV` | `dev` | `dev` or `prod` |
 | `HTTP_ADDR` | `:8080` | Listen address |
 | `DATABASE_URL` | (required) | PostgreSQL DSN |
 | `SNOWFLAKE_ID` | (required) | Worker ID for Snowflake |
-| `ACCESS_TOKEN_COOKIE_NAME` | `access_token` | |
-| `COOKIE_SECURE` | `false` | |
-| `COOKIE_SAME_SITE` | `lax` | |
+| `RMQ_URL` | (required) | RabbitMQ AMQP DSN |
+| `RMQ_SYSTEM_EXCHANGE_NAME` | (required) | RabbitMQ exchange name |
+| `JWT_SECRET` | (required) | Min 32 bytes |
+| `JWT_ISSUER` | `community-v2` | Token issuer claim |
+| `ACCESS_TOKEN_TTL` | `2h` | Access token validity duration |
+
+Cookie security (Secure/SameSite) is derived automatically from `APP_ENV`: `dev` → insecure/lax, `prod` → secure/lax.
 
 ## Architecture conventions
 
 - **Unexported struct fields** by default. Only config/params bags (`Config`, `Deps`, `TupleKey`, `Snapshot`) use exported fields. Domain objects and service structs use unexported fields populated via constructor injection.
-- **Module Setup pattern**: `internal/<domain>/setup/module.go` provides an fx module. Handlers implement `platform.HTTPMounter` and are annotated with `fx.ResultTags("group:\"mounter\"")` for automatic route registration.
+- **Module Setup pattern**: `internal/<domain>/setup/module.go` provides an fx module. Handlers implement `platform.HTTPMounter` and are annotated with `fx.ResultTags("group:\"mounter\"")` for automatic route registration via `platform.RegisterRouters`.
 - **Error-to-HTTP mapping**: `httperr.ErrorMapper` funcs in each `transport/` package map domain sentinel errors to RFC 9457 problem details via `httperr.WriteMappedError`.
-- **GORM models** are private (`postgres.Row`), mapped via `accountToRow`/`rowToAccount`.
-- **Reader/Writer separation**: The `postgres` package exports `Reader` and `Writer`, never exposing GORM directly.
-- **The `bootstrap` package** is each service's composition root — it owns config loading, fx app construction, and route registration.
-- **Events**: RabbitMQ uses topic exchange `domain.events`. Authz's consumer listens for `user.registered`, `user.role_assigned`, `user.role_revoked`, `account.created`, `post.created` and writes corresponding tuples to OpenFGA.
+- **GORM models** are private (`storage.EventRow`, `storage.AccountRow`), mapped via constructor functions.
+- **Reader/Writer separation**: The `storage` package exports separate reader and writer types, never exposing GORM directly.
+- **The `bootstrap` package** is the service's composition root — split into focused files (config, database, gin, jwt, logger, rabbitmq, runtime, server, snowflake, token, cookie) plus `app.go` for fx app construction and `routes.go` for route registration.
+- **Contracts package**: `internal/contracts/` holds shared types and interfaces (e.g. `AccessTokenClaims`, `TTLProvider`) used across domain boundaries within the service.
+- **API package**: `api/` holds cross-service contract types (event payloads, request/response DTOs) organized by version (`v1`).
+- **Events**: Outbox relay pattern in `pkg/events/outbox/` polls the database for unpublished events, wraps them as CloudEvents, publishes to RabbitMQ, and marks them as published.
 
 ## Testing
 

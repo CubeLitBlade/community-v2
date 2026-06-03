@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/cubelitblade/community-v2/backend/pkg/common/httperr"
+	v1 "github.com/cubelitblade/community-v2/backend/services/account/api/types/v1"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/account"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/authn"
 	"github.com/gin-gonic/gin"
@@ -17,7 +18,7 @@ import (
 
 // Registrar defines the interface for account-related operations.
 type Registrar interface {
-	Register(ctx context.Context, username string, password string) (account.Account, error)
+	Register(ctx context.Context, username string, password string) (int64, error)
 }
 
 // ProfileFinder is the interface for looking up account profiles.
@@ -38,10 +39,10 @@ func NewHandler(
 	finder ProfileFinder,
 	logger *slog.Logger,
 ) *Handler {
-	if logger == nil {
-		logger = slog.Default()
-		logger.Warn("No logger provided, using default logger")
-	}
+	logger = logger.With(
+		slog.String("service", "account"),
+		slog.String("component", "transport/handler"),
+	)
 
 	return &Handler{
 		registrar:     registrar,
@@ -59,13 +60,8 @@ func (h *Handler) RegisterRoutes(router gin.IRouter) {
 	g.GET("/:id", h.getProfile)
 }
 
-type createAccountRequest struct {
-	Username string `binding:"required" json:"username"`
-	Password string `binding:"required" json:"password"`
-}
-
 func (h *Handler) createAccount(c *gin.Context) {
-	var req createAccountRequest
+	var req v1.CreateAccountRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		httperr.WriteBadRequest(c, detailInvalidCreateAccountBody())
@@ -73,19 +69,18 @@ func (h *Handler) createAccount(c *gin.Context) {
 		return
 	}
 
-	acc, err := h.registrar.Register(
-		c.Request.Context(),
-		req.Username,
-		req.Password,
-	)
+	id, err := h.registrar.Register(c.Request.Context(), req.Username, req.Password)
 	if err != nil {
-		h.logger.Debug("create account failed", "username", req.Username, "error", err)
+		h.logger.Debug("create account failed",
+			slog.String("username", req.Username),
+			slog.Any("error", err),
+		)
 		httperr.WriteMappedError(c, err, accountProblem)
 
 		return
 	}
 
-	c.Header("Location", fmt.Sprintf("/api/accounts/%d", acc.ID()))
+	c.Header("Location", fmt.Sprintf("%s/%d", c.Request.URL.Path, id))
 	c.Status(http.StatusCreated)
 }
 
@@ -110,7 +105,11 @@ func (h *Handler) getOwnProfile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, profile)
+	c.JSON(http.StatusOK, v1.Profile{
+		ID:          profile.ID,
+		Username:    profile.Username,
+		DisplayName: profile.DisplayName,
+	})
 }
 
 func (h *Handler) getProfile(c *gin.Context) {
@@ -134,5 +133,9 @@ func (h *Handler) getProfile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, profile)
+	c.JSON(http.StatusOK, v1.Profile{
+		ID:          profile.ID,
+		Username:    profile.Username,
+		DisplayName: profile.DisplayName,
+	})
 }

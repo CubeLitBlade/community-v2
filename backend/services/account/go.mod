@@ -4,9 +4,9 @@ go 1.26.3
 
 require (
 	github.com/caarlos0/env v3.5.0+incompatible
-	github.com/cubelitblade/community-v2/backend/pkg/common v0.1.0
-	github.com/cubelitblade/community-v2/backend/pkg/events v0.4.1
-	github.com/cubelitblade/community-v2/backend/pkg/platform v0.1.1
+	github.com/cubelitblade/community-v2/backend/pkg/common v0.2.0
+	github.com/cubelitblade/community-v2/backend/pkg/events v0.5.0
+	github.com/cubelitblade/community-v2/backend/pkg/platform v0.3.0
 	github.com/gin-gonic/gin v1.12.0
 	github.com/rabbitmq/rabbitmq-amqp-go-client v1.1.0
 	go.uber.org/fx v1.24.0
@@ -42,6 +42,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/lmittmann/tint v1.1.3 // indirect
 	github.com/mattn/go-isatty v0.0.22 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
