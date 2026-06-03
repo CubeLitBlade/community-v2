@@ -1,3 +1,4 @@
+// Package jwt provides Signer token creation, signing, and parsing.
 package jwt
 
 import (
@@ -15,64 +16,65 @@ var (
 	ErrUnexpectedSigningMethod = errors.New("unexpected signing method")
 )
 
+// ParserOption is a functional option for configuring a Parser.
 type ParserOption func(*Parser)
 
+// Parser validates and decodes JWT tokens.
 type Parser struct {
 	key    []byte
 	issuer string
 	clock  func() time.Time
 }
 
-func NewParser(key string, opts ...ParserOption) *Parser {
-	p := &Parser{
-		key:    []byte(key),
+// NewParser creates a new Parser with the given key and optional configuration.
+func NewParser(key []byte, opts ...ParserOption) *Parser {
+	parser := &Parser{
+		key:    key,
 		issuer: "",
 		clock:  time.Now,
 	}
 
 	for _, opt := range opts {
-		opt(p)
+		opt(parser)
 	}
 
-	return p
+	return parser
 }
 
+// WithParserIssuer sets the expected issuer for the parser.
 func WithParserIssuer(issuer string) ParserOption {
 	return func(p *Parser) {
 		p.issuer = issuer
 	}
 }
 
+// WithParserClock sets the clock function used for time validation.
 func WithParserClock(clock func() time.Time) ParserOption {
 	return func(p *Parser) {
 		p.clock = clock
 	}
 }
 
-func (p *Parser) Parse(value string) (*Claims, error) {
-	claims := &Claims{
-		RegisteredClaims: jwt.RegisteredClaims{},
-		Role:             "",
-	}
-
+// Parse validates the given JWT string and populates the provided claims.
+func (p *Parser) Parse(value string, claims jwt.Claims) error {
 	token, err := jwt.ParseWithClaims(value, claims, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("%w: %v", ErrUnexpectedSigningMethod, token.Header["alg"])
 		}
 
 		return p.key, nil
-	}, jwt.WithTimeFunc(p.clock),
-	)
-
+	}, jwt.WithTimeFunc(p.clock), jwt.WithIssuer(p.issuer))
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
-			return nil, ErrTokenExpired
+			return ErrTokenExpired
 		}
 
-		return nil, ErrInvalidToken
-	} else if claims, ok := token.Claims.(*Claims); ok && token.Valid {
-		return claims, nil
+		return ErrInvalidToken
 	}
 
-	return nil, ErrInvalidToken
+	if !token.Valid {
+		return ErrInvalidToken
+	}
+
+	return nil
 }

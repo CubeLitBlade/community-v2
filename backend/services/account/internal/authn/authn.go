@@ -9,6 +9,7 @@ import (
 
 	"github.com/cubelitblade/community-v2/backend/pkg/common/httperr"
 	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/contracts"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,29 +21,41 @@ type Principal struct {
 	Role string
 }
 
-// ParseToken is a Gin middleware that extracts a JWT from the access_token
-// cookie, validates it, and sets the Principal in the Gin context.
+// ParseToken is a Gin middleware that extracts a JWT from the named cookie,
+// validates it, and sets the Principal in the Gin context.
 func ParseToken(parser *jwt.Parser, cookieName string, logger *slog.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		log := logger.With("cookie", cookieName)
+		logger = logger.With(
+			slog.String("service", "account"),
+			slog.String("component", "authn"),
+			slog.String("cookie_name", cookieName),
+		)
+
+		//nolint:exhaustruct // Empty struct for assigning later.
+		claims := contracts.AccessTokenClaims{}
 
 		token, err := c.Cookie(cookieName)
 		if err != nil {
-			log.Debug("cookie not found")
+			logger.Debug("cookie not found")
 			c.Next()
 
 			return
 		}
 
-		claims, err := parser.Parse(token)
-		if err != nil {
+		if err := parser.Parse(token, &claims); err != nil {
 			switch {
 			case errors.Is(err, jwt.ErrInvalidToken):
-				log.Debug("token invalid", "error", err)
+				logger.Debug("token invalid",
+					slog.Any("error", err),
+				)
 			case errors.Is(err, jwt.ErrTokenExpired):
-				log.Debug("token expired")
+				logger.Debug("token expired",
+					slog.Any("error", err),
+				)
 			default:
-				log.Debug("token parse error", "error", err)
+				logger.Debug("token parse error",
+					slog.Any("error", err),
+				)
 			}
 
 			c.Next()
@@ -52,7 +65,9 @@ func ParseToken(parser *jwt.Parser, cookieName string, logger *slog.Logger) gin.
 
 		id, err := strconv.ParseInt(claims.Subject, 10, 64)
 		if err != nil {
-			log.Debug("subject parse error", "error", err)
+			logger.Debug("subject parse error",
+				slog.Any("error", err),
+			)
 			c.Next()
 
 			return

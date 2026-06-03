@@ -9,6 +9,7 @@ import (
 
 	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
 	"github.com/cubelitblade/community-v2/backend/pkg/events/outbox"
+	v1 "github.com/cubelitblade/community-v2/backend/services/account/api/events/v1"
 	"gorm.io/gorm"
 )
 
@@ -39,10 +40,10 @@ type Registrar struct {
 func NewRegistrar(ids idgen.Generator, creator Creator, outboxSaver OutboxSaver,
 	db *gorm.DB, logger *slog.Logger, opts ...RegistrarOption,
 ) *Registrar {
-	if logger == nil {
-		logger = slog.Default()
-		logger.Warn("No logger provided while creating registrar, using default logger.")
-	}
+	logger = logger.With(
+		slog.String("service", "account"),
+		slog.String("component", "account/registrar"),
+	)
 
 	registrar := &Registrar{
 		ids:         ids,
@@ -60,52 +61,61 @@ func NewRegistrar(ids idgen.Generator, creator Creator, outboxSaver OutboxSaver,
 	return registrar
 }
 
-// Register creates a new account, persists it, and returns the result.
-func (r *Registrar) Register(ctx context.Context, username, password string) (Account, error) {
+// Register creates a new account, persists it, and returns the ID.
+func (r *Registrar) Register(ctx context.Context, username, password string) (int64, error) {
 	now := r.clock()
 
 	id, err := r.ids.NextID()
 	if err != nil {
-		r.logger.Error("Failed to generate account id.", "error", err)
+		r.logger.ErrorContext(ctx, "failed to generate account id",
+			slog.Any("error", err),
+		)
 
-		return Account{}, fmt.Errorf("generate ID: %w", err)
+		return 0, fmt.Errorf("generate ID: %w", err)
 	}
 
 	acc, err := NewAccount(id, username, password, now)
 	if err != nil {
-		r.logger.Error("Failed to create account.", "error", err)
+		r.logger.ErrorContext(ctx, "failed to create account",
+			slog.Any("error", err),
+		)
 
-		return Account{}, fmt.Errorf("create account: %w", err)
+		return 0, fmt.Errorf("create account: %w", err)
 	}
 
 	id, err = r.ids.NextID()
 	if err != nil {
-		r.logger.Error("Failed to generate account id.", "error", err)
+		r.logger.ErrorContext(ctx, "failed to generate account id",
+			slog.Any("error", err),
+		)
 
-		return Account{}, fmt.Errorf("generate ID: %w", err)
+		return 0, fmt.Errorf("generate ID: %w", err)
 	}
 
 	event := outbox.NewEntry(
-		id, "/community-v2/account-service", "account.created", now,
-		outbox.WithPayload(map[string]any{
-			"id":           strconv.FormatInt(acc.ID(), 10),
-			"username":     acc.Username(),
-			"display_name": acc.DisplayName(),
-			"role":         acc.Role(),
-			"status":       acc.Status(),
-			"created_at":   acc.createdAt.Format(time.RFC3339),
-		}),
+		id, "/community-v2/account-service", v1.AccountCreated, now,
+		outbox.WithPayload(
+			v1.AccountCreatedEvent{
+				AccountID: strconv.FormatInt(acc.ID(), 10),
+				Username:  acc.Username(),
+				Role:      string(acc.role),
+				CreatedAt: acc.createdAt.Format(time.RFC3339),
+			},
+		),
 	)
 
 	err = r.db.Transaction(func(tx *gorm.DB) error {
 		if err := r.creator.Create(ctx, tx, &acc); err != nil {
-			r.logger.Error("Failed to persist account.", "error", err)
+			r.logger.ErrorContext(ctx, "failed to persist account",
+				slog.Any("error", err),
+			)
 
 			return fmt.Errorf("persist account: %w", err)
 		}
 
 		if err := r.outboxSaver.Save(ctx, tx, event); err != nil {
-			r.logger.Error("Failed to persist event.", "error", err)
+			r.logger.ErrorContext(ctx, "failed to persist event",
+				slog.Any("error", err))
 
 			return fmt.Errorf("persist event: %w", err)
 		}
@@ -113,12 +123,14 @@ func (r *Registrar) Register(ctx context.Context, username, password string) (Ac
 		return nil
 	})
 	if err != nil {
-		r.logger.Error("Transaction failed.", "error", err)
+		r.logger.ErrorContext(ctx, "transaction failed",
+			slog.Any("error", err),
+		)
 
-		return Account{}, fmt.Errorf("transaction: %w", err)
+		return 0, fmt.Errorf("transaction: %w", err)
 	}
 
-	return acc, nil
+	return acc.ID(), nil
 }
 
 // WithRegistrarClock sets the clock function for the Registrar.

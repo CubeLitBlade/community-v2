@@ -10,6 +10,7 @@ import (
 	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
 	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/auth"
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/contracts"
 )
 
 const (
@@ -36,22 +37,22 @@ func (g *stubIDGen) NextID() (int64, error) {
 var _ idgen.Generator = (*stubIDGen)(nil)
 
 type stubAuthenticator struct {
-	acc auth.AuthenticatedAccount
+	acc *contracts.AuthenticatedAccount
 	err error
 }
 
 func (a *stubAuthenticator) Authenticate(
 	_ context.Context, _, _ string,
-) (auth.AuthenticatedAccount, error) {
+) (*contracts.AuthenticatedAccount, error) {
 	if a.err != nil {
-		return auth.AuthenticatedAccount{}, a.err
+		return nil, a.err
 	}
 
 	return a.acc, nil
 }
 
 // Compile-time check.
-var _ auth.AccountAuthenticator = (*stubAuthenticator)(nil)
+var _ auth.Authenticator = (*stubAuthenticator)(nil)
 
 type stubLoginRecorder struct{}
 
@@ -64,7 +65,15 @@ func (r *stubLoginRecorder) Record(
 // Compile-time check.
 var _ auth.LoginRecorder = (*stubLoginRecorder)(nil)
 
-//nolint:funlen // For testing only.
+type stubTTLProvider struct{}
+
+func (p *stubTTLProvider) AccessTokenTTL() time.Duration {
+	return testValidity
+}
+
+// Compile-time check.
+var _ contracts.TTLProvider = (*stubTTLProvider)(nil)
+
 func TestLogin_Execute(t *testing.T) {
 	t.Parallel()
 
@@ -72,7 +81,7 @@ func TestLogin_Execute(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		authAcc   auth.AuthenticatedAccount
+		authAcc   contracts.AuthenticatedAccount
 		authErr   error
 		idGenErr  error
 		wantErr   error
@@ -80,7 +89,7 @@ func TestLogin_Execute(t *testing.T) {
 	}{
 		{
 			name:      "success",
-			authAcc:   auth.AuthenticatedAccount{ID: 1, Role: "member"},
+			authAcc:   contracts.AuthenticatedAccount{ID: 1, Role: "member"},
 			authErr:   nil,
 			idGenErr:  nil,
 			wantErr:   nil,
@@ -88,7 +97,7 @@ func TestLogin_Execute(t *testing.T) {
 		},
 		{
 			name:      "invalid_credentials",
-			authAcc:   auth.AuthenticatedAccount{ID: 0, Role: ""},
+			authAcc:   contracts.AuthenticatedAccount{ID: 0, Role: ""},
 			authErr:   auth.ErrInvalidCredentials,
 			idGenErr:  nil,
 			wantErr:   auth.ErrInvalidCredentials,
@@ -96,7 +105,7 @@ func TestLogin_Execute(t *testing.T) {
 		},
 		{
 			name:      "unexpected_auth_error",
-			authAcc:   auth.AuthenticatedAccount{ID: 0, Role: ""},
+			authAcc:   contracts.AuthenticatedAccount{ID: 0, Role: ""},
 			authErr:   errAuthTimeout,
 			idGenErr:  nil,
 			wantErr:   errAuthTimeout,
@@ -104,7 +113,7 @@ func TestLogin_Execute(t *testing.T) {
 		},
 		{
 			name:      "id_generator_error",
-			authAcc:   auth.AuthenticatedAccount{ID: 1, Role: "member"},
+			authAcc:   contracts.AuthenticatedAccount{ID: 1, Role: "member"},
 			authErr:   nil,
 			idGenErr:  errBrokenIDGen,
 			wantErr:   errBrokenIDGen,
@@ -116,17 +125,13 @@ func TestLogin_Execute(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			signer := jwt.NewSigner(
-				testJWTKey,
-				testValidity,
-				&stubIDGen{id: 99, err: tt.idGenErr},
-				jwt.WithSignerIssuer(testIssuer),
-			)
+			signer := jwt.NewSigner([]byte(testJWTKey), &stubIDGen{id: 99, err: tt.idGenErr}, jwt.WithSignerIssuer(testIssuer))
 
 			login := auth.NewLogin(
-				&stubAuthenticator{acc: tt.authAcc, err: tt.authErr},
+				&stubAuthenticator{acc: &tt.authAcc, err: tt.authErr},
 				signer,
 				&stubLoginRecorder{},
+				&stubTTLProvider{},
 			)
 
 			session, err := login.Execute(

@@ -5,7 +5,7 @@ go 1.26.3
 require (
 	github.com/Azure/go-amqp v1.6.0
 	github.com/cloudevents/sdk-go/v2 v2.16.2
-	github.com/cubelitblade/community-v2/backend/pkg/common v0.1.0
+	github.com/cubelitblade/community-v2/backend/pkg/common v0.2.1
 	github.com/rabbitmq/rabbitmq-amqp-go-client v1.1.0
 	gorm.io/gorm v1.31.1
 )

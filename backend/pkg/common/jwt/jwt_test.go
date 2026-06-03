@@ -8,6 +8,7 @@ import (
 
 	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
 	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
+	jwtlib "github.com/golang-jwt/jwt/v5"
 )
 
 var errBroken = errors.New("snowflake broken")
@@ -21,11 +22,12 @@ func (m *mockIDGen) NextID() (int64, error) {
 	return m.id, m.err
 }
 
+//nolint:funlen // For testing only.
 func TestSigner_Sign(t *testing.T) {
 	t.Parallel()
 
-	validKey := "test-secret-key-that-is-long-enough"
-	validity := 1 * time.Hour
+	validKey := []byte("test-secret-key-that-is-long-enough")
+	defaultTTL := 1 * time.Hour
 	fakeNow := time.Date(2023, 8, 22, 0, 0, 0, 0, time.UTC)
 
 	parser := jwt.NewParser(validKey, jwt.WithParserClock(func() time.Time {
@@ -36,21 +38,21 @@ func TestSigner_Sign(t *testing.T) {
 		name    string
 		ids     idgen.Generator
 		uid     int64
-		role    string
+		ttl     time.Duration
 		wantErr bool
 	}{
 		{
 			name:    "success",
 			ids:     &mockIDGen{id: 123456789, err: nil},
 			uid:     1,
-			role:    "admin",
+			ttl:     defaultTTL,
 			wantErr: false,
 		},
 		{
 			name:    "id_generator_error",
 			ids:     &mockIDGen{id: 0, err: errBroken},
 			uid:     1,
-			role:    "admin",
+			ttl:     defaultTTL,
 			wantErr: true,
 		},
 	}
@@ -59,13 +61,13 @@ func TestSigner_Sign(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			signer := jwt.NewSigner(validKey, validity, tt.ids, jwt.WithSignerClock(func() time.Time {
+			signer := jwt.NewSigner(validKey, tt.ids, jwt.WithSignerClock(func() time.Time {
 				return fakeNow
 			}))
 
-			gotToken, err := signer.Sign(tt.uid, tt.role)
+			claims, err := signer.NewClaims(strconv.FormatInt(tt.uid, 10), tt.ttl)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Signer.Sign() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Signer.NewClaims() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -73,30 +75,34 @@ func TestSigner_Sign(t *testing.T) {
 				return
 			}
 
+			gotToken, err := signer.Sign(claims)
+			if err != nil {
+				t.Errorf("Signer.Sign() error = %v", err)
+				return
+			}
+
 			if gotToken == "" {
 				t.Fatal("Signer.Sign() returned empty token, expected non-empty")
 			}
 
-			claims, parseErr := parser.Parse(gotToken)
+			var parsedClaims jwtlib.RegisteredClaims
+
+			parseErr := parser.Parse(gotToken, &parsedClaims)
 			if parseErr != nil {
 				t.Fatalf("Failed to parse just issued token: %v", parseErr)
 			}
 
 			wantSub := strconv.FormatInt(tt.uid, 10)
-			if claims.Subject != wantSub {
-				t.Errorf("claims.Subject = %v, want %v", claims.Subject, wantSub)
+			if parsedClaims.Subject != wantSub {
+				t.Errorf("parsedClaims.Subject = %v, want %v", parsedClaims.Subject, wantSub)
 			}
 
-			if claims.Role != tt.role {
-				t.Errorf("claims.Role = %v, want %v", claims.Role, tt.role)
+			if parsedClaims.ID != "123456789" {
+				t.Errorf("parsedClaims.ID = %v, want %v", parsedClaims.ID, "123456789")
 			}
 
-			if claims.ID != "123456789" {
-				t.Errorf("claims.ID = %v, want %v", claims.ID, "123456789")
-			}
-
-			if !claims.IssuedAt.Equal(fakeNow) {
-				t.Errorf("claims.IssuedAt = %v, want %v", claims.IssuedAt, fakeNow)
+			if !parsedClaims.IssuedAt.Equal(fakeNow) {
+				t.Errorf("parsedClaims.IssuedAt = %v, want %v", parsedClaims.IssuedAt, fakeNow)
 			}
 		})
 	}
@@ -106,23 +112,35 @@ func TestSigner_Sign(t *testing.T) {
 func TestParser_Parse(t *testing.T) {
 	t.Parallel()
 
-	validKey := "test-secret-key-that-is-long-enough"
-	wrongKey := "wrong-key"
-	validity := 1 * time.Hour
+	validKey := []byte("test-secret-key-that-is-long-enough")
+	wrongKey := []byte("wrong-key")
+	defaultTTL := 1 * time.Hour
 	fakeNow := time.Date(2023, 8, 22, 0, 0, 0, 0, time.UTC)
 
-	signer := jwt.NewSigner(validKey, validity, &mockIDGen{id: 1, err: nil}, jwt.WithSignerClock(func() time.Time {
+	signer := jwt.NewSigner(validKey, &mockIDGen{id: 1, err: nil}, jwt.WithSignerClock(func() time.Time {
 		return fakeNow
 	}))
-	validToken, err := signer.Sign(10, "user")
+
+	validClaims, err := signer.NewClaims("10", defaultTTL)
+	if err != nil {
+		t.Fatalf("Failed to create claims for test setup: %v", err)
+	}
+
+	validToken, err := signer.Sign(validClaims)
 	if err != nil {
 		t.Fatalf("Failed to sign valid token for test setup: %v", err)
 	}
 
-	expiredSigner := jwt.NewSigner(validKey, validity, &mockIDGen{id: 2, err: nil}, jwt.WithSignerClock(func() time.Time {
+	expiredSigner := jwt.NewSigner(validKey, &mockIDGen{id: 2, err: nil}, jwt.WithSignerClock(func() time.Time {
 		return fakeNow.Add(-2 * time.Hour)
 	}))
-	expiredToken, err := expiredSigner.Sign(20, "expired_user")
+
+	expiredClaims, err := expiredSigner.NewClaims("20", defaultTTL)
+	if err != nil {
+		t.Fatalf("Failed to create expired claims for test setup: %v", err)
+	}
+
+	expiredToken, err := expiredSigner.Sign(expiredClaims)
 	if err != nil {
 		t.Fatalf("Failed to sign expired token for test setup: %v", err)
 	}
@@ -136,7 +154,6 @@ func TestParser_Parse(t *testing.T) {
 		parser      *jwt.Parser
 		wantErr     error
 		wantUID     string
-		wantRole    string
 	}{
 		{
 			name:        "success",
@@ -144,15 +161,13 @@ func TestParser_Parse(t *testing.T) {
 			parser:      jwt.NewParser(validKey, jwt.WithParserClock(func() time.Time { return fakeNow })),
 			wantErr:     nil,
 			wantUID:     "10",
-			wantRole:    "user",
 		},
 		{
 			name:        "expired_token",
 			tokenString: expiredToken,
-			parser:   jwt.NewParser(validKey, jwt.WithParserClock(func() time.Time { return fakeNow })),
-			wantErr:  jwt.ErrTokenExpired,
-			wantUID:  "",
-			wantRole: "",
+			parser:      jwt.NewParser(validKey, jwt.WithParserClock(func() time.Time { return fakeNow })),
+			wantErr:     jwt.ErrTokenExpired,
+			wantUID:     "",
 		},
 		{
 			name:        "invalid_signature",
@@ -160,7 +175,6 @@ func TestParser_Parse(t *testing.T) {
 			parser:      jwt.NewParser(wrongKey, jwt.WithParserClock(func() time.Time { return fakeNow })),
 			wantErr:     jwt.ErrInvalidToken,
 			wantUID:     "",
-			wantRole:    "",
 		},
 		{
 			name:        "malformed_token",
@@ -168,7 +182,6 @@ func TestParser_Parse(t *testing.T) {
 			parser:      jwt.NewParser(validKey, jwt.WithParserClock(func() time.Time { return fakeNow })),
 			wantErr:     jwt.ErrInvalidToken,
 			wantUID:     "",
-			wantRole:    "",
 		},
 		{
 			name:        "empty_token",
@@ -176,7 +189,6 @@ func TestParser_Parse(t *testing.T) {
 			parser:      jwt.NewParser(validKey, jwt.WithParserClock(func() time.Time { return fakeNow })),
 			wantErr:     jwt.ErrInvalidToken,
 			wantUID:     "",
-			wantRole:    "",
 		},
 	}
 
@@ -184,8 +196,9 @@ func TestParser_Parse(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			claims, err := tt.parser.Parse(tt.tokenString)
+			var claims jwtlib.RegisteredClaims
 
+			err := tt.parser.Parse(tt.tokenString, &claims)
 			if !errors.Is(err, tt.wantErr) {
 				t.Errorf("Parser.Parse() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -197,10 +210,6 @@ func TestParser_Parse(t *testing.T) {
 
 			if claims.Subject != tt.wantUID {
 				t.Errorf("claims.Subject = %v, want %v", claims.Subject, tt.wantUID)
-			}
-
-			if claims.Role != tt.wantRole {
-				t.Errorf("claims.Role = %v, want %v", claims.Role, tt.wantRole)
 			}
 		})
 	}

@@ -9,35 +9,30 @@ import (
 	"github.com/cubelitblade/community-v2/backend/pkg/common/httperr"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/auth"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/authn"
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/contracts"
 	"github.com/gin-gonic/gin"
 )
 
-const (
-	cookiePath     = "/api/"
-	cookieHTTPOnly = true
-)
-
-// CookieConfig holds the configuration for the auth cookie.
-type CookieConfig struct {
-	Name     string
-	Secure   bool
-	SameSite http.SameSite
-	MaxAge   int
-}
-
 // Handler handles HTTP requests for authentication.
 type Handler struct {
-	login     *auth.Login
-	cookieCfg *CookieConfig
-	logger    *slog.Logger
+	login  *auth.Login
+	logger *slog.Logger
+	ttl    contracts.TTLProvider
+	policy CookiePolicy
 }
 
-// NewHandler creates and returns a new AuthHandler.
-func NewHandler(login *auth.Login, cookieCfg *CookieConfig, logger *slog.Logger) *Handler {
+// NewHandler creates and returns a new Handler.
+func NewHandler(login *auth.Login, logger *slog.Logger, ttl contracts.TTLProvider, policy CookiePolicy) *Handler {
+	logger = logger.With(
+		slog.String("service", "account"),
+		slog.String("component", "auth/transport/handler"),
+	)
+
 	return &Handler{
-		login:     login,
-		cookieCfg: cookieCfg,
-		logger:    logger,
+		login:  login,
+		logger: logger,
+		ttl:    ttl,
+		policy: policy,
 	}
 }
 
@@ -64,11 +59,7 @@ func (h *Handler) Login(c *gin.Context) {
 	var req loginRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		httperr.WriteBadRequest(
-			c,
-			"Request body must be valid JSON and include username "+
-				"and password.",
-		)
+		httperr.WriteBadRequest(c, "Request body must be valid JSON and include username and password.")
 
 		return
 	}
@@ -84,8 +75,9 @@ func (h *Handler) Login(c *gin.Context) {
 		c.Request.Context(), req.Username, req.Password, ipaddr,
 	)
 	if err != nil {
-		h.logger.Debug(
-			"login failed", "username", req.Username, "error", err,
+		h.logger.Debug("login failed",
+			slog.String("username", req.Username),
+			slog.Any("error", err),
 		)
 
 		httperr.WriteMappedError(c, err, authProblem)
@@ -93,16 +85,7 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	//nolint:gosec // cookie attributes are config-driven; Secure is set
-	cookie := &http.Cookie{
-		Name:     h.cookieCfg.Name,
-		Value:    credentials.Token,
-		Path:     cookiePath,
-		MaxAge:   h.cookieCfg.MaxAge,
-		HttpOnly: cookieHTTPOnly,
-		Secure:   h.cookieCfg.Secure,
-		SameSite: h.cookieCfg.SameSite,
-	}
+	cookie := WriteCookie(CookieNameAccessToken, credentials.Token, h.ttl.AccessTokenTTL(), h.policy)
 
 	http.SetCookie(c.Writer, cookie)
 	c.JSON(http.StatusOK, loginResponse{
@@ -113,17 +96,7 @@ func (h *Handler) Login(c *gin.Context) {
 
 // Logout handles DELETE /auth/ — erase access token cookie.
 func (h *Handler) Logout(c *gin.Context) {
-	//nolint:gosec // cookie attributes are config-driven; Secure is set
-	cookie := &http.Cookie{
-		Name:     h.cookieCfg.Name,
-		Value:    "",
-		Path:     cookiePath,
-		MaxAge:   -1, // delete cookie immediately
-		HttpOnly: cookieHTTPOnly,
-		Secure:   h.cookieCfg.Secure,
-		SameSite: h.cookieCfg.SameSite,
-	}
-
+	cookie := WriteCookie(CookieNameAccessToken, "", -1, h.policy)
 	http.SetCookie(c.Writer, cookie)
 	c.Status(http.StatusNoContent)
 }

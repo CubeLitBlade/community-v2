@@ -4,7 +4,6 @@ package setup
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 
 	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
@@ -24,59 +23,45 @@ import (
 func Module() fx.Option {
 	return fx.Options(
 		fx.Provide(
-			fx.Annotate(storage.NewAccountWriter, fx.As(new(account.Creator))),
-			fx.Annotate(storage.NewAccountWriter, fx.As(new(account.LastLoginUpdater))),
+			fx.Annotate(
+				storage.NewAccountWriter,
+				fx.As(new(account.Creator)),
+				fx.As(new(account.LastLoginUpdater)),
+			),
 		),
 		fx.Provide(
-			fx.Annotate(storage.NewAccountReader, fx.As(new(account.ByIDFinder))),
-			fx.Annotate(storage.NewAccountReader, fx.As(new(account.ByUsernameFinder))),
+			fx.Annotate(
+				storage.NewAccountReader,
+				fx.As(new(account.ByIDFinder)),
+				fx.As(new(account.ByUsernameFinder)),
+			),
 		),
 		fx.Provide(
-			fx.Annotate(storage.NewOutboxRepository, fx.As(new(account.OutboxSaver))),
-			fx.Annotate(storage.NewOutboxRepository, fx.As(new(outbox.Scanner))),
-			fx.Annotate(storage.NewOutboxRepository, fx.As(new(outbox.Recorder))),
+			fx.Annotate(
+				storage.NewOutboxRepository,
+				fx.As(new(account.OutboxSaver)),
+				fx.As(new(outbox.Scanner)),
+				fx.As(new(outbox.Recorder)),
+			),
 		),
 		fx.Provide(provideOutboxRelay),
 		fx.Provide(
 			fx.Annotate(account.NewRegistrar, fx.As(new(transport.Registrar))),
 		),
-		fx.Provide(account.NewAuthenticator),
+		fx.Provide(
+			fx.Annotate(account.NewAuthenticator, fx.As(new(auth.Authenticator))),
+		),
 		fx.Provide(
 			fx.Annotate(account.NewProfileFinder, fx.As(new(transport.ProfileFinder))),
 		),
-		fx.Provide(NewAuthenticatorAdapter),
-		fx.Provide(account.NewLoginRecorder),
+		fx.Provide(
+			fx.Annotate(account.NewLoginRecorder, fx.As(new(auth.LoginRecorder))),
+		),
 		fx.Provide(
 			fx.Annotate(transport.NewHandler, fx.As(new(platform.HTTPMounter)), fx.ResultTags(`group:"mounter"`)),
 		),
 		fx.Invoke(func(*outbox.Relay) {}),
 	)
-}
-
-// AuthenticatorAdapter adapts account.Authenticator to satisfy auth.AccountAuthenticator.
-type AuthenticatorAdapter struct {
-	auth *account.Authenticator
-}
-
-// NewAuthenticatorAdapter creates an AuthenticatorAdapter.
-func NewAuthenticatorAdapter(authenticator *account.Authenticator) *AuthenticatorAdapter {
-	return &AuthenticatorAdapter{auth: authenticator}
-}
-
-// Authenticate delegates to the underlying account.Authenticator and converts
-// the result to an auth.AuthenticatedAccount.
-func (a *AuthenticatorAdapter) Authenticate(
-	ctx context.Context, username, password string,
-) (auth.AuthenticatedAccount, error) {
-	acc, err := a.auth.Authenticate(ctx, username, password)
-	if err != nil {
-		return auth.AuthenticatedAccount{}, fmt.Errorf("authenticate: %w", err)
-	}
-
-	return auth.AuthenticatedAccount{
-		ID:   acc.ID(),
-		Role: acc.Role().String(),
-	}, nil
 }
 
 func provideOutboxRelay(

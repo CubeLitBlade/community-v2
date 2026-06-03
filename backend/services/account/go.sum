@@ -16,12 +16,12 @@ github.com/cloudevents/sdk-go/v2 v2.16.2 h1:ZYDFrYke4FD+jM8TZTJJO6JhKHzOQl2oqpFK
 github.com/cloudevents/sdk-go/v2 v2.16.2/go.mod h1:laOcGImm4nVJEU+PHnUrKL56CKmRL65RlQF0kRmW/kg=
 github.com/cloudwego/base64x v0.1.7 h1:NppS+Fgzg5ovhn4NkUXaDT3x9jldgH5ToMCqzBSi2zI=
 github.com/cloudwego/base64x v0.1.7/go.mod h1:Cu1PV9zfrSf7ET2tIbWbbEy7jO7HHJ13q4X2SQ8aWYg=
-github.com/cubelitblade/community-v2/backend/pkg/common v0.1.0 h1:owA/JirHF/pSUJznlvZPZjFIOr+6PEmcco9/ZgVZZbA=
-github.com/cubelitblade/community-v2/backend/pkg/common v0.1.0/go.mod h1:XEP8VnFdPodnOXIZ0knKIpHUEVmVog9pr2HZBo6X3oM=
-github.com/cubelitblade/community-v2/backend/pkg/events v0.4.1 h1:tBfO3w9NhYk08sBFF3O6zEHYKnSSw5lnizKHp/VTCQQ=
-github.com/cubelitblade/community-v2/backend/pkg/events v0.4.1/go.mod h1:YmvbzY7noNm0ZjWvNn+Mm0ugAD9OhFDKDrmE338TNqE=
-github.com/cubelitblade/community-v2/backend/pkg/platform v0.1.1 h1:1m27cPztCYfHmEjDk2caXO4Z1rXfYGTB1z90Wj0rqSc=
-github.com/cubelitblade/community-v2/backend/pkg/platform v0.1.1/go.mod h1:+0KjGEAxAF44A097Uul7odJ0OCTrOGdhJT38hsAEsF8=
+github.com/cubelitblade/community-v2/backend/pkg/common v0.2.1 h1:QD6Ic0hYvFhgsUNvTCHpaOGFr6qtYXVnKaz/YsTqTNQ=
+github.com/cubelitblade/community-v2/backend/pkg/common v0.2.1/go.mod h1:76uKmfMBxtD0ophm+YpJzWm77uleYEW8btL9IMoA/VY=
+github.com/cubelitblade/community-v2/backend/pkg/events v0.5.1 h1:4GfOmLn0M3T57NMjygBsFXh+ZcLgJp6VD/UsjFOOUec=
+github.com/cubelitblade/community-v2/backend/pkg/events v0.5.1/go.mod h1:3ye1qbhiQ6qYIHfdHZPbZoxTkGr3e00vubUEPXbiHvs=
+github.com/cubelitblade/community-v2/backend/pkg/platform v0.3.1 h1:nNmwMedcQkf5tANc2Lm35clmDjh5jNlO4dJSiNSriA8=
+github.com/cubelitblade/community-v2/backend/pkg/platform v0.3.1/go.mod h1:msbPcffAlzwKWflCgi9+DAEGytYurYibJqZcJTx9Wfw=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -80,6 +80,8 @@ github.com/klauspost/cpuid/v2 v2.3.0 h1:S4CRMLnYUhGeDFDqkGriYKdfoFlDnMtqTiI/sFzh
 github.com/klauspost/cpuid/v2 v2.3.0/go.mod h1:hqwkgyIinND0mEev00jJYCxPNVRVXFQeu1XKlok6oO0=
 github.com/leodido/go-urn v1.4.0 h1:WT9HwE9SGECu3lg4d/dIA+jxlljEa1/ffXKmRjqdmIQ=
 github.com/leodido/go-urn v1.4.0/go.mod h1:bvxc+MVxLKB4z00jd1z+Dvzr47oO32F/QSNjSBOlFxI=
+github.com/lmittmann/tint v1.1.3 h1:Hv4EaHWXQr+GTFnOU4VKf8UvAtZgn0VuKT+G0wFlO3I=
+github.com/lmittmann/tint v1.1.3/go.mod h1:HIS3gSy7qNwGCj+5oRjAutErFBl4BzdQP6cJZ0NfMwE=
 github.com/mattn/go-isatty v0.0.22 h1:j8l17JJ9i6VGPUFUYoTUKPSgKe/83EYU2zBC7YNKMw4=
 github.com/mattn/go-isatty v0.0.22/go.mod h1:ZXfXG4SQHsB/w3ZeOYbR0PrPwLy+n6xiMrJlRFqopa4=
 github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=

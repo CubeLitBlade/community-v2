@@ -15,16 +15,15 @@ import (
 type registerParams struct {
 	fx.In
 
-	Router           *gin.Engine
-	Mounters         []platform.HTTPMounter `group:"mounter"`
-	Parser           *jwt.Parser
-	AuthCookieConfig *transport.CookieConfig
-	Logger           *slog.Logger
+	Router   *gin.Engine
+	Mounters []platform.HTTPMounter `group:"mounter"`
+	Parser   *jwt.Parser
+	Logger   *slog.Logger
 }
 
 func registerAPIRoutes(p registerParams) {
 	api := p.Router.Group("/api")
-	api.Use(authn.ParseToken(p.Parser, p.AuthCookieConfig.Name, p.Logger))
+	api.Use(authn.ParseToken(p.Parser, transport.CookieNameAccessToken, p.Logger))
 	platform.RegisterRouters(api, p.Mounters)
 }
 

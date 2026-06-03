@@ -4,10 +4,12 @@ go 1.26.3
 
 require (
 	github.com/caarlos0/env v3.5.0+incompatible
-	github.com/cubelitblade/community-v2/backend/pkg/common v0.1.0
-	github.com/cubelitblade/community-v2/backend/pkg/events v0.4.1
-	github.com/cubelitblade/community-v2/backend/pkg/platform v0.1.1
+	github.com/cubelitblade/community-v2/backend/pkg/common v0.2.1
+	github.com/cubelitblade/community-v2/backend/pkg/events v0.5.1
+	github.com/cubelitblade/community-v2/backend/pkg/platform v0.3.1
 	github.com/gin-gonic/gin v1.12.0
+	github.com/golang-jwt/jwt/v5 v5.3.1
+	github.com/lmittmann/tint v1.1.3
 	github.com/rabbitmq/rabbitmq-amqp-go-client v1.1.0
 	go.uber.org/fx v1.24.0
 	golang.org/x/crypto v0.52.0
@@ -30,7 +32,6 @@ require (
 	github.com/go-playground/validator/v10 v10.30.3 // indirect
 	github.com/goccy/go-json v0.10.6 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
-	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect

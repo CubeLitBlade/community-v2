@@ -33,13 +33,18 @@ type Publisher struct {
 
 // NewPublisher creates and returns a new instance of Publisher.
 func NewPublisher(
-	env *rmq.Environment, exchangeName string, opts ...PublisherOption,
+	env *rmq.Environment, exchangeName string, logger *slog.Logger, opts ...PublisherOption,
 ) *Publisher {
+	logger = logger.With(
+		slog.String("module", "events/rabbitmq"),
+		slog.String("component", "publisher"),
+	)
+
 	publisher := &Publisher{
 		env:          env,
 		exchangeName: exchangeName,
 		closeTimeout: DefaultCloseTimeout,
-		logger:       slog.Default(),
+		logger:       logger,
 		conn:         nil,
 		publisher:    nil,
 		mu:           sync.RWMutex{},
@@ -58,18 +63,18 @@ func NewPublisher(
 func (p *Publisher) Start(ctx context.Context) error {
 	conn, err := amqp.ConnectWithTopicExchange(ctx, p.env, p.exchangeName)
 	if err != nil {
-		p.logger.Error("Failed to connect to topic exchange.", "err", err)
+		p.logger.ErrorContext(ctx, "failed to connect to topic exchange", slog.Any("error", err))
 
 		return fmt.Errorf("connect to topic exchange: %w", err)
 	}
 
 	publisher, err := conn.NewPublisher(ctx, nil, nil)
 	if err != nil {
-		p.logger.Error("Failed to create publisher.", "err", err)
+		p.logger.ErrorContext(ctx, "failed to create publisher", slog.Any("error", err))
 		err = fmt.Errorf("create publisher: %w", err)
 
 		if closeErr := conn.Close(ctx); closeErr != nil {
-			return errors.Join(err, fmt.Errorf("close AMQP connection: %w", closeErr))
+			return errors.Join(err, fmt.Errorf("close amqp connection: %w", closeErr))
 		}
 
 		return err
@@ -90,7 +95,7 @@ func (p *Publisher) Publish(ctx context.Context, data []byte, key string) error 
 
 	if !p.available {
 		p.mu.RUnlock()
-		p.logger.Error("Publisher is not available")
+		p.logger.ErrorContext(ctx, "publisher is not available")
 
 		return ErrPublisherClosed
 	}
@@ -105,25 +110,27 @@ func (p *Publisher) Publish(ctx context.Context, data []byte, key string) error 
 		Key:      key,
 	})
 	if err != nil {
-		p.logger.Error("Failed to publish message", "error", err)
+		p.logger.ErrorContext(ctx, "failed to publish message", slog.Any("error", err))
 
 		return fmt.Errorf("unable to publish message: %w", err)
 	}
 
 	res, err := p.publisher.Publish(ctx, msg)
 	if err != nil {
-		p.logger.Error("Failed to publish message", "error", err)
+		p.logger.ErrorContext(ctx, "failed to publish message", slog.Any("error", err))
 
 		return fmt.Errorf("unable to publish message: %w", err)
 	}
 
 	if err := CheckOutcome(res.Outcome); err != nil {
-		p.logger.Error("Unexpected outcome", "error", err)
+		p.logger.ErrorContext(ctx, "unexpected outcome", slog.Any("error", err))
 
 		return fmt.Errorf("unexpected outcome: %w", err)
 	}
 
-	p.logger.Debug("[x] Message sent", "content", data)
+	if p.logger.Enabled(context.WithoutCancel(ctx), slog.LevelDebug) {
+		p.logger.DebugContext(ctx, "message sent", slog.String("data", string(data)))
+	}
 
 	return nil
 }
@@ -135,7 +142,7 @@ func (p *Publisher) Close(ctx context.Context) error {
 	p.mu.Unlock()
 
 	p.wg.Wait()
-	p.logger.Debug("All in-flight publishes completed, proceeding to close.")
+	p.logger.DebugContext(ctx, "all in-flight publishes completed, proceeding to close")
 
 	ctx, cancel := context.WithTimeout(ctx, p.closeTimeout)
 	defer cancel()
@@ -143,26 +150,19 @@ func (p *Publisher) Close(ctx context.Context) error {
 	if p.publisher != nil {
 		err := p.publisher.Close(ctx)
 		if err != nil {
-			p.logger.Error("Failed to close publisher", "error", err)
+			p.logger.ErrorContext(ctx, "failed to close publisher", slog.Any("error", err))
 
 			return fmt.Errorf("unable to close publisher: %w", err)
 		}
 	}
 
 	if err := p.env.CloseConnections(ctx); err != nil {
-		p.logger.Error("Failed to close connections", "error", err)
+		p.logger.ErrorContext(ctx, "failed to close connections", slog.Any("error", err))
 
 		return fmt.Errorf("unable to close connections: %w", err)
 	}
 
 	return nil
-}
-
-// WithPublisherLogger sets the logger for the Publisher.
-func WithPublisherLogger(logger *slog.Logger) PublisherOption {
-	return func(p *Publisher) {
-		p.logger = logger
-	}
 }
 
 // WithPublisherCloseTimeout sets the close timeout duration for the Publisher.

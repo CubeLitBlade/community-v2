@@ -16,14 +16,14 @@ type OutboxRepository struct{}
 
 // EventRow represents a record in the "outbox" PostgreSQL table.
 type EventRow struct {
-	ID            int64          `gorm:"column:id;primary_key"`
-	AggregateID   int64          `gorm:"column:aggregate_id"`
-	AggregateType string         `gorm:"column:aggregate_type"`
-	EventType     string         `gorm:"column:event_type"`
-	Payload       map[string]any `gorm:"payload;type:jsonb;serializer:json"`
-	CreatedAt     time.Time      `gorm:"column:created_at"`
-	PublishedAt   *time.Time     `gorm:"column:published_at"`
-	TraceID       *string        `gorm:"column:trace_id"`
+	ID            int64      `gorm:"column:id;primary_key"`
+	AggregateID   int64      `gorm:"column:aggregate_id"`
+	AggregateType string     `gorm:"column:aggregate_type"`
+	EventType     string     `gorm:"column:event_type"`
+	Payload       any        `gorm:"payload;type:jsonb;serializer:json"`
+	CreatedAt     time.Time  `gorm:"column:created_at"`
+	PublishedAt   *time.Time `gorm:"column:published_at"`
+	TraceID       *string    `gorm:"column:trace_id"`
 }
 
 // EventRowField provides strongly-typed Gorm field references for the outbox table columns.

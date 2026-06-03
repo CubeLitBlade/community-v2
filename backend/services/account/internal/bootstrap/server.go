@@ -1,4 +1,4 @@
-package server
+package bootstrap
 
 import (
 	"context"
@@ -6,26 +6,32 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/cubelitblade/community-v2/backend/pkg/common/httperr"
-	"github.com/cubelitblade/community-v2/backend/pkg/platform/config"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 )
 
-// ProvideHTTPServer creates an *http.Server, registers lifecycle hooks to
+const (
+	readHeaderTimeout = time.Second * 5
+	readTimeout       = time.Second * 5
+	writeTimeout      = time.Second * 5
+)
+
+// provideHTTPServer creates an *http.Server, registers lifecycle hooks to
 // start listening on app start and gracefully shut down on app stop.
-func ProvideHTTPServer(lifecycle fx.Lifecycle, cfg *config.ServerConfig, router *gin.Engine) *http.Server {
+func provideHTTPServer(lifecycle fx.Lifecycle, appRT AppRuntime, router *gin.Engine) *http.Server {
 	protection := http.NewCrossOriginProtection()
-	protection.SetDenyHandler(http.HandlerFunc(writeCrossOriginError))
+	protection.SetDenyHandler(http.HandlerFunc(WriteCrossOriginError))
 	finalHandler := protection.Handler(router)
 
 	srv := &http.Server{
-		Addr:              cfg.HTTPAddr,
+		Addr:              appRT.HTTPAddr(),
 		Handler:           finalHandler,
-		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
-		ReadTimeout:       cfg.ReadTimeout,
-		WriteTimeout:      cfg.WriteTimeout,
+		ReadHeaderTimeout: readHeaderTimeout,
+		ReadTimeout:       readTimeout,
+		WriteTimeout:      writeTimeout,
 	}
 
 	lifecycle.Append(fx.Hook{
@@ -35,16 +41,26 @@ func ProvideHTTPServer(lifecycle fx.Lifecycle, cfg *config.ServerConfig, router 
 					log.Printf("HTTP server error: %v", err)
 				}
 			}()
+
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
 			return srv.Shutdown(ctx)
 		},
 	})
+
 	return srv
 }
 
-func writeCrossOriginError(w http.ResponseWriter, r *http.Request) {
+// HTTPServer provides the HTTP server fx module.
+func HTTPServer() fx.Option {
+	return fx.Options(
+		fx.Provide(provideHTTPServer),
+	)
+}
+
+// WriteCrossOriginError writes a problem+json response for cross-origin request rejections.
+func WriteCrossOriginError(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(http.StatusForbidden)
 

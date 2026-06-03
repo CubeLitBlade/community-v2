@@ -38,10 +38,10 @@ type ProfileFinder struct {
 
 // NewProfileFinder creates a ProfileFinder backed by the given ByIDFinder.
 func NewProfileFinder(finder ByIDFinder, db *gorm.DB, logger *slog.Logger) *ProfileFinder {
-	if logger == nil {
-		logger = slog.Default()
-		logger.Warn("No logger provided while creating profile finder, using default logger.")
-	}
+	logger = logger.With(
+		slog.String("service", "account"),
+		slog.String("component", "account/profile_finder"),
+	)
 
 	return &ProfileFinder{
 		finder: finder,
@@ -54,7 +54,10 @@ func NewProfileFinder(finder ByIDFinder, db *gorm.DB, logger *slog.Logger) *Prof
 func (f *ProfileFinder) Find(ctx context.Context, id int64) (*Profile, error) {
 	acc, err := f.finder.FindByID(ctx, f.db, id)
 	if err != nil {
-		f.logger.Error("Failed to find account", "id", id, "error", err)
+		f.logger.ErrorContext(ctx, "failed to find account",
+			slog.Int64("id", id),
+			slog.Any("error", err),
+		)
 
 		return nil, fmt.Errorf("find by id: %w", err)
 	}

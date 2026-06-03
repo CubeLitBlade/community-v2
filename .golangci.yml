@@ -75,6 +75,7 @@ linters:
     - goconst
     - mnd
     - importas
+    - sloglint
     - whitespace
     - wastedassign
     - wsl_v5
@@ -105,6 +106,7 @@ linters:
             - "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
             - "github.com/Azure/go-amqp"
             - "github.com/cloudevents/sdk-go/v2"
+            - "github.com/lmittmann/tint"
 
     errcheck:
       check-type-assertions: true
@@ -228,6 +230,15 @@ linters:
         - lc fx.Lifecycle
         - err error
         - ok bool
+
+    sloglint:
+      no-global: "all"
+      context: "scope"
+      static-msg: true
+      msg-style: "lowercased"
+      key-naming-case: "snake"
+      attr-only: true
+      args-on-sep-lines: true
 
 formatters:
   enable:

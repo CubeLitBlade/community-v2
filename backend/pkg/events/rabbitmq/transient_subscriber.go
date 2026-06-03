@@ -40,15 +40,20 @@ type TransientSubscriber struct {
 
 // NewTransientSubscriber creates and returns a new instance of TransientSubscriber.
 func NewTransientSubscriber(
-	env *rmq.Environment, exchangeName string, opts ...TransientSubscriberOption,
+	env *rmq.Environment, exchangeName string, logger *slog.Logger, opts ...TransientSubscriberOption,
 ) *TransientSubscriber {
+	logger = logger.With(
+		slog.String("module", "events/rabbitmq"),
+		slog.String("component", "transient_subscriber"),
+	)
+
 	subscriber := &TransientSubscriber{
 		env:            env,
 		exchangeName:   exchangeName,
 		keys:           nil,
 		initialCredits: DefaultInitialCredits,
 		closeTimeout:   DefaultCloseTimeout,
-		logger:         slog.Default(),
+		logger:         logger,
 		conn:           nil,
 		consumer:       nil,
 		mu:             sync.RWMutex{},
@@ -67,10 +72,10 @@ func NewTransientSubscriber(
 
 // Start establishes the connection to the broker, declares the exchange and an exclusive queue,
 // binds the specified routing keys, and starts the consume loop.
-func (c *TransientSubscriber) Start(ctx context.Context) error {
-	conn, err := amqp.ConnectWithTopicExchange(ctx, c.env, c.exchangeName)
+func (s *TransientSubscriber) Start(ctx context.Context) error {
+	conn, err := amqp.ConnectWithTopicExchange(ctx, s.env, s.exchangeName)
 	if err != nil {
-		c.logger.Error("Failed to connect to topic exchange.", "err", err)
+		s.logger.ErrorContext(ctx, "failed to connect to topic exchange", slog.Any("error", err))
 		return fmt.Errorf("connect to topic exchange: %w", err)
 	}
 
@@ -85,8 +90,8 @@ func (c *TransientSubscriber) Start(ctx context.Context) error {
 		return declareErr
 	}
 
-	if err := amqp.BindExchangeToQueue(ctx, conn, c.exchangeName, qInfo.Name(), c.keys); err != nil {
-		c.logger.Error("Failed to bind exchange to queue.", "err", err)
+	if err := amqp.BindExchangeToQueue(ctx, conn, s.exchangeName, qInfo.Name(), s.keys); err != nil {
+		s.logger.ErrorContext(ctx, "failed to bind exchange to queue", slog.Any("error", err))
 		err = fmt.Errorf("bind exchange to queue: %w", err)
 
 		if closeErr := conn.Close(ctx); closeErr != nil {
@@ -97,10 +102,10 @@ func (c *TransientSubscriber) Start(ctx context.Context) error {
 	}
 
 	consumer, err := conn.NewConsumer(ctx, qInfo.Name(), &rmq.ConsumerOptions{
-		InitialCredits: c.initialCredits,
+		InitialCredits: s.initialCredits,
 	})
 	if err != nil {
-		c.logger.Error("Failed to create consumer", "err", err)
+		s.logger.ErrorContext(ctx, "failed to create consumer", slog.Any("error", err))
 		err = fmt.Errorf("create consumer: %w", err)
 
 		if closeErr := conn.Close(ctx); closeErr != nil {
@@ -110,51 +115,51 @@ func (c *TransientSubscriber) Start(ctx context.Context) error {
 		return err
 	}
 
-	c.consumer = consumer
+	s.consumer = consumer
 
 	consumeCtx, consumeCancel := context.WithCancel(ctx)
-	c.consumeCancel = consumeCancel
+	s.consumeCancel = consumeCancel
 
-	c.Deliveries = make(chan *ReceivedMessage, c.initialCredits)
+	s.Deliveries = make(chan *ReceivedMessage, s.initialCredits)
 
-	c.wg.Add(1)
-	go c.consumeLoop(consumeCtx)
+	s.wg.Add(1)
+	go s.consumeLoop(consumeCtx)
 
-	c.mu.Lock()
-	c.available = true
-	c.mu.Unlock()
+	s.mu.Lock()
+	s.available = true
+	s.mu.Unlock()
 
 	return nil
 }
 
 // Close gracefully shuts down the consumer, cancels the consume loop, waits for in-flight
 // messages, and closes the AMQP connections.
-func (c *TransientSubscriber) Close() error {
-	c.mu.Lock()
-	c.available = false
-	c.mu.Unlock()
+func (s *TransientSubscriber) Close() error {
+	s.mu.Lock()
+	s.available = false
+	s.mu.Unlock()
 
-	if c.consumeCancel != nil {
-		c.consumeCancel()
+	if s.consumeCancel != nil {
+		s.consumeCancel()
 	}
 
-	c.wg.Wait()
-	c.logger.Debug("Consumer loop stopped gracefully.")
+	s.wg.Wait()
+	s.logger.Debug("consumer loop stopped gracefully")
 
-	ctx, cancel := context.WithTimeout(context.Background(), c.closeTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), s.closeTimeout)
 	defer cancel()
 
 	var errs []error
 
-	if c.consumer != nil {
-		if err := c.consumer.Close(ctx); err != nil {
-			c.logger.Error("Failed to close consumer", "error", err)
+	if s.consumer != nil {
+		if err := s.consumer.Close(ctx); err != nil {
+			s.logger.Error("failed to close consumer", slog.Any("error", err))
 			errs = append(errs, err)
 		}
 	}
 
-	if err := c.env.CloseConnections(ctx); err != nil {
-		c.logger.Error("Failed to close connections", "error", err)
+	if err := s.env.CloseConnections(ctx); err != nil {
+		s.logger.Error("failed to close connections", slog.Any("error", err))
 		errs = append(errs, err)
 	}
 
@@ -165,19 +170,19 @@ func (c *TransientSubscriber) Close() error {
 	return nil
 }
 
-func (c *TransientSubscriber) consumeLoop(ctx context.Context) {
-	defer c.wg.Done()
-	defer close(c.Deliveries)
+func (s *TransientSubscriber) consumeLoop(ctx context.Context) {
+	defer s.wg.Done()
+	defer close(s.Deliveries)
 
 	for {
-		delivery, err := c.consumer.Receive(ctx)
+		delivery, err := s.consumer.Receive(ctx)
 		if err != nil {
 			if errors.Is(err, context.Canceled) {
-				c.logger.Debug("Consumer loop exiting due to shutdown signal.")
+				s.logger.DebugContext(ctx, "consumer loop exiting due to shutdown signal")
 				return
 			}
 
-			c.logger.Error("Failed to receive message, consumer exiting.", "error", err)
+			s.logger.ErrorContext(ctx, "failed to receive message, consumer exiting", slog.Any("error", err))
 
 			return
 		}
@@ -197,10 +202,10 @@ func (c *TransientSubscriber) consumeLoop(ctx context.Context) {
 		}
 
 		select {
-		case c.Deliveries <- received:
+		case s.Deliveries <- received:
 		case <-ctx.Done():
 			if err := received.Requeue(); err != nil {
-				c.logger.Error("Failed to nack message", "error", err)
+				s.logger.ErrorContext(ctx, "failed to nack message", slog.Any("error", err))
 			}
 
 			return
@@ -219,13 +224,6 @@ func WithTransientSubscriberKeys(keys []string) TransientSubscriberOption {
 func WithTransientSubscriberInitialCredits(initialCredits int32) TransientSubscriberOption {
 	return func(s *TransientSubscriber) {
 		s.initialCredits = initialCredits
-	}
-}
-
-// WithTransientSubscriberLogger sets the logger for the TransientSubscriber.
-func WithTransientSubscriberLogger(logger *slog.Logger) TransientSubscriberOption {
-	return func(s *TransientSubscriber) {
-		s.logger = logger
 	}
 }
 

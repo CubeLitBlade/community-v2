@@ -14,7 +14,7 @@ type Entry struct {
 	AggregateID   int64
 	AggregateType string
 	EventType     string
-	Payload       map[string]any
+	Payload       any
 	CreatedAt     time.Time
 	PublishedAt   *time.Time
 	TraceID       *string
@@ -41,7 +41,7 @@ func NewEntry(id int64, aggregateType string, eventType string, now time.Time, o
 }
 
 // WithPayload sets the payload for the Entry.
-func WithPayload(payload map[string]any) EntryOption {
+func WithPayload(payload any) EntryOption {
 	return func(entry *Entry) {
 		entry.Payload = payload
 	}
