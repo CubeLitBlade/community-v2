@@ -2,6 +2,7 @@
 // JWT claims from HTTP requests.
 package authn
 
+// TODO: make this middleware a shared component so that other microservice can approach it
 import (
 	"errors"
 	"log/slog"

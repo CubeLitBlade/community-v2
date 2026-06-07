@@ -19,6 +19,7 @@ type EventRow struct {
 	ID            int64      `gorm:"column:id;primary_key"`
 	AggregateID   int64      `gorm:"column:aggregate_id"`
 	AggregateType string     `gorm:"column:aggregate_type"`
+	Topic         string     `gorm:"column:topic"`
 	EventType     string     `gorm:"column:event_type"`
 	Payload       any        `gorm:"payload;type:jsonb;serializer:json"`
 	CreatedAt     time.Time  `gorm:"column:created_at"`
@@ -31,6 +32,7 @@ var EventRowField = struct {
 	ID            field.Number[int64]
 	AggregateID   field.Number[int64]
 	AggregateType field.String
+	Topic         field.String
 	EventType     field.String
 	Payload       field.Bytes
 	CreatedAt     field.Time
@@ -40,6 +42,7 @@ var EventRowField = struct {
 	ID:            field.Number[int64]{}.WithColumn("id"),
 	AggregateID:   field.Number[int64]{}.WithColumn("aggregate_id"),
 	AggregateType: field.String{}.WithColumn("aggregate_type"),
+	Topic:         field.String{}.WithColumn("topic"),
 	EventType:     field.String{}.WithColumn("event_type"),
 	Payload:       field.Bytes{}.WithColumn("payload"),
 	CreatedAt:     field.Time{}.WithColumn("created_at"),
@@ -51,16 +54,17 @@ var EventRowField = struct {
 func NewOutboxRepository() *OutboxRepository { return &OutboxRepository{} }
 
 // Save persists a new outbox event to the database.
-func (r *OutboxRepository) Save(ctx context.Context, db *gorm.DB, event *outbox.Entry) error {
+func (r *OutboxRepository) Save(ctx context.Context, db *gorm.DB, entry *outbox.Entry) error {
 	row := &EventRow{
-		ID:            event.ID,
-		AggregateID:   event.AggregateID,
-		AggregateType: event.AggregateType,
-		EventType:     event.EventType,
-		Payload:       event.Payload,
-		CreatedAt:     event.CreatedAt,
-		PublishedAt:   event.PublishedAt,
-		TraceID:       event.TraceID,
+		ID:            entry.ID,
+		AggregateID:   entry.AggregateID,
+		AggregateType: entry.AggregateType,
+		Topic:         entry.Topic,
+		EventType:     entry.EventType,
+		Payload:       entry.Payload,
+		CreatedAt:     entry.CreatedAt,
+		PublishedAt:   entry.PublishedAt,
+		TraceID:       entry.TraceID,
 	}
 
 	err := gorm.G[EventRow](db).Create(ctx, row)
@@ -91,6 +95,7 @@ func (r *OutboxRepository) Scan(ctx context.Context, db *gorm.DB, count int) ([]
 			ID:            row.ID,
 			AggregateID:   row.AggregateID,
 			AggregateType: row.AggregateType,
+			Topic:         row.Topic,
 			EventType:     row.EventType,
 			Payload:       row.Payload,
 			CreatedAt:     row.CreatedAt,

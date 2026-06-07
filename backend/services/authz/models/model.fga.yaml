@@ -1,0 +1,85 @@
+model_file: ./model.fga
+
+tuples:
+  - user: user:alice
+    relation: admin
+    object: system:global
+  - user: user:bob
+    relation: moderator
+    object: system:global
+  - user: user:carol
+    relation: member
+    object: system:global
+  - user: user:eve
+    relation: owner
+    object: account:acme
+  - object: account:acme
+    relation: global
+    user: system:global
+  - user: user:dave
+    relation: author
+    object: post:post1
+  - object: post:post1
+    relation: global
+    user: system:global
+
+tests:
+  - name: "system can_publish_post"
+    check:
+      - user: user:carol
+        object: system:global
+        assertions:
+          can_publish_post: true
+      - user: user:bob
+        object: system:global
+        assertions:
+          can_publish_post: true
+      - user: user:alice
+        object: system:global
+        assertions:
+          can_publish_post: true
+  - name: "account can_archive"
+    check:
+      - user: user:eve
+        object: account:acme
+        assertions:
+          can_archive: true
+  - name: "account can_suspend"
+    check:
+      - user: user:alice
+        object: account:acme
+        assertions:
+          can_suspend: true
+      - user: user:bob
+        object: account:acme
+        assertions:
+          can_suspend: true
+      - user: user:carol
+        object: account:acme
+        assertions:
+          can_suspend: false
+
+  - name: "post can_edit"
+    check:
+      - user: user:dave
+        object: post:post1
+        assertions:
+          can_edit: true
+  - name: "post can_archive"
+    check:
+      - user: user:dave
+        object: post:post1
+        assertions:
+          can_archive: true
+      - user: user:alice
+        object: post:post1
+        assertions:
+          can_archive: true
+      - user: user:bob
+        object: post:post1
+        assertions:
+          can_archive: true
+      - user: user:carol
+        object: post:post1
+        assertions:
+          can_archive: false

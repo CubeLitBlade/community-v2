@@ -28,6 +28,9 @@ var (
 
 	// ErrPublisherClosed indicates that a publish operation was attempted while the publisher is closed.
 	ErrPublisherClosed = errors.New("publisher is closed")
+
+	// ErrSubscriberAlreadyStarted indicates that the subscriber that was attempting to start has already started.
+	ErrSubscriberAlreadyStarted = errors.New("subscriber already started")
 )
 
 // CheckOutcome evaluates an AMQP delivery state and returns an error if the outcome is not Accepted.

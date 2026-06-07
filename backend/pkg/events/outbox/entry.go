@@ -13,6 +13,7 @@ type Entry struct {
 	ID            int64
 	AggregateID   int64
 	AggregateType string
+	Topic         string
 	EventType     string
 	Payload       any
 	CreatedAt     time.Time
@@ -21,11 +22,14 @@ type Entry struct {
 }
 
 // NewEntry creates a new Entry with the required fields and applies any provided Options.
-func NewEntry(id int64, aggregateType string, eventType string, now time.Time, opts ...EntryOption) *Entry {
+func NewEntry(
+	id int64, aggregateType string, topic string, eventType string, now time.Time, opts ...EntryOption,
+) *Entry {
 	event := &Entry{
 		ID:            id,
 		AggregateID:   id,
 		AggregateType: aggregateType,
+		Topic:         topic,
 		EventType:     eventType,
 		Payload:       nil,
 		CreatedAt:     now,

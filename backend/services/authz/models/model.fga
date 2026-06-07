@@ -1,0 +1,26 @@
+model
+  schema 1.1
+
+type user
+
+type system
+  relations
+    define member: [user]
+    define moderator: [user]
+    define admin: [user]
+
+    define can_publish_post: member or moderator or admin
+
+type account
+  relations
+    define owner: [user]
+    define global: [system]
+    define can_archive: owner
+    define can_suspend: moderator from global or admin from global
+
+type post
+  relations
+    define author: [user]
+    define global: [system]
+    define can_edit: author
+    define can_archive: author or moderator from global or admin from global

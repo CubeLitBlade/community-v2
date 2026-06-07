@@ -44,7 +44,6 @@ type Relay struct {
 	channel   chan *Entry
 	db        *gorm.DB
 
-	namespace   string
 	minInterval time.Duration
 	maxInterval time.Duration
 	clock       func() time.Time
@@ -71,7 +70,6 @@ func NewRelay(ids idgen.Generator, scanner Scanner, recorder Recorder,
 		publisher:   publisher,
 		channel:     make(chan *Entry, defaultChannelBufferSize),
 		db:          db,
-		namespace:   "",
 		minInterval: 1 * time.Second,
 		maxInterval: 4 * time.Second,
 		clock:       time.Now,
@@ -189,13 +187,8 @@ func (r *Relay) publish(ctx context.Context, entry *Entry) error {
 		return fmt.Errorf("generate event ID: %w", err)
 	}
 
-	eventType := entry.EventType
-	if r.namespace != "" {
-		eventType = fmt.Sprintf("%s.%s", r.namespace, eventType)
-	}
-
 	event, err := NewEvent(
-		entry.AggregateType, eventType, entry.Payload, id, r.clock(),
+		entry.AggregateType, entry.EventType, entry.Payload, id, r.clock(),
 	)
 	if err != nil {
 		r.logger.ErrorContext(ctx, "failed to create event", slog.Any("error", err))
@@ -203,7 +196,7 @@ func (r *Relay) publish(ctx context.Context, entry *Entry) error {
 		return fmt.Errorf("create event: %w", err)
 	}
 
-	if err := r.publisher.Publish(ctx, event, entry.EventType); err != nil {
+	if err := r.publisher.Publish(ctx, event, entry.Topic); err != nil {
 		return fmt.Errorf("publish event: %w", err)
 	}
 
@@ -214,13 +207,6 @@ func (r *Relay) publish(ctx context.Context, entry *Entry) error {
 func WithClock(clock func() time.Time) RelayOption {
 	return func(r *Relay) {
 		r.clock = clock
-	}
-}
-
-// WithNamespace sets a namespace prefix for event types.
-func WithNamespace(namespace string) RelayOption {
-	return func(r *Relay) {
-		r.namespace = namespace
 	}
 }
 

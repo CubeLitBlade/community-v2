@@ -1,5 +1,4 @@
-// Package setup provides constructors that wire together account domain services,
-// persistence, and HTTP transport.
+// Package setup provides constructors that wire together account domain services, persistence, and HTTP transport.
 package setup
 
 import (
@@ -69,7 +68,7 @@ func provideOutboxRelay(
 	publisher outbox.Publisher, db *gorm.DB, logger *slog.Logger, lc fx.Lifecycle,
 ) *outbox.Relay {
 	relay := outbox.NewRelay(
-		ids, scanner, recorder, publisher, db, logger, outbox.WithNamespace("io.github.cubelitblade"),
+		ids, scanner, recorder, publisher, db, logger,
 	)
 
 	lc.Append(fx.Hook{

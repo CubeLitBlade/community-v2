@@ -13,13 +13,14 @@ import (
 	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
 )
 
-// TransientSubscriberOption configures a TransientSubscriber.
-type TransientSubscriberOption func(*TransientSubscriber)
+// QuorumSubscriberOption configures a QuorumSubscriber.
+type QuorumSubscriberOption func(*QuorumSubscriber)
 
-// TransientSubscriber consumes messages from a RabbitMQ exchange and delivers them via the Deliveries channel.
-type TransientSubscriber struct {
+// QuorumSubscriber consumes messages from a RabbitMQ exchange and delivers them via the Deliveries channel.
+type QuorumSubscriber struct {
 	env          *rmq.Environment
 	exchangeName string
+	queueName    string
 
 	keys           []string
 	initialCredits int32
@@ -38,18 +39,19 @@ type TransientSubscriber struct {
 	deliveries chan *ReceivedMessage
 }
 
-// NewTransientSubscriber creates and returns a new instance of TransientSubscriber.
-func NewTransientSubscriber(
-	env *rmq.Environment, exchangeName string, logger *slog.Logger, opts ...TransientSubscriberOption,
-) *TransientSubscriber {
+// NewQuorumSubscriber creates and returns a new instance of QuorumSubscriber.
+func NewQuorumSubscriber(
+	env *rmq.Environment, exchangeName, queueName string, logger *slog.Logger, opts ...QuorumSubscriberOption,
+) *QuorumSubscriber {
 	logger = logger.With(
 		slog.String("module", "events/rabbitmq"),
-		slog.String("component", "transient_subscriber"),
+		slog.String("component", "quorum_subscriber"),
 	)
 
-	subscriber := &TransientSubscriber{
+	subscriber := &QuorumSubscriber{
 		env:            env,
 		exchangeName:   exchangeName,
+		queueName:      queueName,
 		keys:           nil,
 		initialCredits: DefaultInitialCredits,
 		closeTimeout:   DefaultCloseTimeout,
@@ -72,7 +74,7 @@ func NewTransientSubscriber(
 
 // Start establishes the connection to the broker, declares the exchange and an exclusive queue,
 // binds the specified routing keys, and starts the consume loop.
-func (s *TransientSubscriber) Start(ctx context.Context) (<-chan *ReceivedMessage, error) {
+func (s *QuorumSubscriber) Start(ctx context.Context) (<-chan *ReceivedMessage, error) {
 	s.mu.Lock()
 	if s.available {
 		s.mu.Unlock()
@@ -86,9 +88,9 @@ func (s *TransientSubscriber) Start(ctx context.Context) (<-chan *ReceivedMessag
 		return nil, fmt.Errorf("connect to topic exchange: %w", err)
 	}
 
-	qInfo, declareErr := amqp.DeclareExclusiveQueue(ctx, conn)
+	qInfo, declareErr := amqp.DeclareQuorumQueue(ctx, conn, s.queueName)
 	if declareErr != nil {
-		declareErr = fmt.Errorf("declare exclusive queue: %w", declareErr)
+		declareErr = fmt.Errorf("declare quorum queue: %w", declareErr)
 
 		if closeErr := conn.Close(ctx); closeErr != nil {
 			return nil, errors.Join(declareErr, fmt.Errorf("close AMQP connection: %w", closeErr))
@@ -141,7 +143,7 @@ func (s *TransientSubscriber) Start(ctx context.Context) (<-chan *ReceivedMessag
 
 // Close gracefully shuts down the consumer, cancels the consume loop, waits for in-flight
 // messages, and closes the AMQP connections.
-func (s *TransientSubscriber) Close(ctx context.Context) error {
+func (s *QuorumSubscriber) Close(ctx context.Context) error {
 	s.mu.Lock()
 	s.available = false
 	s.mu.Unlock()
@@ -177,7 +179,7 @@ func (s *TransientSubscriber) Close(ctx context.Context) error {
 	return nil
 }
 
-func (s *TransientSubscriber) consumeLoop(ctx context.Context) {
+func (s *QuorumSubscriber) consumeLoop(ctx context.Context) {
 	defer s.wg.Done()
 	defer close(s.deliveries)
 
@@ -220,23 +222,23 @@ func (s *TransientSubscriber) consumeLoop(ctx context.Context) {
 	}
 }
 
-// WithTransientSubscriberKeys sets the routing keys for the subscriber to bind to.
-func WithTransientSubscriberKeys(keys []string) TransientSubscriberOption {
-	return func(s *TransientSubscriber) {
+// WithQuorumSubscriberKeys sets the routing keys for the subscriber to bind to.
+func WithQuorumSubscriberKeys(keys []string) QuorumSubscriberOption {
+	return func(s *QuorumSubscriber) {
 		s.keys = keys
 	}
 }
 
-// WithTransientSubscriberInitialCredits sets the initial credit (prefetch) count for the consumer.
-func WithTransientSubscriberInitialCredits(initialCredits int32) TransientSubscriberOption {
-	return func(s *TransientSubscriber) {
+// WithQuorumSubscriberInitialCredits sets the initial credit (prefetch) count for the consumer.
+func WithQuorumSubscriberInitialCredits(initialCredits int32) QuorumSubscriberOption {
+	return func(s *QuorumSubscriber) {
 		s.initialCredits = initialCredits
 	}
 }
 
-// WithTransientSubscriberCloseTimeout sets the close timeout duration for the TransientSubscriber.
-func WithTransientSubscriberCloseTimeout(timeout time.Duration) TransientSubscriberOption {
-	return func(s *TransientSubscriber) {
+// WithQuorumSubscriberCloseTimeout sets the close timeout duration for the QuorumSubscriber.
+func WithQuorumSubscriberCloseTimeout(timeout time.Duration) QuorumSubscriberOption {
+	return func(s *QuorumSubscriber) {
 		s.closeTimeout = timeout
 	}
 }

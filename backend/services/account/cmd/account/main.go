@@ -1,4 +1,4 @@
-// package main starts the API server for the community-v2 backend
+// Package main starts the API server for the account service.
 package main
 
 import (

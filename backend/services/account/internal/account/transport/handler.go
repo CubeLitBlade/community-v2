@@ -34,11 +34,7 @@ type Handler struct {
 }
 
 // NewHandler creates and returns a new Handler.
-func NewHandler(
-	registrar Registrar,
-	finder ProfileFinder,
-	logger *slog.Logger,
-) *Handler {
+func NewHandler(registrar Registrar, finder ProfileFinder, logger *slog.Logger) *Handler {
 	logger = logger.With(
 		slog.String("service", "account"),
 		slog.String("component", "transport/handler"),

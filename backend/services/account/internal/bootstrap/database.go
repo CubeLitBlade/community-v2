@@ -21,7 +21,7 @@ type DatabaseConfig struct {
 }
 
 func gormConfig(appRT AppRuntime) *gorm.Config {
-	logLevel := logger.Info
+	logLevel := logger.Warn
 
 	if appRT.Environment() == AppEnvProduction {
 		logLevel = logger.Warn

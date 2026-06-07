@@ -37,7 +37,19 @@ func DeclareExclusiveQueue(ctx context.Context, conn *rmq.AmqpConnection) (*rmq.
 		IsAutoDelete: true,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("unable to declare queue: %w", err)
+		return nil, fmt.Errorf("declare auto generated queue: %w", err)
+	}
+
+	return qInfo, nil
+}
+
+// DeclareQuorumQueue declares a named quorum queue on the connection.
+func DeclareQuorumQueue(ctx context.Context, conn *rmq.AmqpConnection, queueName string) (*rmq.AmqpQueueInfo, error) {
+	qInfo, err := conn.Management().DeclareQueue(ctx, &rmq.QuorumQueueSpecification{
+		Name: queueName,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("declare quorum queue: %w", err)
 	}
 
 	return qInfo, nil

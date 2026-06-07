@@ -107,6 +107,7 @@ linters:
             - "github.com/Azure/go-amqp"
             - "github.com/cloudevents/sdk-go/v2"
             - "github.com/lmittmann/tint"
+            - "github.com/openfga/go-sdk/client"
 
     errcheck:
       check-type-assertions: true

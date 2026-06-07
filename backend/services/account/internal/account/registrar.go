@@ -85,24 +85,14 @@ func (r *Registrar) Register(ctx context.Context, username, password string) (in
 
 	id, err = r.ids.NextID()
 	if err != nil {
-		r.logger.ErrorContext(ctx, "failed to generate account id",
+		r.logger.ErrorContext(ctx, "failed to generate event id",
 			slog.Any("error", err),
 		)
 
 		return 0, fmt.Errorf("generate ID: %w", err)
 	}
 
-	event := outbox.NewEntry(
-		id, "/community-v2/account-service", v1.AccountCreated, now,
-		outbox.WithPayload(
-			v1.AccountCreatedEvent{
-				AccountID: strconv.FormatInt(acc.ID(), 10),
-				Username:  acc.Username(),
-				Role:      string(acc.role),
-				CreatedAt: acc.createdAt.Format(time.RFC3339),
-			},
-		),
-	)
+	entry := newAccountCreatedEntry(id, acc, now)
 
 	err = r.db.Transaction(func(tx *gorm.DB) error {
 		if err := r.creator.Create(ctx, tx, &acc); err != nil {
@@ -113,7 +103,7 @@ func (r *Registrar) Register(ctx context.Context, username, password string) (in
 			return fmt.Errorf("persist account: %w", err)
 		}
 
-		if err := r.outboxSaver.Save(ctx, tx, event); err != nil {
+		if err := r.outboxSaver.Save(ctx, tx, entry); err != nil {
 			r.logger.ErrorContext(ctx, "failed to persist event",
 				slog.Any("error", err))
 
@@ -138,4 +128,17 @@ func WithRegistrarClock(clock func() time.Time) RegistrarOption {
 	return func(r *Registrar) {
 		r.clock = clock
 	}
+}
+
+func newAccountCreatedEntry(eventID int64, acc Account, now time.Time) *outbox.Entry {
+	return outbox.NewEntry(eventID, v1.AggregateTypeAccountService,
+		v1.TopicAccountCreated, v1.EventTypeAccountCreated, now, outbox.WithPayload(
+			v1.AccountCreatedEventPayload{
+				AccountID: strconv.FormatInt(acc.ID(), 10),
+				Username:  acc.Username(),
+				Role:      string(acc.role),
+				CreatedAt: acc.createdAt.Format(time.RFC3339),
+			},
+		),
+	)
 }
