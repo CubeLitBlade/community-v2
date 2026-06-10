@@ -5,18 +5,24 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/cubelitblade/community-v2/backend/pkg/events/rabbitmq"
-	"github.com/cubelitblade/community-v2/backend/services/authz/internal/authz"
 	"go.uber.org/fx"
+
+	"github.com/cubelitblade/community-v2/backend/pkg/events/rabbitmq"
+	"github.com/cubelitblade/community-v2/backend/pkg/platform"
+	"github.com/cubelitblade/community-v2/backend/services/authz/internal/authz"
+	"github.com/cubelitblade/community-v2/backend/services/authz/internal/authz/transport"
 )
 
 // Module returns the fx providers for the authz microservice.
 func Module() fx.Option {
 	return fx.Options(
 		fx.Provide(authz.NewWriter),
-		fx.Provide(authz.NewChecker),
+		fx.Provide(fx.Annotate(authz.NewChecker, fx.As(new(transport.Checker)))),
 		fx.Provide(authz.NewHealthChecker),
 		fx.Provide(provideSyncer),
+		fx.Provide(
+			fx.Annotate(transport.NewHandler, fx.As(new(platform.HTTPMounter)), fx.ResultTags(`group:"mounter"`)),
+		),
 		fx.Invoke(func(*authz.Syncer) {}),
 	)
 }

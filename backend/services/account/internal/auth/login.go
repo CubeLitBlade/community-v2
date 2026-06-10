@@ -7,9 +7,10 @@ import (
 	"log"
 	"net/netip"
 	"strconv"
+	"time"
 
 	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
-	"github.com/cubelitblade/community-v2/backend/services/account/internal/contracts"
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
 )
 
 // ErrInvalidCredentials is returned when login fails due to invalid credentials.
@@ -17,7 +18,7 @@ var ErrInvalidCredentials = errors.New("invalid credentials")
 
 // Authenticator authenticates a user by username and password.
 type Authenticator interface {
-	Authenticate(ctx context.Context, username, password string) (*contracts.AuthenticatedAccount, error)
+	Authenticate(ctx context.Context, username, password string) (*shared.AuthenticatedAccount, error)
 }
 
 // LoginRecorder records a successful login event.
@@ -30,7 +31,7 @@ type Login struct {
 	auth     Authenticator
 	recorder LoginRecorder
 	signer   *jwt.Signer
-	ttl      contracts.TTLProvider
+	validity time.Duration
 }
 
 // Credentials holds the result of a successful login: a signed JWT and basic user info.
@@ -41,12 +42,12 @@ type Credentials struct {
 }
 
 // NewLogin creates a new Login service.
-func NewLogin(auth Authenticator, signer *jwt.Signer, recorder LoginRecorder, ttl contracts.TTLProvider) *Login {
+func NewLogin(auth Authenticator, signer *jwt.Signer, recorder LoginRecorder, validity time.Duration) *Login {
 	return &Login{
 		auth:     auth,
 		signer:   signer,
 		recorder: recorder,
-		ttl:      ttl,
+		validity: validity,
 	}
 }
 
@@ -61,12 +62,12 @@ func (l *Login) Execute(ctx context.Context, username, password string, ipaddr n
 		return Credentials{}, fmt.Errorf("authenticate: %w", err)
 	}
 
-	regClaims, err := l.signer.NewClaims(strconv.FormatInt(acc.ID, 10), l.ttl.AccessTokenTTL())
+	regClaims, err := l.signer.NewClaims(strconv.FormatInt(acc.ID, 10), l.validity)
 	if err != nil {
 		return Credentials{}, fmt.Errorf("sign new claims: %w", err)
 	}
 
-	token, err := l.signer.Sign(contracts.AccessTokenClaims{
+	token, err := l.signer.Sign(shared.AccessTokenClaims{
 		RegisteredClaims: regClaims,
 		Role:             acc.Role,
 	})

@@ -1,22 +1,22 @@
 package bootstrap
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
-	"time"
+	"strings"
 
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/auth/transport"
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
 	"go.uber.org/fx"
 )
+
+var errUnsupportedSamesite = errors.New("unsupported samesite")
 
 // CookiePolicy implements transport.CookiePolicy based on the runtime environment.
 type CookiePolicy struct {
 	secure   bool
 	sameSite http.SameSite
-}
-
-// CookieTTLConfig holds the TTL configuration for cookies.
-type CookieTTLConfig struct {
-	Access time.Duration `env:"ACCESS_TOKEN_TTL" envDefault:"2h"`
 }
 
 // Secure returns whether cookies should be marked as Secure.
@@ -29,24 +29,24 @@ func (p CookiePolicy) SameSite() http.SameSite {
 	return p.sameSite
 }
 
-func provideCookiePolicy(appRT AppRuntime) CookiePolicy {
-	switch appRT.Environment() {
-	case AppEnvDevelopment:
-		return CookiePolicy{
-			secure:   false,
-			sameSite: http.SameSiteLaxMode,
-		}
-	case AppEnvProduction:
-		return CookiePolicy{
-			secure:   true,
-			sameSite: http.SameSiteLaxMode,
-		}
+func provideCookiePolicy(cfg *shared.CookieConfig) (*CookiePolicy, error) {
+	var sameSite http.SameSite
+
+	switch strings.ToLower(cfg.SameSite) {
+	case "strict":
+		sameSite = http.SameSiteStrictMode
+	case "lax":
+		sameSite = http.SameSiteLaxMode
+	case "none":
+		sameSite = http.SameSiteNoneMode
+	default:
+		return nil, fmt.Errorf("%w: %q", errUnsupportedSamesite, cfg.SameSite)
 	}
 
-	return CookiePolicy{
-		secure:   false,
-		sameSite: http.SameSiteLaxMode,
-	}
+	return &CookiePolicy{
+		secure:   cfg.Secure,
+		sameSite: sameSite,
+	}, nil
 }
 
 // CookieModule provides the cookie policy fx module.

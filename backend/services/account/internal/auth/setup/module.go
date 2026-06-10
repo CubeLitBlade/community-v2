@@ -3,18 +3,34 @@
 package setup
 
 import (
+	"log/slog"
+
+	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
 	"github.com/cubelitblade/community-v2/backend/pkg/platform"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/auth"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/auth/transport"
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
 	"go.uber.org/fx"
 )
+
+func provideLogin(
+	authenticator auth.Authenticator, signer *jwt.Signer, recorder auth.LoginRecorder, cfg *shared.TokenConfig,
+) *auth.Login {
+	return auth.NewLogin(authenticator, signer, recorder, cfg.AccessTokenValidity)
+}
+
+func provideHandler(
+	login *auth.Login, logger *slog.Logger, cfg *shared.TokenConfig, policy transport.CookiePolicy,
+) *transport.Handler {
+	return transport.NewHandler(login, logger, cfg.AccessTokenValidity, policy)
+}
 
 // Module returns the fx providers for the auth module.
 func Module() fx.Option {
 	return fx.Options(
-		fx.Provide(auth.NewLogin),
+		fx.Provide(provideLogin),
 		fx.Provide(
-			fx.Annotate(transport.NewHandler, fx.As(new(platform.HTTPMounter)), fx.ResultTags(`group:"mounter"`)),
+			fx.Annotate(provideHandler, fx.As(new(platform.HTTPMounter)), fx.ResultTags(`group:"mounter"`)),
 		),
 	)
 }

@@ -1,12 +1,25 @@
+# Environment and config
 .env
+config.toml
+
+# Logs
 *.log
-tmp/
-dist/
+
+# Temp and dependencies
 node_modules/
+tmp/
+
+# Build
+dist/
 backend/bin/
-.vscode/
+
+# JetBrains
 .idea/
 
 # Go work
 go.work
 go.work.sum
+
+# VS Code
+.vscode/
+*.code-workspace

@@ -4,14 +4,8 @@ package transport
 import (
 	"net/http"
 	"time"
-)
 
-// Cookie name and path constants.
-const (
-	// CookieNameAccessToken is the name of the access token cookie.
-	CookieNameAccessToken = "access_token"
-	// CookiePath is the path for which the cookie is valid.
-	CookiePath = "/api/"
+	v1 "github.com/cubelitblade/community-v2/backend/services/account/api/rest/v1"
 )
 
 // CookiePolicy provides the security policy for cookies.
@@ -26,7 +20,7 @@ func WriteCookie(name string, value string, ttl time.Duration, policy CookiePoli
 	return &http.Cookie{
 		Name:     name,
 		Value:    value,
-		Path:     CookiePath,
+		Path:     v1.CookiePath,
 		MaxAge:   int(ttl.Seconds()),
 		HttpOnly: true,
 		Secure:   policy.Secure(),

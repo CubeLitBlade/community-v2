@@ -2,22 +2,16 @@ package bootstrap
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/cubelitblade/community-v2/backend/pkg/platform"
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 )
 
-func ginMode(appRT AppRuntime) string {
-	if appRT.Environment() == AppEnvProduction {
-		return gin.ReleaseMode
-	}
-
-	return gin.DebugMode
-}
-
-func provideGinEngine(appRT AppRuntime) *gin.Engine {
-	gin.SetMode(ginMode(appRT))
+func provideGinEngine(cfg *shared.GinConfig) *gin.Engine {
+	gin.SetMode(strings.ToLower(cfg.Mode))
 
 	handlers := []gin.HandlerFunc{
 		gin.Logger(),

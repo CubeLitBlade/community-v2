@@ -5,9 +5,10 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/fx"
+
 	"github.com/cubelitblade/community-v2/backend/services/authz/internal/authz"
 	"github.com/cubelitblade/community-v2/backend/services/authz/internal/health"
-	"go.uber.org/fx"
 )
 
 // Module returns the fx providers for the health module.

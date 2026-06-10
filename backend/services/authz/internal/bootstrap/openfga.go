@@ -3,21 +3,16 @@ package bootstrap
 import (
 	"fmt"
 
-	"github.com/cubelitblade/community-v2/backend/services/authz/internal/authz"
 	fga "github.com/openfga/go-sdk/client"
 	"go.uber.org/fx"
+
+	"github.com/cubelitblade/community-v2/backend/services/authz/internal/authz"
+	"github.com/cubelitblade/community-v2/backend/services/authz/internal/shared"
 )
 
-// OpenFGAConfig holds the configuration required to connect to the OpenFGA server.
-type OpenFGAConfig struct {
-	URL     string `env:"FGA_API_URL" required:"true"`
-	StoreID string `env:"FGA_STORE_ID" required:"true"`
-	ModelID string `env:"FGA_MODEL_ID" required:"true"`
-}
-
-func provideOpenFGAClient(cfg OpenFGAConfig) (*fga.OpenFgaClient, error) {
+func provideOpenFGAClient(cfg *shared.OpenFGAConfig) (*fga.OpenFgaClient, error) {
 	client, err := fga.NewSdkClient(&fga.ClientConfiguration{
-		ApiUrl:               cfg.URL,
+		ApiUrl:               cfg.APIURL,
 		StoreId:              cfg.StoreID,
 		AuthorizationModelId: cfg.ModelID,
 	})
@@ -28,8 +23,8 @@ func provideOpenFGAClient(cfg OpenFGAConfig) (*fga.OpenFgaClient, error) {
 	return client, nil
 }
 
-// FGAModule provides the OpenFGA client and its dependencies via fx.
-func FGAModule() fx.Option {
+// OpenFGAModule provides the OpenFGA client and its dependencies via fx.
+func OpenFGAModule() fx.Option {
 	return fx.Options(
 		fx.Provide(
 			fx.Annotate(provideOpenFGAClient,

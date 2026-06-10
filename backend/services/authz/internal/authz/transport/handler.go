@@ -5,10 +5,11 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/cubelitblade/community-v2/backend/pkg/common/httperr"
 	v1 "github.com/cubelitblade/community-v2/backend/services/authz/api/types/v1"
 	"github.com/cubelitblade/community-v2/backend/services/authz/internal/constant"
-	"github.com/gin-gonic/gin"
 )
 
 // Checker verifies if a user has a specific relation to an object.

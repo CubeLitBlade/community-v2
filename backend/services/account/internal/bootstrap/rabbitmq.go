@@ -4,19 +4,15 @@ import (
 	"context"
 	"log/slog"
 
+	v1 "github.com/cubelitblade/community-v2/backend/pkg/contracts/v1"
 	"github.com/cubelitblade/community-v2/backend/pkg/events/outbox"
 	"github.com/cubelitblade/community-v2/backend/pkg/events/rabbitmq"
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
 	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
 	"go.uber.org/fx"
 )
 
-// RabbitMQConfig holds the RabbitMQ connection and topology configuration.
-type RabbitMQConfig struct {
-	BrokerURL    string `env:"RMQ_URL" required:"true"`
-	ExchangeName string `env:"RMQ_SYSTEM_EXCHANGE_NAME" required:"true"`
-}
-
-func provideRabbitMQEnvironment(cfg RabbitMQConfig, lc fx.Lifecycle) *rmq.Environment {
+func provideRabbitMQEnvironment(cfg *shared.RabbitMQConfig, lc fx.Lifecycle) *rmq.Environment {
 	env := rmq.NewEnvironment(cfg.BrokerURL, nil)
 
 	lc.Append(fx.Hook{
@@ -28,10 +24,8 @@ func provideRabbitMQEnvironment(cfg RabbitMQConfig, lc fx.Lifecycle) *rmq.Enviro
 	return env
 }
 
-func providePublisher(
-	cfg RabbitMQConfig, env *rmq.Environment, logger *slog.Logger, lc fx.Lifecycle,
-) (*rabbitmq.Publisher, error) {
-	publisher := rabbitmq.NewPublisher(env, cfg.ExchangeName, logger)
+func providePublisher(env *rmq.Environment, logger *slog.Logger, lc fx.Lifecycle) (*rabbitmq.Publisher, error) {
+	publisher := rabbitmq.NewPublisher(env, v1.SystemExchange, logger)
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {

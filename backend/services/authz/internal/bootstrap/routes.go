@@ -3,10 +3,11 @@ package bootstrap
 import (
 	"log/slog"
 
-	"github.com/cubelitblade/community-v2/backend/pkg/platform"
-	"github.com/cubelitblade/community-v2/backend/services/authz/internal/health"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
+
+	"github.com/cubelitblade/community-v2/backend/pkg/platform"
+	"github.com/cubelitblade/community-v2/backend/services/authz/internal/health"
 )
 
 type registerParams struct {

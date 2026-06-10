@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cubelitblade/community-v2/backend/services/authz/internal/constant"
 	"github.com/gin-gonic/gin"
+
+	"github.com/cubelitblade/community-v2/backend/services/authz/internal/constant"
 )
 
 const (

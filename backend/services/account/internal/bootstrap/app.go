@@ -12,11 +12,13 @@ import (
 // NewApp creates the fx application with all providers and lifecycle hooks.
 func NewApp() *fx.App {
 	return fx.New(
+		fx.Provide(LoadConfig),
+
 		ConfigModule(),
 		CookieModule(),
 		JWTModule(),
-		LoggerModule(),
-		DatabaseModule(),
+		SlogModule(),
+		GormModule(),
 		GinModule(),
 		SnowflakeModule(),
 		RabbitMQModule(),

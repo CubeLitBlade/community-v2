@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/cubelitblade/community-v2/backend/services/account/internal/contracts"
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
 	"gorm.io/gorm"
 )
 
@@ -53,7 +53,7 @@ func NewAuthenticator(finder ByUsernameFinder, db *gorm.DB,
 // Authenticate verifies the given username and password and returns the matching account.
 func (a *Authenticator) Authenticate(
 	ctx context.Context, username, password string,
-) (*contracts.AuthenticatedAccount, error) {
+) (*shared.AuthenticatedAccount, error) {
 	acc, err := a.finder.FindByUsername(ctx, a.db, username)
 	if err != nil {
 		if errors.Is(err, ErrAccountNotFound) {
@@ -79,7 +79,7 @@ func (a *Authenticator) Authenticate(
 		return nil, ErrInvalidCredentials
 	}
 
-	return &contracts.AuthenticatedAccount{
+	return &shared.AuthenticatedAccount{
 		ID:   acc.ID(),
 		Role: acc.Role().String(),
 	}, nil

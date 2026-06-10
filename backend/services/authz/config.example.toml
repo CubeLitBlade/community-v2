@@ -1,0 +1,45 @@
+[authz]
+# Name of this service.
+service_name = "authz"
+
+# Runtime environment.
+# Should be one of: 'dev' or 'prod'.
+env = "dev"
+
+# Addr for http server.
+http_addr = ":8081"
+
+[authz.openfga]
+# API URL of OpenFGA.
+api_url = "http://localhost:9090"
+
+# Store ID of OpenFGA.
+store_id = ""
+
+# Model ID of OpenFGA.
+model_id = ""
+
+[authz.rabbitmq]
+# Broker URL of RabbitMQ.
+broker_url = "amqp://community:community_dev_password@localhost:5672/"
+
+[authz.slog]
+# Handler type of slog.
+# Should be one of: 'default', 'discard', 'text', 'json' or 'tint'.
+type = "tint"
+
+# Log level of slog.
+# Should be one of: 'debug', 'info', 'warn' or 'error'.
+# Note: Ignored when 'type' is 'default' or 'discard'.
+level = "debug"
+
+[authz.slog.tint]
+# Time format when the handler type is 'tint'.
+# Should be one of: 'rfc3339', 'rfc3339_nano', 'stamp', 'stamp_milli', 'stamp_micro', 
+# 'stamp_nano', 'kitchen', 'ruby', 'layout', 'date_time', 'ansic' or 'unix_date'.
+time_format = "stamp_milli"
+
+[authz.gin]
+# Run mode of Gin framework.
+# Should be one of: 'debug', 'release' or 'test'.
+mode = "debug"

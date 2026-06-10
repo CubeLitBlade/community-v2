@@ -10,7 +10,7 @@ import (
 	"strconv"
 
 	"github.com/cubelitblade/community-v2/backend/pkg/common/httperr"
-	v1 "github.com/cubelitblade/community-v2/backend/services/account/api/types/v1"
+	v1 "github.com/cubelitblade/community-v2/backend/services/account/api/rest/v1"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/account"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/authn"
 	"github.com/gin-gonic/gin"

@@ -1,8 +1,5 @@
 [tools]
-go = '1.26.3'
-
-[env]
-_.file = ".env"
+go = '1.26.4'
 
 [tasks.compose]
 description = "Run compose."

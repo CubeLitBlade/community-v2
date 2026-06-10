@@ -5,34 +5,35 @@ import (
 	"log/slog"
 	"net/http"
 	"net/netip"
+	"time"
 
 	"github.com/cubelitblade/community-v2/backend/pkg/common/httperr"
+	v1 "github.com/cubelitblade/community-v2/backend/services/account/api/rest/v1"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/auth"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/authn"
-	"github.com/cubelitblade/community-v2/backend/services/account/internal/contracts"
 	"github.com/gin-gonic/gin"
 )
 
 // Handler handles HTTP requests for authentication.
 type Handler struct {
-	login  *auth.Login
-	logger *slog.Logger
-	ttl    contracts.TTLProvider
-	policy CookiePolicy
+	login    *auth.Login
+	logger   *slog.Logger
+	validity time.Duration
+	policy   CookiePolicy
 }
 
 // NewHandler creates and returns a new Handler.
-func NewHandler(login *auth.Login, logger *slog.Logger, ttl contracts.TTLProvider, policy CookiePolicy) *Handler {
+func NewHandler(login *auth.Login, logger *slog.Logger, validity time.Duration, policy CookiePolicy) *Handler {
 	logger = logger.With(
 		slog.String("service", "account"),
 		slog.String("component", "auth/transport/handler"),
 	)
 
 	return &Handler{
-		login:  login,
-		logger: logger,
-		ttl:    ttl,
-		policy: policy,
+		login:    login,
+		logger:   logger,
+		validity: validity,
+		policy:   policy,
 	}
 }
 
@@ -85,7 +86,7 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	cookie := WriteCookie(CookieNameAccessToken, credentials.Token, h.ttl.AccessTokenTTL(), h.policy)
+	cookie := WriteCookie(v1.AccessTokenCookieName, credentials.Token, h.validity, h.policy)
 
 	http.SetCookie(c.Writer, cookie)
 	c.JSON(http.StatusOK, loginResponse{
@@ -96,7 +97,7 @@ func (h *Handler) Login(c *gin.Context) {
 
 // Logout handles DELETE /auth/ — erase access token cookie.
 func (h *Handler) Logout(c *gin.Context) {
-	cookie := WriteCookie(CookieNameAccessToken, "", -1, h.policy)
+	cookie := WriteCookie(v1.AccessTokenCookieName, "", -1, h.policy)
 	http.SetCookie(c.Writer, cookie)
 	c.Status(http.StatusNoContent)
 }

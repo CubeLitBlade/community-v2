@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	ce "github.com/cloudevents/sdk-go/v2"
+
 	"github.com/cubelitblade/community-v2/backend/pkg/events/rabbitmq"
 	v1 "github.com/cubelitblade/community-v2/backend/services/account/api/events/v1"
 	"github.com/cubelitblade/community-v2/backend/services/authz/internal/constant"
