@@ -4,12 +4,13 @@ import (
 	"context"
 	"log/slog"
 
+	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
+	"go.uber.org/fx"
+
 	v1 "github.com/cubelitblade/community-v2/backend/pkg/contracts/v1"
 	"github.com/cubelitblade/community-v2/backend/pkg/events/outbox"
 	"github.com/cubelitblade/community-v2/backend/pkg/events/rabbitmq"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
-	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
-	"go.uber.org/fx"
 )
 
 func provideRabbitMQEnvironment(cfg *shared.RabbitMQConfig, lc fx.Lifecycle) *rmq.Environment {

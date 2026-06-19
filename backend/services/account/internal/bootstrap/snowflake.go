@@ -3,9 +3,10 @@ package bootstrap
 import (
 	"fmt"
 
+	"go.uber.org/fx"
+
 	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
-	"go.uber.org/fx"
 )
 
 func provideSnowflake(cfg *shared.SnowflakeConfig) (*idgen.Snowflake, error) {

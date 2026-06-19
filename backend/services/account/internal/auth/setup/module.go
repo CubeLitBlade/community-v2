@@ -5,12 +5,13 @@ package setup
 import (
 	"log/slog"
 
+	"go.uber.org/fx"
+
 	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
 	"github.com/cubelitblade/community-v2/backend/pkg/platform"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/auth"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/auth/transport"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
-	"go.uber.org/fx"
 )
 
 func provideLogin(

@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cubelitblade/community-v2/backend/pkg/events/outbox"
 	"gorm.io/cli/gorm/field"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"github.com/cubelitblade/community-v2/backend/pkg/events/outbox"
 )
 
 // OutboxRepository implements the outbox.Scanner, outbox.Recorder, and account.OutboxSaver interfaces.

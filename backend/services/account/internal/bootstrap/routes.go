@@ -3,13 +3,14 @@ package bootstrap
 import (
 	"log/slog"
 
+	"github.com/gin-gonic/gin"
+	"go.uber.org/fx"
+
 	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
 	"github.com/cubelitblade/community-v2/backend/pkg/platform"
 	v1 "github.com/cubelitblade/community-v2/backend/services/account/api/rest/v1"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/authn"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/health"
-	"github.com/gin-gonic/gin"
-	"go.uber.org/fx"
 )
 
 type registerParams struct {

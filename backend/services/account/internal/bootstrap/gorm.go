@@ -9,11 +9,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cubelitblade/community-v2/backend/pkg/platform"
-	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"github.com/cubelitblade/community-v2/backend/pkg/platform"
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
 )
 
 var errUnsupportedGormLogLevel = errors.New("unsupported gorm log level")

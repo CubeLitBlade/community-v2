@@ -8,9 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
 	"github.com/lmittmann/tint"
 	"go.uber.org/fx"
+
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
 )
 
 var (

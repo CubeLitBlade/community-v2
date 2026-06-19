@@ -6,8 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
 	"github.com/golang-jwt/jwt/v5"
+
+	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
 )
 
 // SignerOption configures a Signer instance.

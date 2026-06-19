@@ -5,6 +5,9 @@ import (
 	"context"
 	"log/slog"
 
+	"go.uber.org/fx"
+	"gorm.io/gorm"
+
 	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
 	"github.com/cubelitblade/community-v2/backend/pkg/events/outbox"
 	"github.com/cubelitblade/community-v2/backend/pkg/platform"
@@ -12,8 +15,6 @@ import (
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/account/storage"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/account/transport"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/auth"
-	"go.uber.org/fx"
-	"gorm.io/gorm"
 )
 
 // Module returns the fx providers for the account module.

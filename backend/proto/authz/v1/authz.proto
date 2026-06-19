@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package authz.v1;
+
+option go_package = "github.com/cubelitblade/community-v2/backend/gen/go/authz/v1;v1";
+
+message CheckRequest {
+  string user = 1;
+  string relation = 2;
+  string object = 3;
+}
+
+message CheckResponse {
+  bool allowed = 1;
+}
+
+service AuthzService {
+  rpc Check(CheckRequest) returns (CheckResponse);
+}

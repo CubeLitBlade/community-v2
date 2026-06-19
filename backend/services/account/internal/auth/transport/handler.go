@@ -7,11 +7,12 @@ import (
 	"net/netip"
 	"time"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/cubelitblade/community-v2/backend/pkg/common/httperr"
 	v1 "github.com/cubelitblade/community-v2/backend/services/account/api/rest/v1"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/auth"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/authn"
-	"github.com/gin-gonic/gin"
 )
 
 // Handler handles HTTP requests for authentication.

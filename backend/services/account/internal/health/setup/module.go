@@ -2,8 +2,9 @@
 package setup
 
 import (
-	"github.com/cubelitblade/community-v2/backend/services/account/internal/health"
 	"go.uber.org/fx"
+
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/health"
 )
 
 // Module returns the fx providers for the health module.

@@ -26,9 +26,19 @@ services:
     volumes:
       - mqdata:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
       interval: 10s
       timeout: 5s
+      retries: 5
+
+  jaeger:
+    image: cr.jaegertracing.io/jaegertracing/jaeger:2.19.0
+    container_name: community-jaeger
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "13133" ]
+      interval: 10s
+      timeout: 3s
       retries: 5
 
   openfga-migrate:
@@ -46,6 +56,8 @@ services:
     depends_on:
       openfga-migrate:
         condition: service_completed_successfully
+      jaeger:
+        condition: service_healthy
     image: docker.io/openfga/openfga:latest
     container_name: community-openfga
     command: run
@@ -54,15 +66,14 @@ services:
       - OPENFGA_DATASTORE_URI=postgres://openfga:openfga_dev_password@db:5432/community?sslmode=disable
       - OPENFGA_DATASTORE_MAX_OPEN_CONNS=20
       - OPENFGA_PLAYGROUND_ENABLED=false
-    networks:
-      - default
+      - OPENFGA_TRACE_ENABLED=true
+      - OPENFGA_TRACE_OTLP_ENDPOINT=jaeger:4317
+      - OPENFGA_TRACE_SAMPLE_RATIO=1
+      - OPENFGA_CACHE_ENABLED=true
+      - OPENFGA_CACHE_TTL=60s
+      - OPENFGA_CACHE_MAX_SIZE=10000
     healthcheck:
-      test:
-        [
-          "CMD",
-          "/usr/local/bin/grpc_health_probe",
-          "-addr=openfga:8081"
-        ]
+      test: [ "CMD", "/usr/local/bin/grpc_health_probe", "-addr=openfga:8081" ]
       interval: 5s
       timeout: 30s
       retries: 3
@@ -70,3 +81,4 @@ services:
 volumes:
   pgdata:
   mqdata:
+

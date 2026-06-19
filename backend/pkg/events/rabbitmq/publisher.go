@@ -8,8 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cubelitblade/community-v2/backend/pkg/events/rabbitmq/amqp"
 	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
+
+	"github.com/cubelitblade/community-v2/backend/pkg/events/rabbitmq/amqp"
 )
 
 // PublisherOption configures a Publisher.

@@ -7,8 +7,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
 	"gorm.io/gorm"
+
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
 )
 
 // AuthenticatorOption defines a functional option for configuring an Authenticator.

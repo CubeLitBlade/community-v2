@@ -3,12 +3,13 @@ package bootstrap
 import (
 	"fmt"
 
-	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
 	"github.com/go-playground/validator/v10"
 	toml "github.com/knadh/koanf/parsers/toml/v2"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/v2"
 	"go.uber.org/fx"
+
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
 )
 
 // LoadConfig reads and validates the account service configuration from the

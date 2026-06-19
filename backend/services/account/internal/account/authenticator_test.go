@@ -6,8 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cubelitblade/community-v2/backend/services/account/internal/account"
 	"gorm.io/gorm"
+
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/account"
 )
 
 var errFinder = errors.New("finder error")

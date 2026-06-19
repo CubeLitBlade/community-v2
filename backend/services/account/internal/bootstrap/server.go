@@ -8,10 +8,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cubelitblade/community-v2/backend/pkg/common/httperr"
-	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
+
+	"github.com/cubelitblade/community-v2/backend/pkg/common/httperr"
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
 )
 
 const (

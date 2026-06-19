@@ -1,0 +1,55 @@
+package bootstrap
+
+import (
+	"fmt"
+	"os"
+	"strings"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/knadh/koanf/parsers/toml/v2"
+	"github.com/knadh/koanf/providers/env/v2"
+	"github.com/knadh/koanf/providers/file"
+	"github.com/knadh/koanf/v2"
+
+	"github.com/cubelitblade/community-v2/backend/services/post/internal/config"
+)
+
+func LoadConfig() (config.Config, error) {
+	k := koanf.New(".")
+
+	// Load from TOML.
+	if tomlPath := os.Getenv("POST_CONFIG_TOML_PATH"); tomlPath != "" {
+		if err := k.Load(file.Provider(tomlPath), toml.Parser()); err != nil {
+			return config.Config{}, fmt.Errorf("load config from toml: %w", err)
+		}
+	}
+
+	// Load from environment variables, will override duplicated config.
+	if err := k.Load(env.Provider(".", env.Opt{
+		Prefix: "POST_",
+		TransformFunc: func(key, val string) (string, any) {
+			key = strings.ReplaceAll(strings.ToLower(key), "_", ".")
+			if strings.Contains(val, " ") {
+				return key, strings.Split(val, " ")
+			}
+
+			return key, val
+		},
+	}), nil); err != nil {
+		return config.Config{}, fmt.Errorf("load config from environment variables: %w", err)
+	}
+
+	var cfg config.Config
+
+	err := k.Unmarshal("post", &cfg)
+	if err != nil {
+		return config.Config{}, fmt.Errorf("unmarshal config: %w", err)
+	}
+
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	if err := validate.Struct(cfg); err != nil {
+		return config.Config{}, fmt.Errorf("validate config: %w", err)
+	}
+
+	return cfg, nil
+}

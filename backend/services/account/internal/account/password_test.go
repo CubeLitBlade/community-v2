@@ -5,8 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cubelitblade/community-v2/backend/services/account/internal/account"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/account"
 )
 
 const (

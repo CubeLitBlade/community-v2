@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package post.v1;
+
+option go_package = "github.com/cubelitblade/community-v2/backend/gen/go/post/v1;v1";
+
+message PublishRequest {
+  int64 account_id = 1;
+  optional string title = 2;
+  string content = 3;
+}
+
+message PublishResponse {
+  int64 post_id = 1;
+}
+
+service PostService {
+  rpc Publish(PublishRequest) returns (PublishResponse);
+}

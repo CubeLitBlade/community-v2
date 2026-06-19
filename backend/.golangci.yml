@@ -1,4 +1,4 @@
-version: "2"
+version: '2'
 
 run:
   timeout: 5m
@@ -81,8 +81,34 @@ linters:
     - wsl_v5
   
   exclusions:
-    generated: strict
+    generated: lax
     warn-unused: true
+    presets:
+      - comments
+      - std-error-handling
+      - common-false-positives
+      - legacy
+    rules:
+      - path: ent
+        linters:
+          - gocyclo
+          - errcheck
+          - dupl
+          - gosec
+          - funlen
+          - exhaustruct
+      - path: _test\.go
+        linters:
+          - gocyclo
+          - errcheck
+          - dupl
+          - gosec
+          - funlen
+          - exhaustruct
+          - varnamelen
+      - path-except: _test\.go
+        linters:
+          - forbidigo
   
   settings:
     depguard:
@@ -90,28 +116,43 @@ linters:
         main:
           list-mode: strict
           files:
-            - "$all"
+            - '$all'
           allow:
-            - "$gostd"
-            - "github.com/cubelitblade/community-v2/backend"
-            - "github.com/caarlos0/env"
-            - "github.com/gin-gonic/gin"
-            - "github.com/gorilla/csrf"
-            - "golang.org/x/crypto/bcrypt"
-            - "github.com/golang-jwt/jwt/v5"
-            - "gorm.io/gorm"
-            - "gorm.io/driver/postgres"
-            - "go.uber.org/fx"
-            - "gorm.io/cli/gorm/field"
-            - "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
-            - "github.com/Azure/go-amqp"
-            - "github.com/cloudevents/sdk-go/v2"
-            - "github.com/lmittmann/tint"
-            - "github.com/openfga/go-sdk/client"
-            - "github.com/knadh/koanf/v2"
-            - "github.com/knadh/koanf/providers/file"
-            - "github.com/knadh/koanf/parsers/toml/v2"
+            - '$gostd'
+            - 'github.com/cubelitblade/community-v2/backend'
+            - 'github.com/gin-gonic/gin'
+            - 'github.com/gorilla/csrf'
+            - 'golang.org/x/crypto/bcrypt'
+            - 'github.com/golang-jwt/jwt/v5'
+            - 'gorm.io/gorm'
+            - 'gorm.io/driver/postgres'
+            - 'go.uber.org/fx'
+            - 'gorm.io/cli/gorm/field'
+            - 'github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp'
+            - 'github.com/Azure/go-amqp'
+            - 'github.com/cloudevents/sdk-go/v2'
+            - 'github.com/lmittmann/tint'
+            - 'github.com/openfga/go-sdk/client'
+            - 'github.com/knadh/koanf/v2'
+            - 'github.com/knadh/koanf/providers/file'
+            - 'github.com/knadh/koanf/parsers/toml/v2'
+            - 'github.com/knadh/koanf/providers/env/v2'
             - 'github.com/go-playground/validator/v10'
+            - 'github.com/stretchr/testify/assert'
+            - 'entgo.io/ent'
+            - 'github.com/mattn/go-sqlite3'
+            - 'github.com/jackc/pgx/v5/stdlib'
+            - 'github.com/pressly/goose/v3'
+            - 'github.com/testcontainers/testcontainers-go'
+            - 'google.golang.org/grpc'
+            - 'go.opentelemetry.io/otel'
+            - 'go.opentelemetry.io/otel/trace'
+            - 'go.opentelemetry.io/otel/sdk/trace'
+            - 'go.opentelemetry.io/otel/semconv/v1.41.0'
+            - 'go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc'
+            - 'github.com/bytedance/sonic'
+            - 'github.com/openfga/api/proto/openfga/v1'
+            - 'github.com/XSAM/otelsql'
 
     errcheck:
       check-type-assertions: true
@@ -133,6 +174,7 @@ linters:
         - 'gorm.io/gorm.Config'
         - 'net/http.Client'
         - 'net/http.Transport'
+      allow-empty: true
 
     gosec:
       excludes:
@@ -149,25 +191,12 @@ linters:
     revive:
       severity: error
       confidence: 0.8
+      enable-all-rules: true
       rules:
-        - name: blank-imports
-        - name: context-as-argument
-        - name: context-keys-type
-        - name: dot-imports
-        - name: error-return
-        - name: error-strings
-        - name: error-naming
-        - name: exported
-        - name: increment-decrement
-        - name: var-naming
-        - name: package-comments
-        - name: range
-        - name: receiver-naming
-        - name: time-naming
-        - name: unexported-return
-        - name: indent-error-flow
-        - name: errorf
-        - name: unnecessary-stmt
+        - name: add-constant
+          disabled: true
+        - name: line-length-limit
+          arguments: [120]
     
     nolintlint:
       allow-unused: false
@@ -181,7 +210,7 @@ linters:
     
     reassign:
       patterns:
-        - ".*"
+        - '.*'
 
     cyclop:
       max-complexity: 10
@@ -204,12 +233,12 @@ linters:
 
     mnd:
       ignored-numbers:
-        - "0"
-        - "1"
-        - "2"
-        - "3"
-        - "4"
-        - "5"
+        - '0'
+        - '1'
+        - '2'
+        - '3'
+        - '4'
+        - '5'
     
     varnamelen:
       ignore-names:
@@ -217,6 +246,7 @@ linters:
         - tc
         - id
         - fc
+        - fn
       ignore-decls:
         - c echo.Context
         - t testing.T
@@ -228,21 +258,24 @@ linters:
         - m map[string]int
         - r *http.Request
         - w http.ResponseWriter
-        - c *gin.Context 
+        - c *gin.Context
+        - db *sql.DB 
         - db *gorm.DB
         - tx *gorm.DB
+        - tx *ent.Tx
         - tt *testing.T
         - tc TestCase
         - lc fx.Lifecycle
         - err error
         - ok bool
+        - k *koanf.Koanf
 
     sloglint:
-      no-global: "all"
-      context: "scope"
+      no-global: 'all'
+      context: 'scope'
       static-msg: true
-      msg-style: "lowercased"
-      key-naming-case: "snake"
+      msg-style: 'lowercased'
+      key-naming-case: 'snake'
       attr-only: true
       args-on-sep-lines: true
 

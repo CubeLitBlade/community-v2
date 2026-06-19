@@ -1,10 +1,11 @@
 package bootstrap
 
 import (
+	"go.uber.org/fx"
+
 	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
 	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
-	"go.uber.org/fx"
 )
 
 // MinJWTKeyLength is the minimum required length in bytes for a JWT signing key.

@@ -7,10 +7,11 @@ import (
 	"strconv"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
 	"github.com/cubelitblade/community-v2/backend/pkg/events/outbox"
 	v1 "github.com/cubelitblade/community-v2/backend/services/account/api/events/v1"
-	"gorm.io/gorm"
 )
 
 // RegistrarOption defines a functional option for configuring a Registrar.

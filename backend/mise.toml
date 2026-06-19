@@ -1,0 +1,39 @@
+[tasks.post-run]
+description = "Run the post service locally"
+run = """
+set -a; source ./services/post/.env; set +a
+export POST_CONFIG_TOML_PATH="$(pwd)/services/post/config.toml"
+go run ./services/post/cmd/post
+"""
+
+[tasks.post-migrate]
+description = "Run the post database migrations"
+run = """
+set -a; source ./services/post/.env; set +a
+export POST_CONFIG_TOML_PATH="$(pwd)/services/post/config.toml"
+go run ./services/post/cmd/post --migrate
+"""
+
+[tasks.post-air]
+description = "Run the post service with air"
+run = """
+set -a; source ./services/post/.env; set +a
+export POST_CONFIG_TOML_PATH="$(pwd)/services/post/config.toml"
+mise x -C ./services/post -- air
+"""
+
+[tasks.authz-run]
+description = "Run the authz service locally"
+run = """
+set -a; source ./services/authz/.env; set +a
+export AUTHZ_CONFIG_TOML_PATH="$(pwd)/services/authz/config.toml"
+go run ./services/authz/cmd/authz
+"""
+
+[tasks.authz-air]
+description = "Run the authz service with air"
+run = """
+set -a; source ./services/authz/.env; set +a
+export AUTHZ_CONFIG_TOML_PATH="$(pwd)/services/authz/config.toml"
+mise x -C ./services/authz -- air
+"""

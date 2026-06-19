@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cubelitblade/community-v2/backend/pkg/platform"
-	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
+
+	"github.com/cubelitblade/community-v2/backend/pkg/platform"
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/shared"
 )
 
 func provideGinEngine(cfg *shared.GinConfig) *gin.Engine {

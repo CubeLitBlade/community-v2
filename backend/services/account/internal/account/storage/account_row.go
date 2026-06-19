@@ -4,8 +4,9 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/cubelitblade/community-v2/backend/services/account/internal/account"
 	"gorm.io/cli/gorm/field"
+
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/account"
 )
 
 // AccountRow represents a record in the "accounts" PostgreSQL table.

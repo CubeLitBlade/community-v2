@@ -7,8 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
 	"gorm.io/gorm"
+
+	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
 )
 
 const (

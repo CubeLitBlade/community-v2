@@ -3,6 +3,11 @@ services:
     ports:
       - "5432:5432"
 
+  jaeger:
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+
   rabbitmq:
     ports:
       - "5672:5672"

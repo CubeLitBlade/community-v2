@@ -9,8 +9,9 @@ import (
 	"time"
 
 	goamqp "github.com/Azure/go-amqp"
-	"github.com/cubelitblade/community-v2/backend/pkg/events/rabbitmq/amqp"
 	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
+
+	"github.com/cubelitblade/community-v2/backend/pkg/events/rabbitmq/amqp"
 )
 
 // TransientSubscriberOption configures a TransientSubscriber.

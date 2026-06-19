@@ -6,9 +6,10 @@ import (
 	"testing"
 	"time"
 
+	jwtlib "github.com/golang-jwt/jwt/v5"
+
 	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
 	"github.com/cubelitblade/community-v2/backend/pkg/common/jwt"
-	jwtlib "github.com/golang-jwt/jwt/v5"
 )
 
 var errBroken = errors.New("snowflake broken")

@@ -8,12 +8,14 @@ import (
 	"go.uber.org/fx"
 
 	event "github.com/cubelitblade/community-v2/backend/pkg/contracts/v1"
-	"github.com/cubelitblade/community-v2/backend/pkg/events/rabbitmq"
+	rmq "github.com/cubelitblade/community-v2/backend/pkg/events/rabbitmq"
 	account "github.com/cubelitblade/community-v2/backend/services/account/api/events/v1"
-	"github.com/cubelitblade/community-v2/backend/services/authz/internal/shared"
+	"github.com/cubelitblade/community-v2/backend/services/authz/internal/adapter/driven/rabbitmq"
+	"github.com/cubelitblade/community-v2/backend/services/authz/internal/application"
+	"github.com/cubelitblade/community-v2/backend/services/authz/internal/config"
 )
 
-func provideRMQEnv(cfg *shared.RabbitMQConfig, lc fx.Lifecycle) *rabbitmqamqp.Environment {
+func NewRabbitMQEnv(cfg config.RabbitMQConfig, lc fx.Lifecycle) *rabbitmqamqp.Environment {
 	env := rabbitmqamqp.NewEnvironment(cfg.BrokerURL, nil)
 
 	lc.Append(fx.Hook{
@@ -25,9 +27,11 @@ func provideRMQEnv(cfg *shared.RabbitMQConfig, lc fx.Lifecycle) *rabbitmqamqp.En
 	return env
 }
 
-func provideSubscriber(env *rabbitmqamqp.Environment, logger *slog.Logger, lc fx.Lifecycle) *rabbitmq.QuorumSubscriber {
-	subscriber := rabbitmq.NewQuorumSubscriber(env, event.SystemExchange, event.QueueNameAuthz, logger,
-		rabbitmq.WithQuorumSubscriberKeys([]string{
+func NewRabbitMQSubscriber(
+	env *rabbitmqamqp.Environment, logger *slog.Logger, lc fx.Lifecycle,
+) *rmq.QuorumSubscriber {
+	subscriber := rmq.NewQuorumSubscriber(env, event.SystemExchange, event.QueueNameAuthz, logger,
+		rmq.WithQuorumSubscriberKeys([]string{
 			account.TopicAccountCreated,
 		}),
 	)
@@ -41,10 +45,31 @@ func provideSubscriber(env *rabbitmqamqp.Environment, logger *slog.Logger, lc fx
 	return subscriber
 }
 
+func NewRabbitMQConsumer(
+	lc fx.Lifecycle, subscriber *rmq.QuorumSubscriber, syncer *application.EventSyncer, logger *slog.Logger,
+) *rabbitmq.Consumer {
+	consumer := rabbitmq.NewConsumer(subscriber, syncer, logger)
+
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			return consumer.Start(ctx)
+		},
+		OnStop: func(ctx context.Context) error {
+			consumer.Stop(ctx)
+			return nil
+		},
+	})
+
+	return consumer
+}
+
 // RabbitMQModule provides the RabbitMQ connection and subscriber fx module.
 func RabbitMQModule() fx.Option {
 	return fx.Options(
-		fx.Provide(provideRMQEnv),
-		fx.Provide(provideSubscriber),
+		fx.Provide(NewRabbitMQEnv),
+		fx.Provide(NewRabbitMQSubscriber),
+		fx.Provide(NewRabbitMQConsumer),
+
+		fx.Invoke(func(*rabbitmq.Consumer) {}),
 	)
 }
