@@ -3,26 +3,31 @@ package bootstrap
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	"go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/fx"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/stats"
 
 	"github.com/cubelitblade/community-v2/backend/services/authz/internal/adapter/driven/openfga"
 	"github.com/cubelitblade/community-v2/backend/services/authz/internal/config"
 )
 
 func NewOpenFGAServiceConn(
-	cfg config.OpenFGAConfig, lc fx.Lifecycle, tp *trace.TracerProvider,
+	cfg config.OpenFGAConfig, lc fx.Lifecycle, tp trace.TracerProvider,
 ) (*grpc.ClientConn, error) {
 	conn, err := grpc.NewClient(cfg.APIURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler(
 			otelgrpc.WithTracerProvider(tp),
+			otelgrpc.WithFilter(func(ri *stats.RPCTagInfo) bool {
+				return !strings.HasSuffix(ri.FullMethodName, "/grpc.health.v1.Health/Check")
+			}),
 		)),
 	)
 	if err != nil {

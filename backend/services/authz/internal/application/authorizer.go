@@ -2,8 +2,10 @@ package application
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -12,42 +14,82 @@ import (
 	"github.com/cubelitblade/community-v2/backend/services/authz/internal/domain/port"
 )
 
+const (
+	decisionCacheExpiration = 5 * time.Minute
+)
+
+// Authorizer evaluates user permissions using a cache and an authority checker.
 type Authorizer struct {
-	checker port.Checker
-	logger  *slog.Logger
+	authChecker  port.AuthorityChecker
+	cacheChecker port.CacheChecker
+	cacheWriter  port.CacheWriter
+	logger       *slog.Logger
+	tracer       trace.Tracer
 }
 
-func NewAuthorizer(checker port.Checker, logger *slog.Logger) *Authorizer {
+// NewAuthorizer creates a new Authorizer instance.
+func NewAuthorizer(
+	authChecker port.AuthorityChecker, cacheChecker port.CacheChecker,
+	cacheWriter port.CacheWriter, logger *slog.Logger, tracerProvider trace.TracerProvider,
+) *Authorizer {
 	return &Authorizer{
-		checker: checker,
-		logger:  logger.With(slog.String("component", "authorizer")),
+		authChecker:  authChecker,
+		cacheChecker: cacheChecker,
+		cacheWriter:  cacheWriter,
+		logger:       logger.With(slog.String("component", "authorizer")),
+		tracer:       tracerProvider.Tracer("authz.application.authorizer"),
 	}
 }
 
-func (c *Authorizer) Authorize(ctx context.Context, user, relation, object string) (bool, error) {
-	span := trace.SpanFromContext(ctx)
+// Authorize determines if a user is granted a relation on an object.
+//
+// It checks the cache first, falling back to the AuthorityChecker on a miss,
+// and caches the result upon a successful evaluation.
+func (a *Authorizer) Authorize(ctx context.Context, user, relation, object string) (bool, error) {
+	var allowed bool
+
+	ctx, span := a.tracer.Start(ctx, "Authorizer/Authorize")
+	defer span.End()
+
 	span.SetAttributes(
 		attribute.String("authz.user", user),
 		attribute.String("authz.relation", relation),
 		attribute.String("authz.object", object),
 	)
 
-	allowed, err := c.checker.Check(ctx, user, relation, object)
-	if err != nil {
-		c.logger.ErrorContext(ctx, "authorize call went sideways",
+	allowed, cerr := a.cacheChecker.Check(ctx, user, relation, object)
+	switch {
+	case cerr == nil:
+		a.logger.DebugContext(ctx, "cache hit")
+		return allowed, nil
+	case errors.Is(cerr, port.ErrCacheMiss):
+		a.logger.DebugContext(ctx, "cache miss")
+	default:
+		a.logger.ErrorContext(ctx, "unexpected cache error", slog.Any("error", cerr))
+		span.RecordError(cerr)
+	}
+
+	allowed, serr := a.authChecker.Check(ctx, user, relation, object)
+	if serr != nil {
+		a.logger.ErrorContext(ctx, "authorize call went sideways",
 			slog.String("user", user),
 			slog.String("relation", relation),
 			slog.String("object", object),
-			slog.Any("error", err),
+			slog.Any("error", serr),
 		)
 
 		span.SetStatus(codes.Error, "failed to authorize")
-		span.RecordError(err)
+		span.RecordError(serr)
 
-		return false, fmt.Errorf("authorize: %w", err)
+		return false, fmt.Errorf("authorize: %w", serr)
 	}
 
-	c.logger.DebugContext(ctx, "authorization pronounced",
+	if err := a.cacheWriter.Write(ctx, user, relation, object, allowed, decisionCacheExpiration); err != nil {
+		a.logger.ErrorContext(ctx, "failed to write cache", slog.Any("error", err))
+		span.RecordError(err)
+	}
+
+	a.logger.DebugContext(ctx, "authorization pronounced",
 		slog.String("user", user),
 		slog.String("relation", relation),
 		slog.String("object", object),

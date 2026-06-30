@@ -16,5 +16,6 @@ func NewApp() *fx.App {
 		RabbitMQModule(),
 		SlogModule(),
 		OpenTelemetryModule(),
+		RedisModule(),
 	)
 }

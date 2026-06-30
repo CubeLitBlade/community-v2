@@ -16,6 +16,13 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: docker.io/library/redis:8.8.0-alpine
+    container_name: community-redis
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+
   rabbitmq:
     image: docker.io/library/rabbitmq:4.3-management
     container_name: community-rabbitmq
@@ -80,5 +87,6 @@ services:
 
 volumes:
   pgdata:
+  redisdata:
   mqdata:
 

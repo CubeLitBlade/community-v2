@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"strings"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	"go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/fx"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/stats"
 
 	authzv1 "github.com/cubelitblade/community-v2/backend/gen/go/authz/v1"
 	authgrpc "github.com/cubelitblade/community-v2/backend/services/authz/internal/adapter/driving/grpc"
@@ -18,12 +20,15 @@ import (
 )
 
 func NewGRPCServer(
-	cfg config.GRPCConfig, lc fx.Lifecycle, authzSrv *authgrpc.AuthzServiceServer, tp *trace.TracerProvider,
+	cfg config.GRPCConfig, lc fx.Lifecycle, authzSrv *authgrpc.AuthzServiceServer, tp trace.TracerProvider,
 	logger *slog.Logger,
 ) (*grpc.Server, error) {
 	srv := grpc.NewServer(
 		grpc.StatsHandler(otelgrpc.NewServerHandler(
 			otelgrpc.WithTracerProvider(tp),
+			otelgrpc.WithFilter(func(ri *stats.RPCTagInfo) bool {
+				return !strings.HasSuffix(ri.FullMethodName, "/grpc.health.v1.Health/Check")
+			}),
 		)),
 	)
 

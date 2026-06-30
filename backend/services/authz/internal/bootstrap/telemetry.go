@@ -12,6 +12,8 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
+	oteltrace "go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/fx"
 
 	"github.com/cubelitblade/community-v2/backend/services/authz/internal/config"
@@ -19,11 +21,11 @@ import (
 
 func NewOpenTelemetryTraceProvider(
 	cfg config.OTELConfig, lc fx.Lifecycle, logger *slog.Logger,
-) (*sdktrace.TracerProvider, error) {
+) (oteltrace.TracerProvider, error) {
 	if !cfg.Enable {
 		logger.Info("otel disabled")
 
-		tp := sdktrace.NewTracerProvider()
+		tp := noop.NewTracerProvider()
 		otel.SetTracerProvider(tp)
 
 		return tp, nil

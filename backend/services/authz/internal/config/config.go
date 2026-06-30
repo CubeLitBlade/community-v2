@@ -12,4 +12,5 @@ type Config struct {
 	Slog     SlogConfig     `koanf:"slog"`
 	GRPC     GRPCConfig     `koanf:"grpc"`
 	OTEL     OTELConfig     `koanf:"otel"`
+	Redis    RedisConfig    `koanf:"redis"`
 }

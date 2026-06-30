@@ -174,7 +174,7 @@ export function teardown(data) {
 
 ##### HTTP
 
-```bash
+```text
      execution: local
         script: bench_http.js
         output: -
