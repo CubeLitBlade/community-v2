@@ -7,7 +7,6 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -31,9 +30,16 @@ func NewOpenTelemetryTraceProvider(
 		return tp, nil
 	}
 
-	exporter, err := newExporter(context.Background(), cfg, logger)
+	opts := []otlptracegrpc.Option{
+		otlptracegrpc.WithEndpoint(cfg.Endpoint),
+	}
+	if cfg.Insecure {
+		opts = append(opts, otlptracegrpc.WithInsecure())
+	}
+
+	exporter, err := otlptracegrpc.New(context.Background(), opts...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create trace exporter: %w", err)
+		return nil, fmt.Errorf("create otlp trace exporter: %w", err)
 	}
 
 	res, err := resource.Merge(
@@ -68,35 +74,6 @@ func NewOpenTelemetryTraceProvider(
 	logger.Info("otel tracer provider initialized", slog.String("endpoint", cfg.Endpoint))
 
 	return provider, nil
-}
-
-func newExporter(ctx context.Context, cfg config.OTELConfig, logger *slog.Logger) (sdktrace.SpanExporter, error) {
-	if cfg.ConsoleExporter {
-		logger.InfoContext(ctx, "otel is using stdout trace exporter")
-
-		exporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
-		if err != nil {
-			return nil, fmt.Errorf("create stdout trace exporter: %w", err)
-		}
-
-		return exporter, nil
-	}
-
-	logger.InfoContext(ctx, "otel is using otlp trace exporter", slog.String("endpoint", cfg.Endpoint))
-
-	opts := []otlptracegrpc.Option{
-		otlptracegrpc.WithEndpoint(cfg.Endpoint),
-	}
-	if cfg.Insecure {
-		opts = append(opts, otlptracegrpc.WithInsecure())
-	}
-
-	exporter, err := otlptracegrpc.New(ctx, opts...)
-	if err != nil {
-		return nil, fmt.Errorf("create otlp trace exporter: %w", err)
-	}
-
-	return exporter, nil
 }
 
 func OpenTelemetryModule() fx.Option {

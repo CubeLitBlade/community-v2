@@ -38,6 +38,19 @@ services:
       timeout: 5s
       retries: 5
 
+  otel-collector:
+    image: otel/opentelemetry-collector:0.154.0
+    container_name: community-otel-collector
+    restart: unless-stopped
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    volumes:
+      - ./otel/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317"
+    depends_on:
+      jaeger:
+        condition: service_healthy
+
   jaeger:
     image: cr.jaegertracing.io/jaegertracing/jaeger:2.19.0
     container_name: community-jaeger
@@ -63,8 +76,8 @@ services:
     depends_on:
       openfga-migrate:
         condition: service_completed_successfully
-      jaeger:
-        condition: service_healthy
+      otel-collector:
+        condition: service_started
     image: docker.io/openfga/openfga:latest
     container_name: community-openfga
     command: run
@@ -74,7 +87,7 @@ services:
       - OPENFGA_DATASTORE_MAX_OPEN_CONNS=20
       - OPENFGA_PLAYGROUND_ENABLED=false
       - OPENFGA_TRACE_ENABLED=true
-      - OPENFGA_TRACE_OTLP_ENDPOINT=jaeger:4317
+      - OPENFGA_TRACE_OTLP_ENDPOINT=otel-collector:4317
       - OPENFGA_TRACE_SAMPLE_RATIO=1
       - OPENFGA_CACHE_ENABLED=true
       - OPENFGA_CACHE_TTL=60s

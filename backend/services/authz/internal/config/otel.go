@@ -12,7 +12,4 @@ type OTELConfig struct {
 
 	// Enable toggles OpenTelemetry tracing globally.
 	Enable bool `koanf:"enable"`
-
-	// ConsoleExporter outputs traces to stdout instead of the Endpoint.
-	ConsoleExporter bool `koanf:"console_exporter"`
 }
