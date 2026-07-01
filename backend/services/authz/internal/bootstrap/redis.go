@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/redis/go-redis/extra/redisotel-native/v9"
+	redismetrics "github.com/redis/go-redis/extra/redisotel-native/v9"
+	"github.com/redis/go-redis/extra/redisotel/v9"
 	redisdk "github.com/redis/go-redis/v9"
 	"go.uber.org/fx"
 
@@ -15,9 +16,9 @@ import (
 )
 
 func NewRedisClient(lc fx.Lifecycle, cfg config.RedisConfig, logger *slog.Logger) (*redisdk.Client, error) {
-	otelInstance := redisotel.GetObservabilityInstance()
+	otelInstance := redismetrics.GetObservabilityInstance()
 
-	otelcfg := redisotel.NewConfig().WithEnabled(true)
+	otelcfg := redismetrics.NewConfig().WithEnabled(true)
 	if err := otelInstance.Init(otelcfg); err != nil {
 		return nil, fmt.Errorf("init redis client: %w", err)
 	}
@@ -27,6 +28,10 @@ func NewRedisClient(lc fx.Lifecycle, cfg config.RedisConfig, logger *slog.Logger
 		Password: cfg.Password,
 		DB:       cfg.DB,
 	})
+
+	if err := redisotel.InstrumentTracing(rdb); err != nil {
+		return nil, fmt.Errorf("failed to instrument tracing: %w", err)
+	}
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
@@ -40,6 +45,10 @@ func NewRedisClient(lc fx.Lifecycle, cfg config.RedisConfig, logger *slog.Logger
 		OnStop: func(context.Context) error {
 			if err := rdb.Close(); err != nil {
 				logger.Error("failed to close redis client", slog.Any("error", err))
+			}
+
+			if err := otelInstance.Shutdown(); err != nil {
+				logger.Error("failed to shut down redis otel instance", slog.Any("error", err))
 			}
 
 			logger.Info("redis client stopped gracefully")

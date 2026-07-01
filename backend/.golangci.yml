@@ -156,6 +156,7 @@ linters:
             - 'github.com/XSAM/otelsql'
             - 'github.com/redis/go-redis/v9'
             - 'github.com/redis/go-redis/extra/redisotel-native/v9'
+            - 'github.com/redis/go-redis/extra/redisotel/v9'
 
     errcheck:
       check-type-assertions: true
