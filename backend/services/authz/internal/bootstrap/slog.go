@@ -7,7 +7,7 @@ import (
 
 	"go.uber.org/fx"
 
-	slogx "github.com/cubelitblade/community-v2/backend/pkg/slog"
+	"github.com/cubelitblade/community-v2/backend/pkg/slogx"
 	"github.com/cubelitblade/community-v2/backend/services/authz/internal/config"
 )
 

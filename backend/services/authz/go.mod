@@ -5,8 +5,10 @@ go 1.26.4
 require (
 	github.com/bytedance/sonic v1.15.2
 	github.com/cloudevents/sdk-go/v2 v2.16.2
+	github.com/cubelitblade/community-v2/backend/gen/go v0.1.0
 	github.com/cubelitblade/community-v2/backend/pkg/contracts v0.1.0
 	github.com/cubelitblade/community-v2/backend/pkg/events v0.6.0
+	github.com/cubelitblade/community-v2/backend/pkg/slogx v0.1.0
 	github.com/cubelitblade/community-v2/backend/services/account v0.0.0-20260603191228-1449021f0a67
 	github.com/go-playground/validator/v10 v10.30.3
 	github.com/knadh/koanf/parsers/toml/v2 v2.2.1
@@ -72,6 +74,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/knadh/koanf/maps v0.1.2 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/lmittmann/tint v1.1.3 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/magiconair/properties v1.8.10 // indirect
 	github.com/mdelapenya/tlscert v0.2.0 // indirect
