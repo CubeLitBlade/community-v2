@@ -13,10 +13,10 @@ import (
 type AuthzServiceServer struct {
 	authzv1.UnimplementedAuthzServiceServer
 
-	check *application.Authorizer
+	check application.AuthChecker
 }
 
-func NewAuthzServiceServer(check *application.Authorizer) *AuthzServiceServer {
+func NewAuthzServiceServer(check application.AuthChecker) *AuthzServiceServer {
 	return &AuthzServiceServer{
 		UnimplementedAuthzServiceServer: authzv1.UnimplementedAuthzServiceServer{},
 		check:                           check,

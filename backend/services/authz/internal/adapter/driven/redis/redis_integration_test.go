@@ -48,7 +48,7 @@ func client(ctx context.Context, t *testing.T) *goredis.Client {
 	return rdb
 }
 
-//nolint:paralleltest,revive // Intentionally sequential: subtests share a single Redis Testcontainer.
+//nolint:paralleltest // Intentionally sequential: subtests share a single Redis Testcontainer.
 func Test_IntegrationRedisAdapter(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping redis adapter integration test")

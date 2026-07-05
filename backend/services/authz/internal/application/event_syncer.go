@@ -13,9 +13,9 @@ type EventSyncer struct {
 	logger *slog.Logger
 }
 
-func NewEventSyncer(write *TupleWriter, logger *slog.Logger) *EventSyncer {
+func NewEventSyncer(writer *TupleWriter, logger *slog.Logger) *EventSyncer {
 	return &EventSyncer{
-		writer: write,
+		writer: writer,
 		logger: logger.With(slog.String("component", "event_syncer")),
 	}
 }

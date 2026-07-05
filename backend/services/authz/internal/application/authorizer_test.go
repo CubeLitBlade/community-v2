@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"go.opentelemetry.io/otel/trace/noop"
 
 	"github.com/cubelitblade/community-v2/backend/services/authz/internal/application"
 	"github.com/cubelitblade/community-v2/backend/services/authz/internal/domain/port"
@@ -249,7 +248,7 @@ func TestAuthorizer_Authorize(t *testing.T) {
 			authChecker.errToReturn = tt.authCheckerErr
 
 			a := application.NewAuthorizer(
-				authChecker, cacheChecker, cacheWriter, slog.Default(), noop.NewTracerProvider(),
+				authChecker, cacheChecker, cacheWriter, slog.Default(),
 			)
 
 			got, gotErr := a.Authorize(context.Background(), tt.user, tt.relation, tt.object)

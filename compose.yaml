@@ -1,7 +1,6 @@
 services:
   db:
     image: docker.io/library/postgres:18-alpine
-    container_name: community-postgres
     restart: unless-stopped
     environment:
       - POSTGRES_USER=community
@@ -18,14 +17,12 @@ services:
 
   redis:
     image: docker.io/library/redis:8.8.0-alpine
-    container_name: community-redis
     restart: unless-stopped
     volumes:
       - redisdata:/data
 
   rabbitmq:
     image: docker.io/library/rabbitmq:4.3-management
-    container_name: community-rabbitmq
     restart: unless-stopped
     environment:
       - RABBITMQ_DEFAULT_USER=community
@@ -40,30 +37,36 @@ services:
 
   otel-collector:
     image: otel/opentelemetry-collector:0.154.0
-    container_name: community-otel-collector
     restart: unless-stopped
     command: [ "--config=/etc/otel-collector-config.yaml" ]
     volumes:
       - ./otel/otel-collector-config.yaml:/etc/otel-collector-config.yaml
-    ports:
-      - "4317:4317"
     depends_on:
-      jaeger:
-        condition: service_healthy
+      - tempo
 
-  jaeger:
-    image: cr.jaegertracing.io/jaegertracing/jaeger:2.19.0
-    container_name: community-jaeger
+  tempo:
+    image: grafana/tempo:latest
+    command: "-target=all -config.file=/etc/tempo.yaml"
     restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "nc", "-z", "localhost", "13133" ]
-      interval: 10s
-      timeout: 3s
-      retries: 5
+    volumes:
+      - ./otel/tempo.yaml:/etc/tempo.yaml
+      - tempo-data:/var/tempo
+
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus.yml
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+      - --enable-feature=native-histograms
+    volumes:
+      - ./otel/prometheus.yml:/etc/prometheus.yml
+    depends_on:
+      - otel-collector
 
   openfga-migrate:
     image: docker.io/openfga/openfga:latest
-    container_name: community-openfga-migrate
     environment:
       - OPENFGA_DATASTORE_ENGINE=postgres
       - OPENFGA_DATASTORE_URI=postgres://openfga:openfga_dev_password@db:5432/community?sslmode=disable
@@ -79,7 +82,6 @@ services:
       otel-collector:
         condition: service_started
     image: docker.io/openfga/openfga:latest
-    container_name: community-openfga
     command: run
     environment:
       - OPENFGA_DATASTORE_ENGINE=postgres
@@ -98,8 +100,24 @@ services:
       timeout: 30s
       retries: 3
 
+  grafana:
+    image: grafana/grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./otel/grafana/provisioning/datasources/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./otel/grafana/provisioning/dashboards/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+    depends_on:
+      - tempo
+
 volumes:
   pgdata:
   redisdata:
   mqdata:
-
+  grafana-data:
+  tempo-data:
