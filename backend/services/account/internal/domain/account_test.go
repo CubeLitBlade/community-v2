@@ -200,6 +200,34 @@ type invalidRegisterCase struct {
 	id        int64
 }
 
+func TestAccountRecordLogin(t *testing.T) {
+	t.Parallel()
+
+	now := mustRegistrationTime()
+	loginTime := now.Add(24 * time.Hour)
+
+	acc, err := account.NewAccount(validAccountID, usernameAlice, validPwd, now)
+	if err != nil {
+		t.Fatalf("NewAccount() error = %v", err)
+	}
+
+	acc.RecordLogin(loginTime, netip.MustParseAddr("192.168.1.1"))
+
+	snap := acc.Snapshot()
+	if snap.LastLoginAt == nil {
+		t.Fatal("LastLoginAt is nil after RecordLogin")
+	}
+	if !snap.LastLoginAt.Equal(loginTime) {
+		t.Errorf("LastLoginAt = %v, want %v", snap.LastLoginAt, loginTime)
+	}
+	if snap.LastLoginIP == nil {
+		t.Fatal("LastLoginIP is nil after RecordLogin")
+	}
+	if *snap.LastLoginIP != netip.MustParseAddr("192.168.1.1") {
+		t.Errorf("LastLoginIP = %v, want %v", *snap.LastLoginIP, netip.MustParseAddr("192.168.1.1"))
+	}
+}
+
 func invalidRegisterCases() []invalidRegisterCase {
 	return []invalidRegisterCase{
 		{
