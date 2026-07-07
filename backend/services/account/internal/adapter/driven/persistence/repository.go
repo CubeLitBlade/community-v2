@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"gorm.io/gorm"
 
@@ -52,10 +53,14 @@ func (r *AccountRepository) FindByUsername(ctx context.Context, username account
 	return rowToAccount(&row)
 }
 
+func isDuplicateKeyError(err error) bool {
+	return errors.Is(err, gorm.ErrDuplicatedKey) || strings.Contains(err.Error(), "UNIQUE constraint failed")
+}
+
 func (r *AccountRepository) Create(ctx context.Context, acc *account.Account) error {
 	err := txFromContext(ctx, r.db).Create(accountToRow(acc)).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrDuplicatedKey) {
+		if isDuplicateKeyError(err) {
 			return account.ErrUsernameAlreadyExists
 		}
 

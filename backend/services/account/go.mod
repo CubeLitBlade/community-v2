@@ -4,6 +4,8 @@ go 1.26.4
 
 require (
 	github.com/cubelitblade/community-v2/backend/pkg/common v0.2.2
+	github.com/cubelitblade/community-v2/backend/pkg/contracts v0.1.0
+	github.com/cubelitblade/community-v2/backend/pkg/events v0.0.0-00010101000000-000000000000
 	github.com/cubelitblade/community-v2/backend/pkg/platform v0.3.2
 	github.com/cubelitblade/community-v2/backend/pkg/slogx v0.1.0
 	github.com/go-playground/validator/v10 v10.30.3
@@ -11,6 +13,7 @@ require (
 	github.com/knadh/koanf/providers/env/v2 v2.0.0
 	github.com/knadh/koanf/providers/file v1.2.1
 	github.com/knadh/koanf/v2 v2.3.5
+	github.com/rabbitmq/rabbitmq-amqp-go-client v1.2.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.69.0
 	go.opentelemetry.io/otel v1.44.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.44.0
@@ -26,10 +29,12 @@ require (
 )
 
 require (
+	github.com/Azure/go-amqp v1.7.0 // indirect
 	github.com/bytedance/gopkg v0.1.4 // indirect
 	github.com/bytedance/sonic v1.15.1 // indirect
 	github.com/bytedance/sonic/loader v0.5.1 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
+	github.com/cloudevents/sdk-go/v2 v2.16.2 // indirect
 	github.com/cloudwego/base64x v0.1.7 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
@@ -43,6 +48,7 @@ require (
 	github.com/goccy/go-json v0.10.6 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
@@ -68,8 +74,8 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.44.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.10.0 // indirect
 	go.uber.org/dig v1.19.0 // indirect
-	go.uber.org/multierr v1.10.0 // indirect
-	go.uber.org/zap v1.26.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
+	go.uber.org/zap v1.28.0 // indirect
 	golang.org/x/arch v0.27.0 // indirect
 	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
@@ -89,3 +95,5 @@ require (
 )
 
 replace github.com/cubelitblade/community-v2/backend/gen/go => ../../gen/go
+
+replace github.com/cubelitblade/community-v2/backend/pkg/events => ../../pkg/events
