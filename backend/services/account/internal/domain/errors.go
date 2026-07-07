@@ -4,7 +4,6 @@ import "errors"
 
 var (
 	ErrAccountNotFound       = errors.New("account not found")
-	ErrNilAccount            = errors.New("account is nil")
 	ErrUsernameAlreadyExists = errors.New("username already exists")
 
 	ErrInvalidAccountID   = errors.New("invalid account id")
