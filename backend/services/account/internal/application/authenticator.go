@@ -8,6 +8,10 @@ import (
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/domain/port"
 )
 
+type AuthenticatorUseCase interface {
+	Authenticate(ctx context.Context, username, password string) (*account.Account, error)
+}
+
 type Authenticator struct {
 	reader port.AccountReader
 }

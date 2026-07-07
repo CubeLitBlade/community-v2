@@ -9,6 +9,10 @@ import (
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/domain/port"
 )
 
+type RegistrarUseCase interface {
+	Register(ctx context.Context, username, password string) (*account.Account, error)
+}
+
 type Registrar struct {
 	ids     port.IDGenerator
 	creator port.AccountWriter

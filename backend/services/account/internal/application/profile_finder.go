@@ -7,6 +7,10 @@ import (
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/domain/port"
 )
 
+type ProfileFinderUseCase interface {
+	Find(ctx context.Context, id int64) (*Profile, error)
+}
+
 type ProfileFinder struct {
 	reader port.AccountReader
 }
