@@ -23,3 +23,6 @@ service_name = "account"
 endpoint = "localhost:4317"
 insecure = true
 enable = false
+
+[account.rabbitmq]
+broker_url = "amqp://community:community_dev_password@localhost:5672/"

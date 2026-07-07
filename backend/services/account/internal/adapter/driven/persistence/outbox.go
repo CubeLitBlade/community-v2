@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/cubelitblade/community-v2/backend/pkg/events/outbox"
 )
@@ -54,3 +55,49 @@ func (r *OutboxRepository) Record(ctx context.Context, entry *outbox.Entry) erro
 
 	return nil
 }
+
+func (r *OutboxRepository) Scan(ctx context.Context, db *gorm.DB, count int) ([]*outbox.Entry, error) {
+	tx := db.WithContext(ctx).Clauses(clause.Locking{Strength: "UPDATE", Options: "SKIP LOCKED"})
+
+	rows, err := gorm.G[OutboxRow](tx).
+		Where("published_at IS NULL").
+		Order("created_at").
+		Limit(count).
+		Find(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("scan outbox: %w", err)
+	}
+
+	entries := make([]*outbox.Entry, 0, len(rows))
+	for _, row := range rows {
+		entries = append(entries, &outbox.Entry{
+			ID:            row.ID,
+			AggregateID:   row.AggregateID,
+			AggregateType: row.AggregateType,
+			Topic:         row.Topic,
+			EventType:     row.EventType,
+			Payload:       row.Payload,
+			CreatedAt:     row.CreatedAt,
+			PublishedAt:   row.PublishedAt,
+			TraceID:       row.TraceID,
+		})
+	}
+
+	return entries, nil
+}
+
+func (r *OutboxRepository) Ack(ctx context.Context, db *gorm.DB, id int64, now time.Time) error {
+	_, err := gorm.G[OutboxRow](db.WithContext(ctx)).
+		Where("id = ?", id).
+		Update(ctx, "published_at", now)
+	if err != nil {
+		return fmt.Errorf("ack outbox event: %w", err)
+	}
+
+	return nil
+}
+
+var (
+	_ outbox.Scanner  = (*OutboxRepository)(nil)
+	_ outbox.Recorder = (*OutboxRepository)(nil)
+)

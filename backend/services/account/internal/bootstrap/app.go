@@ -15,5 +15,6 @@ func NewApp() *fx.App {
 		GRPCModule(),
 		HealthModule(),
 		ApplicationModule(),
+		RabbitMQModule(),
 	)
 }

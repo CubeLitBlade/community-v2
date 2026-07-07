@@ -7,4 +7,5 @@ type Config struct {
 	Snowflake   SnowflakeConfig `koanf:"snowflake"`
 	Slog        SlogConfig      `koanf:"slog"`
 	OTEL        OTELConfig      `koanf:"otel"`
+	RabbitMQ    RabbitMQConfig  `koanf:"rabbitmq"`
 }
