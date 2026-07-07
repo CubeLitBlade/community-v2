@@ -3,6 +3,7 @@ package account_test
 import (
 	"errors"
 	"fmt"
+	"net/netip"
 	"testing"
 	"time"
 
@@ -106,6 +107,25 @@ func TestAccountSnapshotRoundtrip(t *testing.T) {
 
 	if !restored.VerifyPassword(validPwd) {
 		t.Error("restored account should verify correct password")
+	}
+
+	if restored.Status() != acc.Status() {
+		t.Errorf("Status mismatch: %v != %v", restored.Status(), acc.Status())
+	}
+	if restored.DisplayName() != acc.DisplayName() {
+		t.Errorf("DisplayName mismatch: %q != %q", restored.DisplayName(), acc.DisplayName())
+	}
+
+	restoredSnap := restored.Snapshot()
+	accSnap := acc.Snapshot()
+	if !restoredSnap.CreatedAt.Equal(accSnap.CreatedAt) {
+		t.Errorf("CreatedAt mismatch: %v != %v", restoredSnap.CreatedAt, accSnap.CreatedAt)
+	}
+	if !restoredSnap.UpdatedAt.Equal(accSnap.UpdatedAt) {
+		t.Errorf("UpdatedAt mismatch: %v != %v", restoredSnap.UpdatedAt, accSnap.UpdatedAt)
+	}
+	if restoredSnap.PasswordChangeRequired != accSnap.PasswordChangeRequired {
+		t.Errorf("PasswordChangeRequired mismatch")
 	}
 }
 
