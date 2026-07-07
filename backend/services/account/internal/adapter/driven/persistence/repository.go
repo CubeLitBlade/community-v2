@@ -26,7 +26,7 @@ func NewAccountRepository(db *gorm.DB) *AccountRepository {
 
 func (r *AccountRepository) FindByID(ctx context.Context, id int64) (*account.Account, error) {
 	var row AccountRow
-	err := r.db.WithContext(ctx).Where("id = ?", id).First(&row).Error
+	err := txFromContext(ctx, r.db).Where("id = ?", id).First(&row).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, account.ErrAccountNotFound
@@ -40,7 +40,7 @@ func (r *AccountRepository) FindByID(ctx context.Context, id int64) (*account.Ac
 
 func (r *AccountRepository) FindByUsername(ctx context.Context, username account.Username) (*account.Account, error) {
 	var row AccountRow
-	err := r.db.WithContext(ctx).Where("username = ?", username.Value()).First(&row).Error
+	err := txFromContext(ctx, r.db).Where("username = ?", username.Value()).First(&row).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, account.ErrAccountNotFound
@@ -53,7 +53,7 @@ func (r *AccountRepository) FindByUsername(ctx context.Context, username account
 }
 
 func (r *AccountRepository) Create(ctx context.Context, acc *account.Account) error {
-	err := r.db.WithContext(ctx).Create(accountToRow(acc)).Error
+	err := txFromContext(ctx, r.db).Create(accountToRow(acc)).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			return account.ErrUsernameAlreadyExists
@@ -66,7 +66,7 @@ func (r *AccountRepository) Create(ctx context.Context, acc *account.Account) er
 }
 
 func (r *AccountRepository) Update(ctx context.Context, acc *account.Account) error {
-	err := r.db.WithContext(ctx).Save(accountToRow(acc)).Error
+	err := txFromContext(ctx, r.db).Save(accountToRow(acc)).Error
 	if err != nil {
 		return fmt.Errorf("update account: %w", err)
 	}

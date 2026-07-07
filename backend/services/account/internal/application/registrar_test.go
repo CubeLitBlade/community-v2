@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cubelitblade/community-v2/backend/pkg/events/outbox"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/application"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/domain"
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/domain/port"
@@ -32,6 +33,22 @@ func (s *stubAccountWriter) Update(_ context.Context, _ *account.Account) error 
 	return nil
 }
 
+type stubEventRecorder struct {
+	recorded *outbox.Entry
+	err      error
+}
+
+func (s *stubEventRecorder) Record(_ context.Context, entry *outbox.Entry) error {
+	s.recorded = entry
+	return s.err
+}
+
+type stubTxRunner struct{}
+
+func (stubTxRunner) RunInTx(_ context.Context, fn func(context.Context) error) error {
+	return fn(context.Background())
+}
+
 func TestRegistrar_Register(t *testing.T) {
 	t.Parallel()
 
@@ -39,8 +56,9 @@ func TestRegistrar_Register(t *testing.T) {
 
 	idGen := &stubIDGenerator{nextID: 42}
 	writer := &stubAccountWriter{}
+	recorder := &stubEventRecorder{}
 
-	r := application.NewRegistrar(idGen, writer)
+	r := application.NewRegistrar(idGen, writer, recorder, stubTxRunner{})
 	r.WithClock(func() time.Time { return fixedTime })
 
 	acc, err := r.Register(context.Background(), "Alice", "this-is-a-valid-password")
@@ -63,6 +81,10 @@ func TestRegistrar_Register(t *testing.T) {
 	if writer.created.ID != 42 {
 		t.Errorf("created ID = %d, want 42", writer.created.ID)
 	}
+
+	if recorder.recorded == nil {
+		t.Fatal("Record was not called")
+	}
 }
 
 func TestRegistrar_Register_IDGeneratorError(t *testing.T) {
@@ -71,7 +93,7 @@ func TestRegistrar_Register_IDGeneratorError(t *testing.T) {
 	idGen := &stubIDGenerator{err: errors.New("snowflake down")}
 	writer := &stubAccountWriter{}
 
-	r := application.NewRegistrar(idGen, writer)
+	r := application.NewRegistrar(idGen, writer, &stubEventRecorder{}, stubTxRunner{})
 
 	_, err := r.Register(context.Background(), "Alice", "this-is-a-valid-password")
 	if err == nil {
@@ -85,7 +107,7 @@ func TestRegistrar_Register_InvalidPassword(t *testing.T) {
 	idGen := &stubIDGenerator{nextID: 1}
 	writer := &stubAccountWriter{}
 
-	r := application.NewRegistrar(idGen, writer)
+	r := application.NewRegistrar(idGen, writer, &stubEventRecorder{}, stubTxRunner{})
 
 	_, err := r.Register(context.Background(), "Alice", "short")
 	if !errors.Is(err, account.ErrPasswordTooShort) {
@@ -99,7 +121,7 @@ func TestRegistrar_Register_PersistError(t *testing.T) {
 	idGen := &stubIDGenerator{nextID: 1}
 	writer := &stubAccountWriter{err: errors.New("db down")}
 
-	r := application.NewRegistrar(idGen, writer)
+	r := application.NewRegistrar(idGen, writer, &stubEventRecorder{}, stubTxRunner{})
 
 	_, err := r.Register(context.Background(), "Alice", "this-is-a-valid-password")
 	if err == nil {
@@ -108,11 +130,15 @@ func TestRegistrar_Register_PersistError(t *testing.T) {
 }
 
 func TestRegistrar_NewRegistrar_UsesRealtimeClock(t *testing.T) {
-	r := application.NewRegistrar(nil, nil)
+	r := application.NewRegistrar(nil, nil, nil, nil)
 	if r == nil {
 		t.Fatal("NewRegistrar returned nil")
 	}
 }
 
-var _ port.IDGenerator = (*stubIDGenerator)(nil)
-var _ port.AccountWriter = (*stubAccountWriter)(nil)
+var (
+	_ port.IDGenerator   = (*stubIDGenerator)(nil)
+	_ port.AccountWriter = (*stubAccountWriter)(nil)
+	_ port.EventRecorder = (*stubEventRecorder)(nil)
+	_ port.TxRunner      = stubTxRunner{}
+)

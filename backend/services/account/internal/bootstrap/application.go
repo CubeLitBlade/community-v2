@@ -18,14 +18,26 @@ func ApplicationModule() fx.Option {
 		fx.Provide(NewIDGeneratorAdapter),
 		fx.Provide(NewPasswordHasherAdapter),
 		fx.Provide(persistence.NewAccountRepository),
+		fx.Provide(persistence.NewOutboxRepository),
+		fx.Provide(persistence.NewTxRunner),
+
+		fx.Provide(func(
+			outboxRepo *persistence.OutboxRepository,
+			tel *telemetry.Telemetry,
+			logger *slog.Logger,
+		) port.EventRecorder {
+			return telemetry.NewInstrumentedEventRecorder(outboxRepo, tel)
+		}),
 
 		fx.Provide(func(
 			repository *persistence.AccountRepository,
 			idGen port.IDGenerator,
+			eventRecorder port.EventRecorder,
+			tx port.TxRunner,
 			tel *telemetry.Telemetry,
 			logger *slog.Logger,
 		) application.RegistrarUseCase {
-			inner := application.NewRegistrar(idGen, repository)
+			inner := application.NewRegistrar(idGen, repository, eventRecorder, tx)
 			return telemetry.NewInstrumentedRegistrar(inner, tel, logger)
 		}),
 
