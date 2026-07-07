@@ -1,0 +1,14 @@
+go 1.26.4
+
+use (
+	./gen/go
+	./pkg/common
+	./pkg/contracts
+	./pkg/events
+	./pkg/platform
+	./pkg/slogx
+	./services/account
+	./services/account-legacy
+	./services/authz
+	./services/post
+)
