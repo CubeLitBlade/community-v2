@@ -1,0 +1,25 @@
+[account]
+service_name = "account"
+
+[account.grpc]
+addr = ":9090"
+reflection = true
+
+[account.database]
+url = "postgres://account_service_svc:account_service_svc_password@localhost:5432/community?sslmode=disable&search_path=account_service"
+
+[account.snowflake]
+node_id = 1
+
+[account.slog]
+handler = "tint"
+level = "debug"
+
+[account.slog.tint]
+time_format = "stamp_milli"
+
+[account.otel]
+service_name = "account"
+endpoint = "localhost:4317"
+insecure = true
+enable = false
