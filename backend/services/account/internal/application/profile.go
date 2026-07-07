@@ -10,8 +10,8 @@ type Profile struct {
 
 func NewProfile(acc *account.Account) *Profile {
 	return &Profile{
-		ID:          acc.ID(),
-		Username:    acc.Username(),
-		DisplayName: acc.DisplayName(),
+		ID:          int64(acc.ID),
+		Username:    acc.Username.Value(),
+		DisplayName: acc.DisplayName,
 	}
 }

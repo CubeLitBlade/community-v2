@@ -16,7 +16,7 @@ func ParseStatus(value string) (Status, error) {
 	return status, nil
 }
 
-func mustParseStatus(value string) Status {
+func MustParseStatus(value string) Status {
 	status, err := ParseStatus(value)
 	if err != nil {
 		panic(err)

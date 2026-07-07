@@ -16,7 +16,7 @@ func ParseRole(value string) (Role, error) {
 	return role, nil
 }
 
-func mustParseRole(value string) Role {
+func MustParseRole(value string) Role {
 	role, err := ParseRole(value)
 	if err != nil {
 		panic(err)

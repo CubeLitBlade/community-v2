@@ -156,15 +156,9 @@ func TestMustParseRolePanics(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r == nil {
-			t.Error("mustParseRole should panic on invalid role")
+			t.Error("MustParseRole should panic on invalid role")
 		}
 	}()
 
-	snap := account.Snapshot{
-		ID:       1,
-		Username: "user",
-		Role:     "__invalid__",
-		Status:   "active",
-	}
-	_ = account.NewAccountFromSnapshot(snap)
+	_ = account.MustParseRole("__invalid__")
 }

@@ -48,20 +48,20 @@ func TestRegistrar_Register(t *testing.T) {
 		t.Fatalf("Register() error = %v", err)
 	}
 
-	if acc.ID() != 42 {
-		t.Errorf("ID() = %d, want 42", acc.ID())
+	if acc.ID != 42 {
+		t.Errorf("ID() = %d, want 42", acc.ID)
 	}
 
-	if acc.Username() != "Alice" {
-		t.Errorf("Username() = %q, want %q", acc.Username(), "Alice")
+	if acc.Username != "Alice" {
+		t.Errorf("Username() = %q, want %q", acc.Username, "Alice")
 	}
 
 	if writer.created == nil {
 		t.Fatal("Create was not called")
 	}
 
-	if writer.created.ID() != 42 {
-		t.Errorf("created ID = %d, want 42", writer.created.ID())
+	if writer.created.ID != 42 {
+		t.Errorf("created ID = %d, want 42", writer.created.ID)
 	}
 }
 

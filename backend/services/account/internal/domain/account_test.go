@@ -80,7 +80,7 @@ func TestAccountVerifyPassword(t *testing.T) {
 	}
 }
 
-func TestAccountSnapshotRoundtrip(t *testing.T) {
+func TestAccountFields(t *testing.T) {
 	t.Parallel()
 
 	now := mustRegistrationTime()
@@ -90,42 +90,48 @@ func TestAccountSnapshotRoundtrip(t *testing.T) {
 		t.Fatalf("NewAccount() error = %v", err)
 	}
 
-	snap := acc.Snapshot()
-	restored := account.NewAccountFromSnapshot(snap)
-
-	if restored.ID() != acc.ID() {
-		t.Errorf("ID mismatch: %d != %d", restored.ID(), acc.ID())
+	if acc.ID != account.ID(validAccountID) {
+		t.Errorf("ID = %d, want %d", acc.ID, validAccountID)
 	}
 
-	if restored.Username() != acc.Username() {
-		t.Errorf("Username mismatch: %q != %q", restored.Username(), acc.Username())
+	if acc.Username != account.Username(usernameAlice) {
+		t.Errorf("Username = %q, want %q", acc.Username, usernameAlice)
 	}
 
-	if restored.Role() != acc.Role() {
-		t.Errorf("Role mismatch: %v != %v", restored.Role(), acc.Role())
+	if acc.DisplayName != usernameAlice {
+		t.Errorf("DisplayName = %q, want %q", acc.DisplayName, usernameAlice)
 	}
 
-	if !restored.VerifyPassword(validPwd) {
-		t.Error("restored account should verify correct password")
+	if acc.Role != account.RoleMember {
+		t.Errorf("Role = %v, want %v", acc.Role, account.RoleMember)
 	}
 
-	if restored.Status() != acc.Status() {
-		t.Errorf("Status mismatch: %v != %v", restored.Status(), acc.Status())
-	}
-	if restored.DisplayName() != acc.DisplayName() {
-		t.Errorf("DisplayName mismatch: %q != %q", restored.DisplayName(), acc.DisplayName())
+	if acc.Status != account.StatusActive {
+		t.Errorf("Status = %v, want %v", acc.Status, account.StatusActive)
 	}
 
-	restoredSnap := restored.Snapshot()
-	accSnap := acc.Snapshot()
-	if !restoredSnap.CreatedAt.Equal(accSnap.CreatedAt) {
-		t.Errorf("CreatedAt mismatch: %v != %v", restoredSnap.CreatedAt, accSnap.CreatedAt)
+	if !acc.CreatedAt.Equal(now) {
+		t.Errorf("CreatedAt = %v, want %v", acc.CreatedAt, now)
 	}
-	if !restoredSnap.UpdatedAt.Equal(accSnap.UpdatedAt) {
-		t.Errorf("UpdatedAt mismatch: %v != %v", restoredSnap.UpdatedAt, accSnap.UpdatedAt)
+
+	if !acc.UpdatedAt.Equal(now) {
+		t.Errorf("UpdatedAt = %v, want %v", acc.UpdatedAt, now)
 	}
-	if restoredSnap.PasswordChangeRequired != accSnap.PasswordChangeRequired {
-		t.Errorf("PasswordChangeRequired mismatch")
+
+	if acc.PasswordChangeRequired {
+		t.Error("PasswordChangeRequired should be false")
+	}
+
+	if acc.LastLoginAt != nil {
+		t.Errorf("LastLoginAt = %v, want nil", acc.LastLoginAt)
+	}
+
+	if acc.LastLoginIP != nil {
+		t.Errorf("LastLoginIP = %v, want nil", acc.LastLoginIP)
+	}
+
+	if !acc.VerifyPassword(validPwd) {
+		t.Error("VerifyPassword should match raw password")
 	}
 }
 
@@ -141,46 +147,44 @@ func mustRegistrationTime() time.Time {
 func assertAccountIdentity(t *testing.T, acc account.Account) {
 	t.Helper()
 
-	if acc.ID() != validAccountID {
-		t.Errorf("ID() = %d, want %d", acc.ID(), validAccountID)
+	if acc.ID != validAccountID {
+		t.Errorf("ID() = %d, want %d", acc.ID, validAccountID)
 	}
 
-	if acc.Username() != usernameAlice {
-		t.Errorf("Username() = %q, want %q", acc.Username(), usernameAlice)
+	if acc.Username != usernameAlice {
+		t.Errorf("Username() = %q, want %q", acc.Username, usernameAlice)
 	}
 
-	if acc.DisplayName() != usernameAlice {
-		t.Errorf("DisplayName() = %q, want %q", acc.DisplayName(), usernameAlice)
+	if acc.DisplayName != usernameAlice {
+		t.Errorf("DisplayName() = %q, want %q", acc.DisplayName, usernameAlice)
 	}
 }
 
 func assertAccountDefaults(t *testing.T, acc account.Account) {
 	t.Helper()
 
-	if acc.Role() != account.RoleMember {
-		t.Errorf("Role() = %v, want %v", acc.Role(), account.RoleMember)
+	if acc.Role != account.RoleMember {
+		t.Errorf("Role() = %v, want %v", acc.Role, account.RoleMember)
 	}
 
-	if acc.Status() != account.StatusActive {
-		t.Errorf("Status() = %v, want %v", acc.Status(), account.StatusActive)
+	if acc.Status != account.StatusActive {
+		t.Errorf("Status() = %v, want %v", acc.Status, account.StatusActive)
 	}
 }
 
 func assertAccountAudit(t *testing.T, acc account.Account, now time.Time) {
 	t.Helper()
 
-	snap := acc.Snapshot()
-
-	if !snap.CreatedAt.Equal(now) {
-		t.Errorf("CreatedAt = %v, want %v", snap.CreatedAt, now)
+	if !acc.CreatedAt.Equal(now) {
+		t.Errorf("CreatedAt = %v, want %v", acc.CreatedAt, now)
 	}
 
-	if !snap.UpdatedAt.Equal(now) {
-		t.Errorf("UpdatedAt = %v, want %v", snap.UpdatedAt, now)
+	if !acc.UpdatedAt.Equal(now) {
+		t.Errorf("UpdatedAt = %v, want %v", acc.UpdatedAt, now)
 	}
 
-	if snap.LastLoginAt != nil {
-		t.Errorf("LastLoginAt = %v, want nil", snap.LastLoginAt)
+	if acc.LastLoginAt != nil {
+		t.Errorf("LastLoginAt = %v, want nil", acc.LastLoginAt)
 	}
 }
 
@@ -213,18 +217,17 @@ func TestAccountRecordLogin(t *testing.T) {
 
 	acc.RecordLogin(loginTime, netip.MustParseAddr("192.168.1.1"))
 
-	snap := acc.Snapshot()
-	if snap.LastLoginAt == nil {
+	if acc.LastLoginAt == nil {
 		t.Fatal("LastLoginAt is nil after RecordLogin")
 	}
-	if !snap.LastLoginAt.Equal(loginTime) {
-		t.Errorf("LastLoginAt = %v, want %v", snap.LastLoginAt, loginTime)
+	if !acc.LastLoginAt.Equal(loginTime) {
+		t.Errorf("LastLoginAt = %v, want %v", acc.LastLoginAt, loginTime)
 	}
-	if snap.LastLoginIP == nil {
+	if acc.LastLoginIP == nil {
 		t.Fatal("LastLoginIP is nil after RecordLogin")
 	}
-	if *snap.LastLoginIP != netip.MustParseAddr("192.168.1.1") {
-		t.Errorf("LastLoginIP = %v, want %v", *snap.LastLoginIP, netip.MustParseAddr("192.168.1.1"))
+	if *acc.LastLoginIP != netip.MustParseAddr("192.168.1.1") {
+		t.Errorf("LastLoginIP = %v, want %v", *acc.LastLoginIP, netip.MustParseAddr("192.168.1.1"))
 	}
 }
 

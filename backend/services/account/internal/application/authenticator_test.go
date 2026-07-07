@@ -48,8 +48,8 @@ func TestAuthenticator_Authenticate_Success(t *testing.T) {
 		t.Fatalf("Authenticate() error = %v", err)
 	}
 
-	if result.ID() != 1 {
-		t.Errorf("ID() = %d, want 1", result.ID())
+	if result.ID != 1 {
+		t.Errorf("ID() = %d, want 1", result.ID)
 	}
 }
 
