@@ -89,7 +89,7 @@ func NewRelay(ids idgen.Generator, scanner Scanner, recorder Recorder,
 
 // Start begins the scan and publish loops in separate goroutines.
 func (r *Relay) Start(ctx context.Context) {
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	r.cancel = cancel
 
 	go r.scanLoop(ctx, defaultScanLimit)

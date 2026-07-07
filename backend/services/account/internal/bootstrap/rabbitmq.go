@@ -22,7 +22,7 @@ func provideRabbitMQEnvironment(cfg config.RabbitMQConfig, lc fx.Lifecycle) *rmq
 
 	lc.Append(fx.Hook{
 		OnStop: func(ctx context.Context) error {
-			return env.CloseConnections(ctx)
+			return env.CloseConnections(context.WithoutCancel(ctx))
 		},
 	})
 
@@ -36,10 +36,10 @@ func providePublisher(
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			return inner.Start(ctx)
+			return inner.Start(context.WithoutCancel(ctx))
 		},
 		OnStop: func(ctx context.Context) error {
-			return inner.Close(ctx)
+			return inner.Close(context.WithoutCancel(ctx))
 		},
 	})
 
