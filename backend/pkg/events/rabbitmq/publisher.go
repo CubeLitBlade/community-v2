@@ -64,14 +64,13 @@ func NewPublisher(
 func (p *Publisher) Start(ctx context.Context) error {
 	conn, err := amqp.ConnectWithTopicExchange(ctx, p.env, p.exchangeName)
 	if err != nil {
-		p.logger.ErrorContext(ctx, "failed to connect to topic exchange", slog.Any("error", err))
-
+		p.logger.ErrorContext(ctx, "exchange connect failed", slog.Any("error", err))
 		return fmt.Errorf("connect to topic exchange: %w", err)
 	}
 
 	publisher, err := conn.NewPublisher(ctx, nil, nil)
 	if err != nil {
-		p.logger.ErrorContext(ctx, "failed to create publisher", slog.Any("error", err))
+		p.logger.ErrorContext(ctx, "publisher setup failed", slog.Any("error", err))
 		err = fmt.Errorf("create publisher: %w", err)
 
 		if closeErr := conn.Close(ctx); closeErr != nil {
@@ -96,8 +95,6 @@ func (p *Publisher) Publish(ctx context.Context, data []byte, key string) error 
 
 	if !p.available {
 		p.mu.RUnlock()
-		p.logger.ErrorContext(ctx, "publisher is not available")
-
 		return ErrPublisherClosed
 	}
 
@@ -111,26 +108,16 @@ func (p *Publisher) Publish(ctx context.Context, data []byte, key string) error 
 		Key:      key,
 	})
 	if err != nil {
-		p.logger.ErrorContext(ctx, "failed to publish message", slog.Any("error", err))
-
 		return fmt.Errorf("unable to publish message: %w", err)
 	}
 
 	res, err := p.publisher.Publish(ctx, msg)
 	if err != nil {
-		p.logger.ErrorContext(ctx, "failed to publish message", slog.Any("error", err))
-
 		return fmt.Errorf("unable to publish message: %w", err)
 	}
 
 	if err := CheckOutcome(res.Outcome); err != nil {
-		p.logger.ErrorContext(ctx, "unexpected outcome", slog.Any("error", err))
-
 		return fmt.Errorf("unexpected outcome: %w", err)
-	}
-
-	if p.logger.Enabled(context.WithoutCancel(ctx), slog.LevelDebug) {
-		p.logger.DebugContext(ctx, "message sent", slog.String("data", string(data)))
 	}
 
 	return nil
@@ -143,7 +130,6 @@ func (p *Publisher) Close(ctx context.Context) error {
 	p.mu.Unlock()
 
 	p.wg.Wait()
-	p.logger.DebugContext(ctx, "all in-flight publishes completed, proceeding to close")
 
 	ctx, cancel := context.WithTimeout(ctx, p.closeTimeout)
 	defer cancel()
@@ -151,15 +137,11 @@ func (p *Publisher) Close(ctx context.Context) error {
 	if p.publisher != nil {
 		err := p.publisher.Close(ctx)
 		if err != nil {
-			p.logger.ErrorContext(ctx, "failed to close publisher", slog.Any("error", err))
-
 			return fmt.Errorf("unable to close publisher: %w", err)
 		}
 	}
 
 	if err := p.env.CloseConnections(ctx); err != nil {
-		p.logger.ErrorContext(ctx, "failed to close connections", slog.Any("error", err))
-
 		return fmt.Errorf("unable to close connections: %w", err)
 	}
 

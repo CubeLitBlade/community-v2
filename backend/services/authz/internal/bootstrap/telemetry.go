@@ -10,13 +10,14 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/metric"
+	metricnoop "go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/propagation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
 	"go.opentelemetry.io/otel/trace"
-	"go.opentelemetry.io/otel/trace/noop"
+	tracenoop "go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/fx"
 
 	"github.com/cubelitblade/community-v2/backend/services/authz/internal/config"
@@ -29,7 +30,7 @@ func NewOpenTelemetryTraceProvider(
 	if !cfg.Enable {
 		logger.Info("otel disabled")
 
-		tp := noop.NewTracerProvider()
+		tp := tracenoop.NewTracerProvider()
 		otel.SetTracerProvider(tp)
 
 		return tp, nil
@@ -86,6 +87,10 @@ const metricExportInterval = 15 * time.Second // TODO: make configurable via OTE
 func NewOpenTelemetryMeterProvider(
 	cfg config.OTELConfig, lc fx.Lifecycle, logger *slog.Logger,
 ) (metric.MeterProvider, error) {
+	if !cfg.Enable {
+		return metricnoop.NewMeterProvider(), nil
+	}
+
 	opts := []otlpmetricgrpc.Option{
 		otlpmetricgrpc.WithEndpoint(cfg.Endpoint),
 	}

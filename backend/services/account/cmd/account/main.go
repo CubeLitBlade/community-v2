@@ -1,7 +1,8 @@
 package main
 
 import (
-	"log"
+	"fmt"
+	"os"
 
 	"github.com/cubelitblade/community-v2/backend/services/account/internal/bootstrap"
 )
@@ -10,5 +11,5 @@ func main() {
 	app := bootstrap.NewApp()
 	app.Run()
 
-	log.Println("server stopped")
+	fmt.Fprintln(os.Stderr, "server stopped")
 }

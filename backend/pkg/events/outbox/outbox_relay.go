@@ -59,10 +59,7 @@ type Relay struct {
 func NewRelay(ids idgen.Generator, scanner Scanner, recorder Recorder,
 	publisher Publisher, db *gorm.DB, logger *slog.Logger, opts ...RelayOption,
 ) *Relay {
-	logger = logger.With(
-		slog.String("module", "events/outbox"),
-		slog.String("component", "relay"),
-	)
+	logger = logger.With(slog.String("module", "outbox"))
 
 	relay := &Relay{
 		ids:         ids,
@@ -117,11 +114,8 @@ func (r *Relay) scanLoop(ctx context.Context, count int) {
 	defer r.wg.Done()
 
 	for {
-		r.logger.DebugContext(ctx, "starting scan...")
-
 		select {
 		case <-ctx.Done():
-			r.logger.DebugContext(ctx, "scan loop shutting down due to context cancellation")
 			return
 		case <-timer.C:
 			entries, err := r.scanner.Scan(ctx, r.db, count)
@@ -129,10 +123,10 @@ func (r *Relay) scanLoop(ctx context.Context, count int) {
 			switch {
 			case err != nil:
 				currentInterval = min(currentInterval*2, r.maxInterval)
-				r.logger.ErrorContext(ctx, "failed to scan entries", slog.Any("error", err))
+				r.logger.ErrorContext(ctx, "scan failed", slog.Any("error", err))
 			case len(entries) > 0:
 				currentInterval = r.minInterval
-				r.logger.DebugContext(ctx, "found entries", slog.Any("count", len(entries)))
+				r.logger.InfoContext(ctx, "relaying events", slog.Int("count", len(entries)))
 
 				for _, entry := range entries {
 					select {
@@ -143,7 +137,6 @@ func (r *Relay) scanLoop(ctx context.Context, count int) {
 				}
 			default:
 				currentInterval = min(currentInterval*2, r.maxInterval)
-				r.logger.DebugContext(ctx, "no entries found")
 			}
 
 			timer.Reset(currentInterval)
@@ -158,22 +151,19 @@ func (r *Relay) workLoop(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			r.logger.DebugContext(ctx, "work loop shutting down due to context cancellation")
 			return
 
 		case entry := <-r.channel:
 			if err := r.publish(ctx, entry); err != nil {
-				r.logger.ErrorContext(ctx, "failed to publish message", slog.Any("error", err))
-
+				r.logger.ErrorContext(ctx, "publish failed", slog.Any("error", err))
 				continue
 			}
 
 			err := r.recorder.Ack(ctx, r.db, entry.ID, r.clock())
 			if err != nil {
-				r.logger.ErrorContext(ctx, "failed to acknowledge entry",
-					slog.Any("error", err),
-					slog.Int64("id", entry.ID))
-
+				r.logger.ErrorContext(ctx, "ack failed",
+					slog.Int64("id", entry.ID),
+					slog.Any("error", err))
 				continue
 			}
 		}
@@ -183,8 +173,7 @@ func (r *Relay) workLoop(ctx context.Context) {
 func (r *Relay) publish(ctx context.Context, entry *Entry) error {
 	id, err := r.ids.NextID()
 	if err != nil {
-		r.logger.WarnContext(ctx, "failed to generate event id", slog.Any("error", err))
-
+		r.logger.WarnContext(ctx, "id generation failed", slog.Any("error", err))
 		return fmt.Errorf("generate event ID: %w", err)
 	}
 
@@ -192,8 +181,6 @@ func (r *Relay) publish(ctx context.Context, entry *Entry) error {
 		entry.AggregateType, entry.EventType, entry.Payload, id, r.clock(),
 	)
 	if err != nil {
-		r.logger.ErrorContext(ctx, "failed to create event", slog.Any("error", err))
-
 		return fmt.Errorf("create event: %w", err)
 	}
 
