@@ -1,6 +1,10 @@
 package config
 
+import "go.uber.org/fx"
+
 type Config struct {
+	fx.Out
+
 	ServiceName string          `koanf:"service_name"`
 	GRPC        GRPCConfig      `koanf:"grpc"`
 	Database    DatabaseConfig  `koanf:"database"`

@@ -4,21 +4,23 @@ import (
 	"context"
 
 	"gorm.io/gorm"
+
+	"github.com/cubelitblade/community-v2/backend/services/account/internal/domain/port"
 )
 
 type txKeyType struct{}
 
 var txKey txKeyType
 
-func NewTxRunner(db *gorm.DB) *TxRunner {
-	return &TxRunner{db: db}
+func NewTxRunner(db *gorm.DB) port.TxRunner {
+	return &txRunner{db: db}
 }
 
-type TxRunner struct {
+type txRunner struct {
 	db *gorm.DB
 }
 
-func (t *TxRunner) RunInTx(ctx context.Context, fn func(ctx context.Context) error) error {
+func (t *txRunner) RunInTx(ctx context.Context, fn func(ctx context.Context) error) error {
 	return t.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		txCtx := context.WithValue(ctx, txKey, tx)
 		return fn(txCtx)
