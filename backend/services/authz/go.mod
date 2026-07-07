@@ -9,7 +9,7 @@ require (
 	github.com/cubelitblade/community-v2/backend/pkg/contracts v0.1.0
 	github.com/cubelitblade/community-v2/backend/pkg/events v0.6.0
 	github.com/cubelitblade/community-v2/backend/pkg/slogx v0.1.0
-	github.com/cubelitblade/community-v2/backend/services/account v0.0.0-20260603191228-1449021f0a67
+	github.com/cubelitblade/community-v2/backend/services/account-legacy v0.0.0
 	github.com/go-playground/validator/v10 v10.30.3
 	github.com/knadh/koanf/parsers/toml/v2 v2.2.1
 	github.com/knadh/koanf/providers/env/v2 v2.0.0
@@ -122,3 +122,5 @@ require (
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/cubelitblade/community-v2/backend/services/account-legacy => ../account-legacy

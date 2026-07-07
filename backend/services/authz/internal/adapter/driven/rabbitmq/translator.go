@@ -6,7 +6,7 @@ import (
 
 	"github.com/cloudevents/sdk-go/v2/event"
 
-	accountv1 "github.com/cubelitblade/community-v2/backend/services/account/api/events/v1"
+	accountv1 "github.com/cubelitblade/community-v2/backend/services/account-legacy/api/events/v1"
 	"github.com/cubelitblade/community-v2/backend/services/authz/internal/domain"
 	"github.com/cubelitblade/community-v2/backend/services/authz/permission"
 )

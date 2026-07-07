@@ -50,8 +50,6 @@ github.com/cubelitblade/community-v2/backend/pkg/events v0.6.0 h1:yB+Aoy5k6KeuMh
 github.com/cubelitblade/community-v2/backend/pkg/events v0.6.0/go.mod h1:lmQo2I74kZyQwYOgFgvbK9n7DYNciPxPVSmYl76xBlU=
 github.com/cubelitblade/community-v2/backend/pkg/slogx v0.1.0 h1:/qio1rJTbUNliYv8bP+9LIBhrLo+LUygnVt8cbvZsUQ=
 github.com/cubelitblade/community-v2/backend/pkg/slogx v0.1.0/go.mod h1:ljquZy8dK97ITTPb+RgBE2N5IkscTIWn8Mu1AVH8+vk=
-github.com/cubelitblade/community-v2/backend/services/account v0.0.0-20260603191228-1449021f0a67 h1:goaKDmTuO2XFhX4CJ+G5EoOo8RKtiGwADtt8ExisXx4=
-github.com/cubelitblade/community-v2/backend/services/account v0.0.0-20260603191228-1449021f0a67/go.mod h1:Vhj48yt4g9Z/HPe5j8GAazlopR3L27ZUu3JO8FiI/HY=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

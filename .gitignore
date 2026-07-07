@@ -23,3 +23,6 @@ go.work.sum
 # VS Code
 .vscode/
 *.code-workspace
+
+# Superpowers: avoid committing temporary plans
+superpowers/

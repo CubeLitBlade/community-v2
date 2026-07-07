@@ -9,7 +9,7 @@ import (
 
 	event "github.com/cubelitblade/community-v2/backend/pkg/contracts/v1"
 	rmq "github.com/cubelitblade/community-v2/backend/pkg/events/rabbitmq"
-	account "github.com/cubelitblade/community-v2/backend/services/account/api/events/v1"
+	account "github.com/cubelitblade/community-v2/backend/services/account-legacy/api/events/v1"
 	"github.com/cubelitblade/community-v2/backend/services/authz/internal/adapter/driven/rabbitmq"
 	"github.com/cubelitblade/community-v2/backend/services/authz/internal/application"
 	"github.com/cubelitblade/community-v2/backend/services/authz/internal/config"
