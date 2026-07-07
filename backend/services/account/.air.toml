@@ -1,7 +1,7 @@
 #:schema https://json.schemastore.org/any.json
 
 env_files = []
-root = "backend/services/account"
+root = "."
 testdata_dir = "testdata"
 tmp_dir = "tmp"
 

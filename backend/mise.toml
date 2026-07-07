@@ -37,3 +37,19 @@ set -a; source ./services/authz/.env; set +a
 export AUTHZ_CONFIG_TOML_PATH="$(pwd)/services/authz/config.toml"
 mise x -C ./services/authz -- air
 """
+
+[tasks.account-run]
+description = "Run the account service locally"
+run = """
+set -a; source ./services/account/.env; set +a
+export AUTHZ_CONFIG_TOML_PATH="$(pwd)/services/account/config.toml"
+go run ./services/account/cmd/account
+"""
+
+[tasks.account-air]
+description = "Run the account service with air"
+run = """
+set -a; source ./services/account/.env; set +a
+export ACCOUNT_CONFIG_TOML_PATH="$(pwd)/services/account/config.toml"
+mise x -C ./services/account -- air
+"""
