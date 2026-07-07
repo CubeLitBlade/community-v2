@@ -106,8 +106,10 @@ func (a *Account) Snapshot() Snapshot {
 	)
 
 	if a.lastLogin != nil {
-		lastLoginAt = new(a.lastLogin.Time)
-		lastLoginIP = new(a.lastLogin.IPAddr)
+		t := a.lastLogin.Time
+		lastLoginAt = &t
+		ip := a.lastLogin.IPAddr
+		lastLoginIP = &ip
 	}
 
 	return Snapshot{
