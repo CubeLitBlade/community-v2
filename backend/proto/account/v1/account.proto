@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package account.v1;
+
+option go_package = "github.com/cubelitblade/community-v2/backend/gen/go/account/v1;v1";
+
+message RegisterRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message RegisterResponse {
+  int64 account_id = 1;
+}
+
+message AuthenticateRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message AuthenticateResponse {
+  int64 account_id = 1;
+  string role = 2;
+}
+
+message GetProfileRequest {
+  int64 account_id = 1;
+}
+
+message GetProfileResponse {
+  int64 id = 1;
+  string username = 2;
+  string display_name = 3;
+}
+
+service AccountService {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse);
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+}
