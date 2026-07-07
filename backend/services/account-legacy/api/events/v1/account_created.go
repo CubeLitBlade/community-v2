@@ -1,16 +1,12 @@
 package v1
 
+import sharedevents "github.com/cubelitblade/community-v2/backend/pkg/events/account/v1"
+
 const (
-	// TopicAccountCreated is the topic for account created events.
-	TopicAccountCreated = "account.created.v1"
-	// EventTypeAccountCreated is Cloud Event type for account created events.
-	EventTypeAccountCreated = "io.github.cubelitblade.account.created.v1"
+	TopicAccountCreated     = sharedevents.TopicAccountCreated
+	EventTypeAccountCreated = sharedevents.EventTypeAccountCreated
+
+	AggregateTypeAccountService = sharedevents.AggregateType
 )
 
-// AccountCreatedEventPayload is the event payload for when a new account is created.
-type AccountCreatedEventPayload struct {
-	AccountID string `json:"accountId"`
-	Username  string `json:"username"`
-	Role      string `json:"role"`
-	CreatedAt string `json:"createdAt"`
-}
+type AccountCreatedEventPayload = sharedevents.AccountCreated

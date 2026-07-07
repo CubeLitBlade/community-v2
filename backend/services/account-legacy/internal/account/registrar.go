@@ -11,7 +11,7 @@ import (
 
 	"github.com/cubelitblade/community-v2/backend/pkg/common/idgen"
 	"github.com/cubelitblade/community-v2/backend/pkg/events/outbox"
-	v1 "github.com/cubelitblade/community-v2/backend/services/account-legacy/api/events/v1"
+	v1 "github.com/cubelitblade/community-v2/backend/pkg/events/account/v1"
 )
 
 // RegistrarOption defines a functional option for configuring a Registrar.
@@ -132,10 +132,10 @@ func WithRegistrarClock(clock func() time.Time) RegistrarOption {
 }
 
 func newAccountCreatedEntry(eventID int64, acc Account, now time.Time) *outbox.Entry {
-	return outbox.NewEntry(eventID, v1.AggregateTypeAccountService,
+	return outbox.NewEntry(eventID, v1.AggregateType,
 		v1.TopicAccountCreated, v1.EventTypeAccountCreated, now, outbox.WithPayload(
-			v1.AccountCreatedEventPayload{
-				AccountID: strconv.FormatInt(acc.ID(), 10),
+			v1.AccountCreated{
+				AccountId: strconv.FormatInt(acc.ID(), 10),
 				Username:  acc.Username(),
 				Role:      string(acc.role),
 				CreatedAt: acc.createdAt.Format(time.RFC3339),

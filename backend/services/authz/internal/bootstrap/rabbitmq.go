@@ -9,7 +9,7 @@ import (
 
 	event "github.com/cubelitblade/community-v2/backend/pkg/contracts/v1"
 	rmq "github.com/cubelitblade/community-v2/backend/pkg/events/rabbitmq"
-	account "github.com/cubelitblade/community-v2/backend/services/account-legacy/api/events/v1"
+	sharedevents "github.com/cubelitblade/community-v2/backend/pkg/events/account/v1"
 	"github.com/cubelitblade/community-v2/backend/services/authz/internal/adapter/driven/rabbitmq"
 	"github.com/cubelitblade/community-v2/backend/services/authz/internal/application"
 	"github.com/cubelitblade/community-v2/backend/services/authz/internal/config"
@@ -32,7 +32,7 @@ func NewRabbitMQSubscriber(
 ) *rmq.QuorumSubscriber {
 	subscriber := rmq.NewQuorumSubscriber(env, event.SystemExchange, event.QueueNameAuthz, logger,
 		rmq.WithQuorumSubscriberKeys([]string{
-			account.TopicAccountCreated,
+			sharedevents.TopicAccountCreated,
 		}),
 	)
 
