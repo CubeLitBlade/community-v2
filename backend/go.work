@@ -8,7 +8,6 @@ use (
 	./pkg/platform
 	./pkg/slogx
 	./services/account
-	./services/account-legacy
 	./services/authz
 	./services/post
 )
