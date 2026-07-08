@@ -23,7 +23,6 @@ const (
 
 type PublishRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	AccountId     int64                  `protobuf:"varint,1,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
 	Title         *string                `protobuf:"bytes,2,opt,name=title,proto3,oneof" json:"title,omitempty"`
 	Content       string                 `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -58,13 +57,6 @@ func (x *PublishRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use PublishRequest.ProtoReflect.Descriptor instead.
 func (*PublishRequest) Descriptor() ([]byte, []int) {
 	return file_post_v1_post_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *PublishRequest) GetAccountId() int64 {
-	if x != nil {
-		return x.AccountId
-	}
-	return 0
 }
 
 func (x *PublishRequest) GetTitle() string {
@@ -129,10 +121,8 @@ var File_post_v1_post_proto protoreflect.FileDescriptor
 
 const file_post_v1_post_proto_rawDesc = "" +
 	"\n" +
-	"\x12post/v1/post.proto\x12\apost.v1\"n\n" +
-	"\x0ePublishRequest\x12\x1d\n" +
-	"\n" +
-	"account_id\x18\x01 \x01(\x03R\taccountId\x12\x19\n" +
+	"\x12post/v1/post.proto\x12\apost.v1\"O\n" +
+	"\x0ePublishRequest\x12\x19\n" +
 	"\x05title\x18\x02 \x01(\tH\x00R\x05title\x88\x01\x01\x12\x18\n" +
 	"\acontent\x18\x03 \x01(\tR\acontentB\b\n" +
 	"\x06_title\"*\n" +

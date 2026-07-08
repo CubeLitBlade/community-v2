@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/cubelitblade/community-v2/backend/services/post/internal/adapter/driven/persistence/ent/post"
 	"github.com/cubelitblade/community-v2/backend/services/post/internal/domain"
 	"github.com/cubelitblade/community-v2/backend/services/post/internal/domain/model"
 )
@@ -279,7 +278,7 @@ func TestPost_Edit(t *testing.T) {
 
 			assert.Equal(t, postID, p.ID())
 			assert.Equal(t, authorID, p.AuthorID())
-			assert.Equal(t, post.StatusPublished, p.Status())
+			assert.Equal(t, model.StatusPublished, p.Status())
 			assert.Equal(t, before, p.CreatedAt())
 
 			assert.Equal(t, tt.wantTitle, p.Title())

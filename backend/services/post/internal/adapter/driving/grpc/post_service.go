@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	postv1 "github.com/cubelitblade/community-v2/backend/gen/go/post/v1"
+	"github.com/cubelitblade/community-v2/backend/pkg/metadata"
 	"github.com/cubelitblade/community-v2/backend/services/post/internal/application"
 	"github.com/cubelitblade/community-v2/backend/services/post/internal/domain"
 )
@@ -33,7 +34,12 @@ func NewPostServiceServer(publishPost *application.Publisher) *PostServiceServer
 }
 
 func (s *PostServiceServer) Publish(ctx context.Context, req *postv1.PublishRequest) (*postv1.PublishResponse, error) {
-	id, err := s.publishPost.Publish(ctx, req.AccountId, req.Title, req.Content)
+	accountID, err := metadata.AccountIDFromContext(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "missing account id")
+	}
+
+	id, err := s.publishPost.Publish(ctx, accountID, req.Title, req.Content)
 	if err != nil {
 		gerr, ok := errorMap[err]
 		if !ok {

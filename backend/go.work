@@ -5,6 +5,7 @@ use (
 	./pkg/common
 	./pkg/contracts
 	./pkg/events
+	./pkg/metadata
 	./pkg/platform
 	./pkg/slogx
 	./services/account
