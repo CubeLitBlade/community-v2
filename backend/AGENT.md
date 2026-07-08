@@ -11,11 +11,19 @@ It consists of multiple microservices and shared infrastructure packages.
 The system follows a **hexagonal architecture direction**.
 
 - Domain logic: `internal/domain`
-- Adapters (DB / external systems): `internal/adapter`
-- Transport layer: `internal/transport`
-- Bootstrap: dependency wiring only
+- Ports (interfaces): `internal/domain/port`
+- Application services (use cases): `internal/application`
+- Adapters — driven (DB / external systems): `internal/adapter/driven`
+- Adapters — driving (gRPC / HTTP): `internal/adapter/driving`
+- Bootstrap: fx dependency wiring only — no business logic
 
-Legacy code may still exist (notably in Account service), but new code MUST follow hexagonal structure.
+All services MUST follow hexagonal structure. The account service has been fully rewritten to DDD/hexagonal and is the canonical reference implementation.
+
+Additionally, the codebase uses an **OpenTelemetry decorator pattern** for cross-cutting observability:
+
+- Telemetry decorators in `internal/telemetry/` wrap application services (use cases) and adapters
+- Decorators record traces, metrics, and structured logs without touching domain logic
+- Example: `InstrumentedRegistrar` wraps `Registrar` — the domain never imports OTel
 
 ---
 
@@ -49,8 +57,9 @@ Each service under `services/*` is an independent bounded context.
 
 ## 4. Contracts (API & Events)
 
-- Each service owns its own API and event definitions
-- Contracts are NOT centralized
+- Each service owns its own API (proto) and gRPC handler definitions
+- Event **payloads** (not topics/constants) may live in `pkg/events/<service>/` when shared between publisher and consumer services
+- Event topics, types, and aggregate constants are co-located with the payload in pkg as the canonical shared contract
 - Cross-service communication relies on versioned schemas
 
 Semantic compatibility is required, structural differences are allowed.
@@ -63,7 +72,7 @@ Semantic compatibility is required, structural differences are allowed.
 
 ### Allowed:
 - platform (server, DB, routing)
-- events (outbox + RabbitMQ)
+- events (outbox + RabbitMQ + shared event payloads)
 - common (IDs, JWT, errors)
 
 ### Rules:
