@@ -82,7 +82,31 @@ Semantic compatibility is required, structural differences are allowed.
 
 ---
 
-## 6. Persistence Strategy (Learning Context)
+## 6. Shared Package Versioning & Release Workflow
+
+When proto definitions or pkg/ shared packages are added or modified, they MUST follow this strict two-phase
+commit and release workflow to maintain dependency integrity:
+
+### Phase 1: Local Integration (The replace commit)
+
+1. Update the consumer service's go.mod to use a replace directive pointing to the local modified pkg/ Or proto path.
+2. Commit this state with the replace directive active.
+
+### Phase 2: Versioning & Publishing (The tagged release)
+
+1. Determine the new semantic version:
+    - Attempt to use `gorelease` to infer the version bump automatically.
+    - Fallback: If `gorelease` fails, times out, or produces no result, MUST infer the correct version bump based on Go compatibility rules
+      (e.g., vo.x.o for backwards-compatible changes, v1.0.0 for breaking changes).
+1. Create a Git tag for the specific pkg/ or proto module with the new version.
+2. Push the tag to the remote repository.
+3. Update the consumer service's go.mod to remove the replace directive and use the actual, newly versioned
+module path.
+1. Commit this final state.
+
+---
+
+## 7. Persistence Strategy (Learning Context)
 
 This repository intentionally uses different persistence approaches:
 
@@ -93,7 +117,7 @@ Each service MUST use only one persistence approach internally.
 
 ---
 
-## 7. Forbidden Patterns
+## 8. Forbidden Patterns
 
 - No new service-to-service HTTP calls
 - No shared domain models across services
@@ -102,7 +126,19 @@ Each service MUST use only one persistence approach internally.
 
 ---
 
-## 8. Design Principle
+## 9. Git Commit Conventions
+
+When generating or assisting with Git commits, an `Assisted-By` trailer MUST be appended to the bottom of every commit message.
+There MUST be exactly one empty line separating the body and the trailer. The format MUST strictly follow the toolchain execution path:
+
+ - When orchestrator != executing agent: `Assisted-By: [Executing Agent] ([Model Name]) via [Orchestrator]`
+   - Example: `Assisted-By: OpenCode (deep-seek-v4-pro) via Hermes`
+ - When orchestrator == executing agent: `Assisted-By: [Agent] ([Model Name])`
+   - Example: `Assisted-By: Hermes (deepseek-v4-pro)`
+
+---
+
+## 10. Design Principle
 
 When uncertain:
 
