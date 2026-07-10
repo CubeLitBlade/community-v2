@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// AccountProfile is the client for interacting with the AccountProfile builders.
 	AccountProfile *AccountProfileClient
+	// Outbox is the client for interacting with the Outbox builders.
+	Outbox *OutboxClient
 	// Post is the client for interacting with the Post builders.
 	Post *PostClient
 
@@ -148,6 +150,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.AccountProfile = NewAccountProfileClient(tx.config)
+	tx.Outbox = NewOutboxClient(tx.config)
 	tx.Post = NewPostClient(tx.config)
 }
 

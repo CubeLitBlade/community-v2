@@ -5,22 +5,25 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 
+	postv1 "github.com/cubelitblade/community-v2/backend/pkg/events/post/v1"
 	"github.com/cubelitblade/community-v2/backend/services/post/internal/domain"
 	"github.com/cubelitblade/community-v2/backend/services/post/internal/domain/model"
 	"github.com/cubelitblade/community-v2/backend/services/post/internal/domain/port"
 )
 
 type Publisher struct {
-	postSaver  port.PostSaver
-	authz      port.Authorizer
-	transactor port.Transactor
-	idgen      port.IDGenerator
+	postSaver     port.PostSaver
+	authz         port.Authorizer
+	transactor    port.Transactor
+	idgen         port.IDGenerator
+	eventRecorder port.EventRecorder
 
 	logger   *slog.Logger
 	timeFunc func() time.Time
@@ -28,15 +31,17 @@ type Publisher struct {
 
 func NewPublisher(
 	postSaver port.PostSaver, authz port.Authorizer, transactor port.Transactor, idgen port.IDGenerator,
+	eventRecorder port.EventRecorder,
 	logger *slog.Logger,
 ) *Publisher {
 	return &Publisher{
-		postSaver:  postSaver,
-		authz:      authz,
-		transactor: transactor,
-		idgen:      idgen,
-		logger:     logger,
-		timeFunc:   time.Now,
+		postSaver:     postSaver,
+		authz:         authz,
+		transactor:    transactor,
+		idgen:         idgen,
+		eventRecorder: eventRecorder,
+		logger:        logger,
+		timeFunc:      time.Now,
 	}
 }
 
@@ -88,7 +93,7 @@ func (p *Publisher) Publish(ctx context.Context, accountID int64, title *string,
 
 func (p *Publisher) savePostAndOutbox(ctx context.Context, post *model.Post) error {
 	serr := p.savePost(ctx, post)
-	werr := p.writeOutbox()
+	werr := p.writeOutbox(ctx, post)
 
 	return errors.Join(serr, werr)
 }
@@ -125,7 +130,24 @@ func (p *Publisher) savePost(ctx context.Context, post *model.Post) error {
 	return nil
 }
 
-func (*Publisher) writeOutbox() error {
-	// TODO: implement
-	return nil
+func (p *Publisher) writeOutbox(ctx context.Context, post *model.Post) error {
+	id, err := p.idgen.Next()
+	if err != nil {
+		return fmt.Errorf("generate outbox id: %w", err)
+	}
+
+	entry := &port.OutboxEntry{
+		ID:            id,
+		AggregateID:   post.ID(),
+		AggregateType: postv1.AggregateType,
+		Topic:         postv1.TopicPostPublished,
+		EventType:     postv1.EventTypePostPublished,
+		Payload: postv1.PostPublished{
+			PostID:   strconv.FormatInt(post.ID(), 10),
+			AuthorID: strconv.FormatInt(post.AuthorID(), 10),
+			Title:    post.TitleString(),
+		},
+	}
+
+	return p.eventRecorder.Record(ctx, entry)
 }

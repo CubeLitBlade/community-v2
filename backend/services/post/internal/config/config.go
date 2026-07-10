@@ -16,4 +16,5 @@ type Config struct {
 	GRPC      GRPCConfig      `koanf:"grpc"`
 	Snowflake SnowflakeConfig `koanf:"snowflake"`
 	OTEL      OTELConfig      `koanf:"otel"`
+	RabbitMQ  RabbitMQConfig  `koanf:"rabbitmq"`
 }

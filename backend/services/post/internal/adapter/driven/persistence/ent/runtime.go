@@ -5,6 +5,7 @@ package ent
 import (
 	"time"
 
+	"github.com/cubelitblade/community-v2/backend/services/post/internal/adapter/driven/persistence/ent/outbox"
 	"github.com/cubelitblade/community-v2/backend/services/post/internal/adapter/driven/persistence/ent/post"
 	"github.com/cubelitblade/community-v2/backend/services/post/internal/adapter/driven/persistence/ent/schema"
 )
@@ -13,6 +14,12 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	outboxFields := schema.Outbox{}.Fields()
+	_ = outboxFields
+	// outboxDescCreatedAt is the schema descriptor for created_at field.
+	outboxDescCreatedAt := outboxFields[6].Descriptor()
+	// outbox.DefaultCreatedAt holds the default value on creation for the created_at field.
+	outbox.DefaultCreatedAt = outboxDescCreatedAt.Default.(func() time.Time)
 	postFields := schema.Post{}.Fields()
 	_ = postFields
 	// postDescContent is the schema descriptor for content field.

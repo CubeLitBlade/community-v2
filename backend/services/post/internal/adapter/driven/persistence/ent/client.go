@@ -16,6 +16,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/cubelitblade/community-v2/backend/services/post/internal/adapter/driven/persistence/ent/accountprofile"
+	"github.com/cubelitblade/community-v2/backend/services/post/internal/adapter/driven/persistence/ent/outbox"
 	"github.com/cubelitblade/community-v2/backend/services/post/internal/adapter/driven/persistence/ent/post"
 )
 
@@ -26,6 +27,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// AccountProfile is the client for interacting with the AccountProfile builders.
 	AccountProfile *AccountProfileClient
+	// Outbox is the client for interacting with the Outbox builders.
+	Outbox *OutboxClient
 	// Post is the client for interacting with the Post builders.
 	Post *PostClient
 }
@@ -40,6 +43,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.AccountProfile = NewAccountProfileClient(c.config)
+	c.Outbox = NewOutboxClient(c.config)
 	c.Post = NewPostClient(c.config)
 }
 
@@ -134,6 +138,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ctx:            ctx,
 		config:         cfg,
 		AccountProfile: NewAccountProfileClient(cfg),
+		Outbox:         NewOutboxClient(cfg),
 		Post:           NewPostClient(cfg),
 	}, nil
 }
@@ -155,6 +160,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ctx:            ctx,
 		config:         cfg,
 		AccountProfile: NewAccountProfileClient(cfg),
+		Outbox:         NewOutboxClient(cfg),
 		Post:           NewPostClient(cfg),
 	}, nil
 }
@@ -185,6 +191,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.AccountProfile.Use(hooks...)
+	c.Outbox.Use(hooks...)
 	c.Post.Use(hooks...)
 }
 
@@ -192,6 +199,7 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.AccountProfile.Intercept(interceptors...)
+	c.Outbox.Intercept(interceptors...)
 	c.Post.Intercept(interceptors...)
 }
 
@@ -200,6 +208,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *AccountProfileMutation:
 		return c.AccountProfile.mutate(ctx, m)
+	case *OutboxMutation:
+		return c.Outbox.mutate(ctx, m)
 	case *PostMutation:
 		return c.Post.mutate(ctx, m)
 	default:
@@ -356,6 +366,139 @@ func (c *AccountProfileClient) mutate(ctx context.Context, m *AccountProfileMuta
 	}
 }
 
+// OutboxClient is a client for the Outbox schema.
+type OutboxClient struct {
+	config
+}
+
+// NewOutboxClient returns a client for the Outbox from the given config.
+func NewOutboxClient(c config) *OutboxClient {
+	return &OutboxClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `outbox.Hooks(f(g(h())))`.
+func (c *OutboxClient) Use(hooks ...Hook) {
+	c.hooks.Outbox = append(c.hooks.Outbox, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `outbox.Intercept(f(g(h())))`.
+func (c *OutboxClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Outbox = append(c.inters.Outbox, interceptors...)
+}
+
+// Create returns a builder for creating a Outbox entity.
+func (c *OutboxClient) Create() *OutboxCreate {
+	mutation := newOutboxMutation(c.config, OpCreate)
+	return &OutboxCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Outbox entities.
+func (c *OutboxClient) CreateBulk(builders ...*OutboxCreate) *OutboxCreateBulk {
+	return &OutboxCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *OutboxClient) MapCreateBulk(slice any, setFunc func(*OutboxCreate, int)) *OutboxCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &OutboxCreateBulk{err: fmt.Errorf("calling to OutboxClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*OutboxCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &OutboxCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Outbox.
+func (c *OutboxClient) Update() *OutboxUpdate {
+	mutation := newOutboxMutation(c.config, OpUpdate)
+	return &OutboxUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *OutboxClient) UpdateOne(_m *Outbox) *OutboxUpdateOne {
+	mutation := newOutboxMutation(c.config, OpUpdateOne, withOutbox(_m))
+	return &OutboxUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *OutboxClient) UpdateOneID(id int64) *OutboxUpdateOne {
+	mutation := newOutboxMutation(c.config, OpUpdateOne, withOutboxID(id))
+	return &OutboxUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Outbox.
+func (c *OutboxClient) Delete() *OutboxDelete {
+	mutation := newOutboxMutation(c.config, OpDelete)
+	return &OutboxDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *OutboxClient) DeleteOne(_m *Outbox) *OutboxDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *OutboxClient) DeleteOneID(id int64) *OutboxDeleteOne {
+	builder := c.Delete().Where(outbox.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &OutboxDeleteOne{builder}
+}
+
+// Query returns a query builder for Outbox.
+func (c *OutboxClient) Query() *OutboxQuery {
+	return &OutboxQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeOutbox},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Outbox entity by its id.
+func (c *OutboxClient) Get(ctx context.Context, id int64) (*Outbox, error) {
+	return c.Query().Where(outbox.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *OutboxClient) GetX(ctx context.Context, id int64) *Outbox {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *OutboxClient) Hooks() []Hook {
+	return c.hooks.Outbox
+}
+
+// Interceptors returns the client interceptors.
+func (c *OutboxClient) Interceptors() []Interceptor {
+	return c.inters.Outbox
+}
+
+func (c *OutboxClient) mutate(ctx context.Context, m *OutboxMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&OutboxCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&OutboxUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&OutboxUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&OutboxDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Outbox mutation op: %q", m.Op())
+	}
+}
+
 // PostClient is a client for the Post schema.
 type PostClient struct {
 	config
@@ -508,9 +651,9 @@ func (c *PostClient) mutate(ctx context.Context, m *PostMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		AccountProfile, Post []ent.Hook
+		AccountProfile, Outbox, Post []ent.Hook
 	}
 	inters struct {
-		AccountProfile, Post []ent.Interceptor
+		AccountProfile, Outbox, Post []ent.Interceptor
 	}
 )

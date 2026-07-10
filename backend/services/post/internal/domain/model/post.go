@@ -87,6 +87,14 @@ func (p *Post) Title() *string {
 	return p.title
 }
 
+// TitleString returns the title as a plain string, or empty string if nil.
+func (p *Post) TitleString() string {
+	if p.title == nil {
+		return ""
+	}
+	return *p.title
+}
+
 func (p *Post) Content() string {
 	return p.content
 }

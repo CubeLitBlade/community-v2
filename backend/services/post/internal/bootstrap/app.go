@@ -15,5 +15,6 @@ func NewApp() *fx.App {
 		SlogModule(),
 		SnowflakeModule(),
 		OpenTelemetryModule(),
+		RabbitMQModule(),
 	)
 }

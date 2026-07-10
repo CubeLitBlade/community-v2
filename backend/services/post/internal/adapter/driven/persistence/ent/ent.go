@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/cubelitblade/community-v2/backend/services/post/internal/adapter/driven/persistence/ent/accountprofile"
+	"github.com/cubelitblade/community-v2/backend/services/post/internal/adapter/driven/persistence/ent/outbox"
 	"github.com/cubelitblade/community-v2/backend/services/post/internal/adapter/driven/persistence/ent/post"
 )
 
@@ -75,6 +76,7 @@ func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			accountprofile.Table: accountprofile.ValidColumn,
+			outbox.Table:         outbox.ValidColumn,
 			post.Table:           post.ValidColumn,
 		})
 	})

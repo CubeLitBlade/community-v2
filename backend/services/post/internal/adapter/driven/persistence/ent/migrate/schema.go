@@ -3,6 +3,7 @@
 package migrate
 
 import (
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/dialect/sql/schema"
 	"entgo.io/ent/schema/field"
 )
@@ -19,6 +20,24 @@ var (
 		Name:       "account_profiles",
 		Columns:    AccountProfilesColumns,
 		PrimaryKey: []*schema.Column{AccountProfilesColumns[0]},
+	}
+	// OutboxColumns holds the columns for the "outbox" table.
+	OutboxColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "aggregate_id", Type: field.TypeInt64},
+		{Name: "aggregate_type", Type: field.TypeString},
+		{Name: "topic", Type: field.TypeString},
+		{Name: "event_type", Type: field.TypeString},
+		{Name: "payload", Type: field.TypeJSON},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "published_at", Type: field.TypeTime, Nullable: true},
+		{Name: "trace_id", Type: field.TypeString, Nullable: true},
+	}
+	// OutboxTable holds the schema information for the "outbox" table.
+	OutboxTable = &schema.Table{
+		Name:       "outbox",
+		Columns:    OutboxColumns,
+		PrimaryKey: []*schema.Column{OutboxColumns[0]},
 	}
 	// PostsColumns holds the columns for the "posts" table.
 	PostsColumns = []*schema.Column{
@@ -47,10 +66,14 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AccountProfilesTable,
+		OutboxTable,
 		PostsTable,
 	}
 )
 
 func init() {
+	OutboxTable.Annotation = &entsql.Annotation{
+		Table: "outbox",
+	}
 	PostsTable.ForeignKeys[0].RefTable = AccountProfilesTable
 }

@@ -23,5 +23,8 @@ func SnowflakeModule() fx.Option {
 	return fx.Options(
 		fx.Provide(NewSnowflake),
 		fx.Provide(idgenerator.New),
+		fx.Provide(func(snowflake *idgen.Snowflake) idgen.Generator {
+			return snowflake
+		}),
 	)
 }

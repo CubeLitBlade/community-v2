@@ -9,5 +9,8 @@ import (
 // AccountProfile is the predicate function for accountprofile builders.
 type AccountProfile func(*sql.Selector)
 
+// Outbox is the predicate function for outbox builders.
+type Outbox func(*sql.Selector)
+
 // Post is the predicate function for post builders.
 type Post func(*sql.Selector)
