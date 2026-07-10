@@ -3,39 +3,39 @@ model_file: ./model.fga
 tuples:
   - user: user:alice
     relation: admin
-    object: system:global
+    object: system:community
   - user: user:bob
     relation: moderator
-    object: system:global
+    object: system:community
   - user: user:carol
     relation: member
-    object: system:global
+    object: system:community
   - user: user:eve
     relation: owner
     object: account:acme
   - object: account:acme
     relation: global
-    user: system:global
+    user: system:community
   - user: user:dave
     relation: author
     object: post:post1
   - object: post:post1
     relation: global
-    user: system:global
+    user: system:community
 
 tests:
   - name: "system can_publish_post"
     check:
       - user: user:carol
-        object: system:global
+        object: system:community
         assertions:
           can_publish_post: true
       - user: user:bob
-        object: system:global
+        object: system:community
         assertions:
           can_publish_post: true
       - user: user:alice
-        object: system:global
+        object: system:community
         assertions:
           can_publish_post: true
   - name: "account can_archive"
