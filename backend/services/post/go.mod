@@ -7,6 +7,7 @@ require (
 	github.com/XSAM/otelsql v0.42.0
 	github.com/cubelitblade/community-v2/backend/gen/go v0.2.0
 	github.com/cubelitblade/community-v2/backend/pkg/common v0.2.2
+	github.com/cubelitblade/community-v2/backend/pkg/events v0.6.0
 	github.com/cubelitblade/community-v2/backend/pkg/metadata v0.1.0
 	github.com/cubelitblade/community-v2/backend/pkg/slogx v0.1.0
 	github.com/cubelitblade/community-v2/backend/services/authz v0.0.0-20260708101720-9b3fb17cbf65
@@ -121,3 +122,5 @@ require (
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/cubelitblade/community-v2/backend/pkg/events => ../../pkg/events
