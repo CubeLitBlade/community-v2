@@ -1,8 +1,8 @@
 package domain
 
 const (
-	EventAccountCreated = "account.created"
-	EventAccountUpdated = "account.updated"
+	EventAccountCreated  = "account.created"
+	EventPostPublished   = "post.published"
 )
 
 type Event interface {
@@ -15,4 +15,12 @@ type AccountCreated struct {
 
 func (AccountCreated) Type() string {
 	return EventAccountCreated
+}
+
+type PostPublished struct {
+	Tuples []Tuple
+}
+
+func (PostPublished) Type() string {
+	return EventPostPublished
 }

@@ -24,6 +24,8 @@ func (s *EventSyncer) Sync(ctx context.Context, evt domain.Event) error {
 	switch e := evt.(type) {
 	case *domain.AccountCreated:
 		return s.syncAccountCreatedEvent(ctx, e)
+	case *domain.PostPublished:
+		return s.syncPostPublishedEvent(ctx, e)
 	default:
 		s.logger.WarnContext(ctx, "unfamiliar event type, letting it slide",
 			slog.String("type", evt.Type()))
@@ -33,6 +35,14 @@ func (s *EventSyncer) Sync(ctx context.Context, evt domain.Event) error {
 }
 
 func (s *EventSyncer) syncAccountCreatedEvent(ctx context.Context, evt *domain.AccountCreated) error {
+	if err := s.writer.Write(ctx, evt.Tuples); err != nil {
+		return fmt.Errorf("write tuples: %w", err)
+	}
+
+	return nil
+}
+
+func (s *EventSyncer) syncPostPublishedEvent(ctx context.Context, evt *domain.PostPublished) error {
 	if err := s.writer.Write(ctx, evt.Tuples); err != nil {
 		return fmt.Errorf("write tuples: %w", err)
 	}
